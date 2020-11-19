@@ -1,0 +1,10 @@
+module moduletest2(a, b, c) = (d, e, f)
+    shared (a, b, c, d, e, f, g) = ()
+    shared (u, h, d) = [1; 8]
+    (a, b, c) = coucou(h)
+    automaton
+        node nodetest
+            a = [1; 9]
+            b = not c
+        transition 
+            | default -> nodetest

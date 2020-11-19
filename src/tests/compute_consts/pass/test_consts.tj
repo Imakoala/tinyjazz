@@ -1,0 +1,13 @@
+const p = n*8+3
+const n = 5 * 4 * 6 + 2
+
+fn fonction<k, l>() = ()
+    a = [0; (k+l)*0]
+    b = [1; k*(n+p)]
+
+module mod(g[n+p*9]) = ()
+    shared c = [1; n/p]
+    automaton
+        node no 
+            k = c[0..n/p]
+        transition

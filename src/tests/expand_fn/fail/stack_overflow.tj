@@ -1,0 +1,8 @@
+fn rec<n>() = (a)
+    a = rec<n-1>()
+
+module main() = ()
+    automaton
+        node n 
+            a = rec<1>()
+        transition
