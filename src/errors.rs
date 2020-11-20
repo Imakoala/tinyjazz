@@ -1,15 +1,17 @@
-use std::rc::Rc;
-
+use crate::{
+    compute_consts::ComputeConstError,
+    expand_fn::{ExpandFnError, REC_DEPTH},
+    parser_wrapper::{ParseErrorType, ParserError},
+};
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFiles;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
+use std::rc::Rc;
 
-use crate::{
-    compute_consts::ComputeConstError,
-    expand_fn::{ExpandFnError, STACK_SIZE},
-    parser_wrapper::{ParseErrorType, ParserError},
-};
-
+/*
+This file is dedicated to the handling of all errors, to pretty_print them using codespan_diagnostic, among others.
+It is a bit verbose, but provides very clear error messages
+*/
 pub enum ErrorType {
     Parser(ParserError),
     ComputeConst(ComputeConstError),
@@ -77,7 +79,7 @@ fn get_diagnostic(
                 .with_labels(vec![Label::primary(name.loc.0, name.loc.1..name.loc.2)])
                 .with_message(format!(
                     "Function {} was expanded recursively more than {} times without finishing.",
-                    name.value, STACK_SIZE
+                    name.value, REC_DEPTH
                 )),
             ExpandFnError::WrongNumber(typ, (file_id, l, r), _name, expected, got) => {
                 Diagnostic::error()

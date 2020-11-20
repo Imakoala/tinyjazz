@@ -8,6 +8,8 @@ mod errors;
 mod expand_fn;
 mod flatten;
 mod parser_wrapper;
+mod typed_ast;
+
 use ast::*;
 use docopt::Docopt;
 use errors::TinyjazzError;
@@ -17,9 +19,7 @@ use parser_wrapper::parse;
 use serde::Deserialize;
 use std::{path::PathBuf, process::exit};
 
-#[derive(Debug)]
-struct PrettyError;
-
+//Docopt generates a CLI automatically from this usage string. Pretty amazing.
 const USAGE: &'static str = "
 Tinyjazz.
 A compiler for a language close to minijazz, extended with a more permissive syntaxe and state automaton
@@ -45,6 +45,8 @@ fn process_file(path: PathBuf) -> Result<Program, TinyjazzError> {
     compute_consts::compute_consts(&mut prog).map_err(|e| (e, files.clone()))?;
     flatten(&mut prog);
     expand_functions(&mut prog).map_err(|e| (e, files.clone()))?;
+    prog.functions = HashMap::new(); //the functions are no longer useful
+                                     //at this point, the ast is ready to be typed.
     Ok(prog)
 }
 fn main() {

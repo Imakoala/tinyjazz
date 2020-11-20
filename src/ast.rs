@@ -4,8 +4,11 @@ use std::{
     path::PathBuf,
 };
 
+//filed_id, left index, right index
 pub type Pos = (usize, usize, usize);
 
+//A wrapper to include position information in the tree
+//It implements deref for easier use
 #[derive(Debug, Clone)]
 pub struct Loc<T> {
     pub loc: Pos,
@@ -27,22 +30,25 @@ impl<T> DerefMut for Loc<T> {
 //the main program
 #[derive(Debug, Clone)]
 pub struct Program {
-    pub imports: Vec<Import>,                 //all imported files
-    pub modules: HashMap<String, Module>,     //all the modules ordered by name
-    pub functions: HashMap<String, Function>, //all the functions ordered by name
-    pub global_consts: HashMap<String, Const>,
+    pub imports: Vec<Import>,                  //all imported files
+    pub modules: HashMap<String, Module>,      //all the modules ordered by name
+    pub functions: HashMap<String, Function>,  //all the functions ordered by name
+    pub global_consts: HashMap<String, Const>, //the global constants
 }
 pub type Import = PathBuf; //an import is just a Path
+
+//A module is basiaclly a group of automata, taking some input and ouputs
 #[derive(Debug, Clone)]
 pub struct Module {
     pub name: String,
     pub inputs: Vec<Arg>,
     pub outputs: Vec<Arg>,
-    pub shared: Vec<VarAssign>,
-    pub extern_modules: Vec<Loc<ExtModule>>,
+    pub shared: Vec<VarAssign>, //Variables shared across nodes and automata must be declared
+    pub extern_modules: Vec<Loc<ExtModule>>, //You can call another module, the inpits must be shared variables and the output are automatically shared
     pub automata: Vec<Automaton>,
 }
 
+//A variable assignement
 #[derive(Debug, Clone)]
 pub struct VarAssign {
     pub var: Loc<Var>,
@@ -59,6 +65,7 @@ pub struct ConstVarAssign {
 #[derive(Debug, Clone)]
 pub struct Value(Vec<bool>);
 
+//A call to an extenrla module
 #[derive(Debug, Clone)]
 pub struct ExtModule {
     pub inputs: Loc<Vec<Loc<Var>>>,
@@ -73,6 +80,8 @@ pub struct Node {
     pub statements: Vec<Statement>,
     pub transitions: Vec<(Loc<Expr>, Loc<Var>, bool)>,
 }
+
+//a statement can be either (tuple) = (tuple), var = expr, or (tuple) = function call
 #[derive(Debug, Clone)]
 pub enum Statement {
     Assign(Vec<VarAssign>),
@@ -85,6 +94,8 @@ pub struct FnAssign {
     pub vars: Vec<Loc<Var>>,
     pub f: FnCall,
 }
+
+//a constant expression, either [0; n] which mean a bus of size n initialized to 0, or a vector of bits
 #[derive(Debug, Clone)]
 pub enum ConstExpr {
     Known(Vec<bool>),
@@ -158,6 +169,8 @@ pub enum ConstBiOp {
     Eq,
     Neq,
 }
+
+//A variable in which the size must be specified (in arguments or return vars)
 #[derive(Debug, Clone)]
 pub struct Arg {
     pub name: String,

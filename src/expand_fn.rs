@@ -3,13 +3,22 @@ use std::fmt::Display;
 use crate::compute_consts::{compute_const, compute_consts_in_statement};
 use crate::{ast::*, compute_consts::ComputeConstError};
 use global_counter::global_counter;
-pub const STACK_SIZE: u32 = 1000;
+
+/*
+This file recusively inlines functions.
+It simply alternates between inlining all functions, then computing all constants.
+Then as all constants in modules are values again, it can inlines the remaining functions, and so on.
+
+It stops if the depth exceed a constant currently, probably a cli parameter eventually
+*/
+
+pub const REC_DEPTH: u32 = 1000;
 global_counter!(FN_CALL_VARIABLE, u32, 0);
 
 #[derive(Debug)]
 pub enum ExpandFnError {
     //CyclicRecursion(Loc<String>, Vec<i32>),
-    StackOverflow(Loc<String>),
+    StackOverflow(Loc<String>), //Actually just recusion depth...
     WrongNumber(WrongNumberType, Pos, String, usize, usize),
     ReplaceConstError(ComputeConstError),
     UnknowFunction(Pos, String),
@@ -45,7 +54,7 @@ pub fn expand_functions(prog: &mut Program) -> Result<(), ExpandFnError> {
     while changed.is_some() {
         changed = replace_fn_calls(prog)?;
         counter += 1;
-        if counter >= STACK_SIZE && changed.is_some() {
+        if counter >= REC_DEPTH && changed.is_some() {
             return Err(ExpandFnError::StackOverflow(changed.unwrap()));
         }
     }
@@ -65,6 +74,8 @@ fn replace_fn_calls(prog: &mut Program) -> Result<Option<Loc<String>>, ExpandFnE
     Ok(changed)
 }
 
+//This replaces a vec of statements with a new vec of statements, where function calls are inlined
+//it returns the name of a function which was inlined, to report infinite recursion errors.
 fn replace_fn_calls_in_statements(
     statements: &mut Vec<Statement>,
     functions: &mut HashMap<String, Function>,
@@ -74,6 +85,7 @@ fn replace_fn_calls_in_statements(
     for stat in statements.drain(..) {
         match stat {
             Statement::Assign(mut var_assigns) => {
+                //handles all the function calls by pushing the right new statements
                 for assign in &mut var_assigns {
                     if let Expr::FnCall(fn_call) = &mut assign.expr.value {
                         let func =
@@ -91,6 +103,7 @@ fn replace_fn_calls_in_statements(
                         changed = Some(fn_call.name.clone());
                     }
                 }
+                //and the select the other var assign and add them as well
                 new_vec.push(Statement::Assign(
                     var_assigns
                         .drain(..)
@@ -102,6 +115,7 @@ fn replace_fn_calls_in_statements(
                 ));
             }
             Statement::If(mut if_struct) => {
+                //As the condition is always a value, this is a good place select the right block and ignore the other.
                 if let Const::Value(v) = if_struct.condition {
                     if v == 0 {
                         changed = changed.or(replace_fn_calls_in_statements(
@@ -121,6 +135,7 @@ fn replace_fn_calls_in_statements(
                 }
             }
             Statement::FnAssign(mut fn_assign) => {
+                //A simple function assign, just inline it
                 let func =
                     functions
                         .get(&*fn_assign.f.name)
@@ -141,6 +156,9 @@ fn replace_fn_calls_in_statements(
     Ok(changed)
 }
 
+//This inlines a function.
+//This means generating a certain amount of statements and intermediary variables,
+//and the binding those to the outputs, which are specifier
 fn inline_function(
     func: &Function,
     fncall: &mut FnCall,
@@ -175,7 +193,7 @@ fn inline_function(
             outputs.len(),
         ));
     }
-    //Makes the vector assignation
+    //Link the inpute paramters
     //remember the names given to the input parameters.
     let mut vars_map = HashMap::new();
     let counter = FN_CALL_VARIABLE.get_cloned();
@@ -240,11 +258,14 @@ fn inline_function(
     let mut func_body = func.statements.clone();
     replace_consts(&mut func_body, &static_args_map)?;
     replace_vars(&mut func_body, &vars_map);
+
+    //push in the right order
     out_statements.append(&mut func_body);
     out_statements.push(stat_outputs);
     Ok(())
 }
 
+//replace constants in functions using the provided static parameters
 fn replace_consts(
     statements: &mut Vec<Statement>,
     consts: &HashMap<String, Const>,
@@ -254,6 +275,8 @@ fn replace_consts(
     }
     Ok(())
 }
+
+//replace the variables in functions using the input variables (which might be generated if an expr was passed as the argument)
 fn replace_vars(statements: &mut Vec<Statement>, vars: &HashMap<String, String>) {
     let mut closure = |v: &mut String| {
         if let Some(v_rep) = vars.get(&v.to_string()) {

@@ -1,12 +1,16 @@
 use crate::ast::*;
 use solvent::DepGraph;
-
+/*
+In this file, we try to simplify all the constants as much as possible, to prepare for
+recursive expansion.
+In particular, the global constants are replaced, and all the constants outiside of functions are replaced by simple numbers.
+*/
 #[derive(Clone, Debug)]
 pub enum ComputeConstError {
-    UnknowVariable(Pos, String),
-    DivisionByZero(Pos),
-    CyclicDefinition,
-    Other(String),
+    UnknowVariable(Pos, String), //Unknown const var
+    DivisionByZero(Pos),         //division by zero in const evaluation
+    CyclicDefinition,            //In global const definition
+    Other(String),               //Unexpected external error
 }
 
 impl From<solvent::SolventError> for ComputeConstError {
@@ -20,8 +24,12 @@ impl From<solvent::SolventError> for ComputeConstError {
     }
 }
 
+//The wrapper function
 pub fn compute_consts(prog: &mut Program) -> Result<(), ComputeConstError> {
+    //Simplify global consts to single values
     compute_global_consts(&mut prog.global_consts)?;
+
+    //iterate through statements to call appropriate functions
     for (_, m) in &mut prog.modules {
         for arg in &mut m.inputs {
             let res = compute_const(&arg.size, &prog.global_consts)?;
@@ -128,6 +136,7 @@ pub fn compute_consts_in_statement(
     map_consts_in_statement(statement, &mut closure)
 }
 
+//Use a generic here, more clear
 fn map_consts_in_statement<F>(statement: &mut Statement, f: &mut F) -> Result<(), ComputeConstError>
 where
     F: FnMut(&mut Const) -> Result<(), ComputeConstError>,
@@ -264,6 +273,8 @@ where
     }
 }
 //replace the constants with simple Value(i32).
+//This uses a dpeendancy solver, as the constant definition can be unordered
+//(this allows for deterministically using constants from other files)
 fn compute_global_consts(consts: &mut HashMap<String, Const>) -> Result<(), ComputeConstError> {
     if consts.is_empty() {
         return Ok(());
@@ -295,6 +306,7 @@ fn compute_global_consts(consts: &mut HashMap<String, Const>) -> Result<(), Comp
     Ok(())
 }
 
+//Replace a constant with a single value, fails if it can't
 pub fn compute_const(c: &Const, consts: &HashMap<String, Const>) -> Result<i32, ComputeConstError> {
     match c {
         Const::Value(i) => Ok(*i),

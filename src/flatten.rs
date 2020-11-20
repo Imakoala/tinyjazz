@@ -1,7 +1,29 @@
 use crate::ast::*;
 use global_counter::global_counter;
+
+/*
+This file is used to "flatten" every statement in the program.
+Expr can currently be nested. Netlists cannot be nested, so the tree will need to be
+flattened at some point. As it makes the tree simpler to process, it is better done
+at the beginning.
+The functions in this file transform :
+a = 1 + 0 * b + f(0)
+
+in:
+x = 0*b
+y = 1 + x
+z = f(0)
+a = y + z
+
+(the names x, y, z are actually generated using $, which is a forbidden character for variables names to avoid conflicts,
+and a global counter.)
+I choose to use strings for name as netlists allow for it and it makes the generated code a bit cleared, albeit not much
+*/
+
+//the global counter
 global_counter!(FLATTEN_EXPR_COUNTER, u32, 0);
 
+//wrapper function
 pub fn flatten(prog: &mut Program) {
     for (_, f) in prog.functions.iter_mut() {
         f.statements = f
@@ -23,6 +45,8 @@ pub fn flatten(prog: &mut Program) {
                     .map(|stat| flatten_statement(stat))
                     .flatten()
                     .collect();
+                //transition must be handled as well.
+                //They are flattened into statements in the end of the node body
                 *transitions = transitions
                     .drain(..)
                     .map(|(expr, goto, reset)| {
@@ -78,11 +102,15 @@ pub fn flatten_assigns(mut statement: Vec<VarAssign>) -> Vec<Statement> {
 fn loc<T>(loc: Pos, value: T) -> Loc<T> {
     Loc { loc, value }
 }
+
+//generates a name
 fn get_name(name: &String) -> String {
     let counter = FLATTEN_EXPR_COUNTER.get_cloned();
     FLATTEN_EXPR_COUNTER.inc();
     format!("flatten${}$${}", name, counter)
 }
+
+//this is very, very verbose. Find a way to simplify it ?
 fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
     let mut res = Vec::new();
     let e_ret = match expr.value {
