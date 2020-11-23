@@ -201,8 +201,6 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
             Expr::Reg(Box::new(Expr::Var(name)))
         }
         Expr::Ram(RamStruct {
-            addr_size: c1,
-            word_size: c2,
             read_addr: e1,
             write_enable: e2,
             write_addr: e3,
@@ -241,8 +239,6 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
                 expr: loc(pos4, e_out4),
             }]));
             Expr::Ram(RamStruct {
-                addr_size: c1,
-                word_size: c2,
                 read_addr: Box::new(loc(pos1, Expr::Var(name1))),
                 write_enable: Box::new(loc(pos2, Expr::Var(name2))),
                 write_addr: Box::new(loc(pos3, Expr::Var(name3))),
@@ -250,12 +246,11 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
             })
         }
         Expr::Rom(RomStruct {
-            addr_size: c1,
-            word_size: c2,
-            read_addr: e_in,
+            word_size,
+            read_addr,
         }) => {
-            let pos = e_in.loc;
-            let (mut v, e_out) = flatten_expr(name, *e_in);
+            let pos = read_addr.loc;
+            let (mut v, e_out) = flatten_expr(name, *read_addr);
             let name = loc(pos, get_name(name));
             res.append(&mut v);
             res.push(Statement::Assign(vec![VarAssign {
@@ -263,9 +258,8 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
                 expr: loc(pos, e_out),
             }]));
             Expr::Rom(RomStruct {
-                addr_size: c1,
-                word_size: c2,
                 read_addr: Box::new(loc(pos, Expr::Var(name))),
+                word_size,
             })
         }
     };

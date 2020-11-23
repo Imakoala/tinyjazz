@@ -33,11 +33,11 @@ pub fn compute_consts(prog: &mut Program) -> Result<(), ComputeConstError> {
     for (_, m) in &mut prog.modules {
         for arg in &mut m.inputs {
             let res = compute_const(&arg.size, &prog.global_consts)?;
-            arg.size = Const::Value(res);
+            arg.size.value = Const::Value(res);
         }
         for arg in &mut m.outputs {
             let res = compute_const(&arg.size, &prog.global_consts)?;
-            arg.size = Const::Value(res);
+            arg.size.value = Const::Value(res);
         }
         for shared in &mut m.shared {
             compute_consts_in_expr(&mut shared.expr, &prog.global_consts)?;
@@ -233,8 +233,6 @@ where
         }
         Expr::Reg(e) => map_consts_in_expr(e, f),
         Expr::Ram(RamStruct {
-            addr_size,
-            word_size,
             read_addr,
             write_enable,
             write_addr,
@@ -243,17 +241,13 @@ where
             map_consts_in_expr(read_addr, f)?;
             map_consts_in_expr(write_enable, f)?;
             map_consts_in_expr(write_addr, f)?;
-            map_consts_in_expr(write_data, f)?;
-            f(addr_size)?;
-            f(word_size)
+            map_consts_in_expr(write_data, f)
         }
         Expr::Rom(RomStruct {
-            addr_size,
             word_size,
             read_addr,
         }) => {
             map_consts_in_expr(read_addr, f)?;
-            f(addr_size)?;
             f(word_size)
         }
         Expr::FnCall(FnCall {

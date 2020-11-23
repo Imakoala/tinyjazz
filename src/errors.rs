@@ -2,6 +2,7 @@ use crate::{
     compute_consts::ComputeConstError,
     expand_fn::{ExpandFnError, REC_DEPTH},
     parser_wrapper::{ParseErrorType, ParserError},
+    typing::TypingError,
 };
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFiles;
@@ -16,6 +17,7 @@ pub enum ErrorType {
     Parser(ParserError),
     ComputeConst(ComputeConstError),
     ExpandFn(ExpandFnError),
+    Typing(TypingError),
 }
 
 fn get_diagnostic(
@@ -97,6 +99,87 @@ fn get_diagnostic(
                 .with_labels(vec![Label::primary(*file_id, *l..*r)])
                 .with_message(format!("Unknown function {}", name)),
         },
+        ErrorType::Typing(err) => match err {
+            TypingError::NegativeSizeBus((file_id, l, r), i) => Diagnostic::error()
+                .with_message("Error : negative length bus")
+                .with_code("E0010")
+                .with_labels(vec![Label::primary(*file_id, *l..*r)])
+                .with_message(format!(
+                    "Bus must have a positive length, got {} instead",
+                    i
+                )),
+            TypingError::MismatchedBusSize(token1, token2) => {
+                let message1;
+                if let Some(name) = &token1.name {
+                    message1 = format!("The variable {} has length {}", name, token1.length)
+                } else {
+                    message1 = format!("This expression has length {}", token1.length)
+                }
+                let message2;
+                if let Some(name) = &token2.name {
+                    message2 = format!("The variable {} has length {}", name, token2.length)
+                } else {
+                    message2 = format!("This expression has length {}", token2.length)
+                }
+                Diagnostic::error()
+                    .with_message("Error : msimatched bus lengths")
+                    .with_code("E0011")
+                    .with_labels(vec![
+                        Label::primary(token1.loc.0, token1.loc.1..token1.loc.2)
+                            .with_message(message1),
+                        Label::primary(token2.loc.0, token2.loc.1..token2.loc.2)
+                            .with_message(message2),
+                    ])
+                    .with_message("These variables must have the same length ")
+            }
+            TypingError::UnknownVar(name, loc) => Diagnostic::error()
+                .with_message("Error : unknown variable")
+                .with_code("E0012")
+                .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
+                .with_message(format!("Unknown variable {}", name)),
+            TypingError::DuplicateVar(name, loc1, loc2) => Diagnostic::error()
+                .with_message("Error : duplicate shared variable")
+                .with_code("E0013")
+                .with_labels(vec![
+                    Label::primary(loc1.0, loc1.1..loc1.2),
+                    Label::primary(loc2.0, loc2.1..loc2.2),
+                ])
+                .with_message(format!("Duplicate shared variable {}", name)),
+            TypingError::UnknownModule(name, loc) => Diagnostic::error()
+                .with_message("Error : unknown module")
+                .with_code("E0014")
+                .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
+                .with_message(format!("Unknown module {}", name)),
+            TypingError::UnknownNode(name, loc) => Diagnostic::error()
+                .with_message("Error : unknown node")
+                .with_code("E0015")
+                .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
+                .with_message(format!("Unknown node {}", name)),
+            TypingError::WrongNumber(typ, loc, expected, got) => Diagnostic::error()
+                .with_message(format!("Error : wrong number of {}", typ))
+                .with_code("E0016")
+                .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
+                .with_message(format!(
+                    "Wrong number of {}:expected {}, got {}",
+                    typ, expected, got
+                )),
+            TypingError::ExpectedSizeOne(loc, n) => Diagnostic::error()
+                .with_message("Error : expected us of length 1")
+                .with_code("E0017")
+                .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
+                .with_message(format!(
+                    "Expected variable of length 1 (single bit), instead, got bus of size {}",
+                    n
+                )),
+            TypingError::IndexOutOfRange(loc, got, len) => Diagnostic::error()
+                .with_message("Error : index out of range")
+                .with_code("E0018")
+                .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
+                .with_message(format!(
+                    "Index out of range : index was {} for a bus of length {}",
+                    got, len
+                )),
+        },
     }
 }
 
@@ -138,6 +221,16 @@ impl From<(ExpandFnError, Rc<SimpleFiles<String, String>>)> for TinyjazzError {
         let (fn_error, files) = err;
         TinyjazzError {
             error: ErrorType::ExpandFn(fn_error),
+            files,
+        }
+    }
+}
+
+impl From<(TypingError, Rc<SimpleFiles<String, String>>)> for TinyjazzError {
+    fn from(err: (TypingError, Rc<SimpleFiles<String, String>>)) -> Self {
+        let (typ_error, files) = err;
+        TinyjazzError {
+            error: ErrorType::Typing(typ_error),
             files,
         }
     }

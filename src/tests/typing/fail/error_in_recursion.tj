@@ -1,0 +1,13 @@
+fn rec<n>() = (a)
+    if n > 0 then
+        a = rec<n-1>()
+    else 
+        a = [0; 5]
+    end if
+
+module main() = (b)
+    shared b = ()
+    automaton
+        node n 
+            b = rec<10>()
+        transition

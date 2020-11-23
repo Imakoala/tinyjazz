@@ -1,16 +1,14 @@
+use crate::ast::BiOp;
 pub use std::collections::HashMap;
-use std::{
-    ops::{Deref, DerefMut},
-    path::PathBuf,
-};
+use std::ops::{Deref, DerefMut};
 /*
 A simpler, typed ast
 */
 //a sized value, useful for typing expr.
 #[derive(Debug, Clone)]
 pub struct Sized<T> {
-    value: T,
-    size: usize,
+    pub value: T,
+    pub size: usize,
 }
 
 impl<T> Deref for Sized<T> {
@@ -30,38 +28,48 @@ pub type Program = HashMap<String, Module>;
 #[derive(Debug, Clone)]
 pub struct Module {
     pub name: String,
-    pub inputs: Vec<Var>,
-    pub outputs: Vec<Var>,
-    pub shared: HashMap<Var, Value>,
+    pub inputs: Vec<Arg>,
+    pub outputs: Vec<Arg>,
+    pub shared: HashMap<SharedVar, Value>,
     pub extern_modules: Vec<ExtModule>,
     pub automata: Vec<Automaton>,
 }
 
-pub type Var = String;
+//Just to be a bit more explicit in the ast, these are all strings
+pub type Arg = String;
+pub type SharedVar = String;
+pub type LocalVar = String;
+pub type Name = String;
 
+//SharedVar and LocalVars are differenciated
+#[derive(Debug, Clone)]
+pub enum Var {
+    Local(LocalVar),
+    Shared(SharedVar),
+}
 pub type Value = Vec<bool>;
 
 #[derive(Debug, Clone)]
 pub struct ExtModule {
-    pub inputs: Vec<Var>,
-    pub outputs: Vec<Var>,
-    pub name: Var,
+    pub inputs: Vec<SharedVar>,
+    pub outputs: Vec<SharedVar>,
+    pub name: Name,
 }
 
-pub type Automaton = HashMap<Var, Node>;
+pub type Automaton = HashMap<Name, Node>;
 
 #[derive(Debug, Clone)]
 pub struct Node {
     pub statements: Vec<Statement>,
-    pub transitions: Vec<(Var, Var, bool)>,
+    pub transitions: Vec<(Var, Name, bool)>,
 }
 #[derive(Debug, Clone)]
 pub struct Statement {
-    var: Var,
-    statement: Expr,
+    pub var: Var,
+    pub expr: Expr,
 }
-type Expr = Sized<ExprType>;
-type ExprTerm = Sized<ExprTermType>;
+pub type Expr = Sized<ExprType>;
+pub type ExprTerm = Sized<ExprTermType>;
 
 //a terminal value for an expression.
 #[derive(Debug, Clone)]
@@ -80,28 +88,12 @@ pub enum ExprType {
     Mux(ExprTerm, ExprTerm, ExprTerm),
     Reg(ExprTerm),
     Ram(RamStruct),
-    Rom(RomStruct),
+    Rom(ExprTerm),
 }
 #[derive(Debug, Clone)]
 pub struct RamStruct {
-    pub addr_size: usize,
-    pub word_size: usize,
     pub read_addr: ExprTerm,
     pub write_enable: ExprTerm,
     pub write_addr: ExprTerm,
     pub write_data: ExprTerm,
-}
-#[derive(Debug, Clone)]
-pub struct RomStruct {
-    pub addr_size: usize,
-    pub word_size: usize,
-    pub read_addr: ExprTerm,
-}
-#[derive(Debug, Clone)]
-pub enum BiOp {
-    And,  //*
-    Or,   //+
-    Xor,  //^
-    Nand, //-*
-    Concat,
 }

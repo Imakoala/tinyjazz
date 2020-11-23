@@ -99,7 +99,7 @@ pub struct FnAssign {
 #[derive(Debug, Clone)]
 pub enum ConstExpr {
     Known(Vec<bool>),
-    Unknown(bool, Const), //Const bits initialized to 0
+    Unknown(bool, Loc<Const>), //Const bits initialized to 0
 }
 #[derive(Debug, Clone)]
 pub enum Expr {
@@ -122,8 +122,6 @@ pub struct FnCall {
 }
 #[derive(Debug, Clone)]
 pub struct RamStruct {
-    pub addr_size: Const,
-    pub word_size: Const,
     pub read_addr: Box<Loc<Expr>>,
     pub write_enable: Box<Loc<Expr>>,
     pub write_addr: Box<Loc<Expr>>,
@@ -131,7 +129,6 @@ pub struct RamStruct {
 }
 #[derive(Debug, Clone)]
 pub struct RomStruct {
-    pub addr_size: Const,
     pub word_size: Const,
     pub read_addr: Box<Loc<Expr>>,
 }
@@ -174,7 +171,7 @@ pub enum ConstBiOp {
 #[derive(Debug, Clone)]
 pub struct Arg {
     pub name: String,
-    pub size: Const,
+    pub size: Loc<Const>,
 }
 #[derive(Debug, Clone)]
 pub struct Function {

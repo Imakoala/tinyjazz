@@ -1,8 +1,12 @@
 fn rec<n>() = (a)
     if n > 0 then
         a = 0
+        f = 0
+        h = 0
+        k = 0
         b = rec<n-1>()
         c = rec<n-1>()
+        l = h . f . a . f .b . c
     else 
         a = 1
     end if
@@ -10,5 +14,5 @@ fn rec<n>() = (a)
 module mod() = ()
     automaton
         node n 
-            b = rec<20>()
+            b = rec<18>()
         transition

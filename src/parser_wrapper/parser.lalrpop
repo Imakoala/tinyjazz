@@ -98,10 +98,8 @@ If : IfStruct = {
 }
 
 Ram : RamStruct = {
-    "ram<" <c1:Const> "," <c2:Const> ">(" <e1:Loc<Expr>> "," <e2:Loc<Expr>> "," <e3:Loc<Expr>> "," <e4:Loc<Expr>> ")" =>
+    "ram(" <e1:Loc<Expr>> "," <e2:Loc<Expr>> "," <e3:Loc<Expr>> "," <e4:Loc<Expr>> ")" =>
     RamStruct {
-        addr_size: c1,
-        word_size: c2,
         read_addr: Box::new(e1),
         write_enable: Box::new(e2),
         write_addr: Box::new(e3),
@@ -110,10 +108,9 @@ Ram : RamStruct = {
 }
 
 Rom : RomStruct = {
-    "rom<" <c1:Const> "," <c2:Const> ">(" <e:Loc<Expr>> ")" =>
+    "rom<" <c1:Const> ">(" <e:Loc<Expr>> ")" =>
     RomStruct {
-        addr_size: c1,
-        word_size: c2,
+        word_size: c1,
         read_addr: Box::new(e),
     }
 }
@@ -154,7 +151,7 @@ Bool : bool = {
 ConstExpr: ConstExpr = {
     Bool => ConstExpr::Known(vec![<>]),
     "[" <Comma<Bool>> "]" => ConstExpr::Known(<>),
-    "[" <b:Bool> ";" <c:Const> "]" => ConstExpr::Unknown(b, c)
+    "[" <b:Bool> ";" <c:Loc<Const>> "]" => ConstExpr::Unknown(b, c)
 }
 
 Num: i32 = {
@@ -313,11 +310,14 @@ Automaton : Automaton = {
     }
 }
 Arg : Arg = {
-    <Var> => Arg {
-        name : <>, 
-        size : Const::Value(1)
+    <v:Var> <l:@L> => Arg {
+        name : v, 
+        size : Loc {
+            value: Const::Value(1),
+            loc: (file_id, l, l)
+        }
     },
-    <v:Var> "[" <c:Const> "]" => Arg {
+    <v:Var> "[" <c:Loc<Const>> "]" => Arg {
         name : v, 
         size : c
     }

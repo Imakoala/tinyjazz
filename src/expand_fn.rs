@@ -45,14 +45,17 @@ impl From<ComputeConstError> for ExpandFnError {
     }
 }
 
-pub fn expand_functions(prog: &mut Program) -> Result<(), ExpandFnError> {
+pub fn expand_functions(
+    prog: &mut Program,
+    type_map: &mut HashMap<String, (i32, Pos)>,
+) -> Result<(), ExpandFnError> {
     let mut changed = Some(Loc {
         loc: (0, 0, 0),
         value: String::new(),
     });
     let mut counter = 0;
     while changed.is_some() {
-        changed = replace_fn_calls(prog)?;
+        changed = replace_fn_calls(prog, type_map)?;
         counter += 1;
         if counter >= REC_DEPTH && changed.is_some() {
             return Err(ExpandFnError::StackOverflow(changed.unwrap()));
@@ -61,13 +64,17 @@ pub fn expand_functions(prog: &mut Program) -> Result<(), ExpandFnError> {
     Ok(())
 }
 
-fn replace_fn_calls(prog: &mut Program) -> Result<Option<Loc<String>>, ExpandFnError> {
+fn replace_fn_calls(
+    prog: &mut Program,
+    type_map: &mut HashMap<String, (i32, Pos)>,
+) -> Result<Option<Loc<String>>, ExpandFnError> {
     let mut changed = None;
     for (_mod_name, module) in prog.modules.iter_mut() {
         for (_node_name, node) in module.automata.iter_mut().flatten() {
             changed = changed.or(replace_fn_calls_in_statements(
                 &mut node.statements,
                 &mut prog.functions,
+                type_map,
             )?);
         }
     }
@@ -79,6 +86,7 @@ fn replace_fn_calls(prog: &mut Program) -> Result<Option<Loc<String>>, ExpandFnE
 fn replace_fn_calls_in_statements(
     statements: &mut Vec<Statement>,
     functions: &mut HashMap<String, Function>,
+    type_map: &mut HashMap<String, (i32, Pos)>,
 ) -> Result<Option<Loc<String>>, ExpandFnError> {
     let mut new_vec: Vec<Statement> = Vec::new();
     let mut changed = None;
@@ -99,20 +107,20 @@ fn replace_fn_calls_in_statements(
                             loc: assign.var.loc.clone(),
                             value: vec![assign.var.clone()],
                         };
-                        inline_function(func, fn_call, outputs, &mut new_vec)?;
+                        inline_function(func, fn_call, outputs, &mut new_vec, type_map)?;
                         changed = Some(fn_call.name.clone());
                     }
                 }
                 //and the select the other var assign and add them as well
-                new_vec.push(Statement::Assign(
-                    var_assigns
+                new_vec.append(
+                    &mut var_assigns
                         .drain(..)
-                        .filter(|v_a| match v_a.expr.value {
-                            Expr::FnCall(_) => false,
-                            _ => true,
+                        .filter_map(|v_a| match v_a.expr.value {
+                            Expr::FnCall(_) => None,
+                            _ => Some(Statement::Assign(vec![v_a])),
                         })
                         .collect(),
-                ));
+                );
             }
             Statement::If(mut if_struct) => {
                 //As the condition is always a value, this is a good place select the right block and ignore the other.
@@ -121,12 +129,14 @@ fn replace_fn_calls_in_statements(
                         changed = changed.or(replace_fn_calls_in_statements(
                             &mut if_struct.else_block,
                             functions,
+                            type_map,
                         )?);
                         new_vec.append(&mut if_struct.else_block);
                     } else {
                         changed = changed.or(replace_fn_calls_in_statements(
                             &mut if_struct.if_block,
                             functions,
+                            type_map,
                         )?);
                         new_vec.append(&mut if_struct.if_block);
                     }
@@ -147,7 +157,7 @@ fn replace_fn_calls_in_statements(
                     loc: fn_assign.f.name.loc.clone(),
                     value: fn_assign.vars,
                 };
-                inline_function(func, &mut fn_assign.f, outputs, &mut new_vec)?;
+                inline_function(func, &mut fn_assign.f, outputs, &mut new_vec, type_map)?;
                 changed = Some(fn_assign.f.name.clone());
             }
         }
@@ -164,6 +174,7 @@ fn inline_function(
     fncall: &mut FnCall,
     outputs: Loc<Vec<Loc<Var>>>,
     out_statements: &mut Vec<Statement>,
+    type_map: &mut HashMap<String, (i32, Pos)>,
 ) -> Result<(), ExpandFnError> {
     //check the number of arguments
     if fncall.static_args.len() != func.static_args.len() {
@@ -193,30 +204,6 @@ fn inline_function(
             outputs.len(),
         ));
     }
-    //Link the inpute paramters
-    //remember the names given to the input parameters.
-    let mut vars_map = HashMap::new();
-    let counter = FN_CALL_VARIABLE.get_cloned();
-    FN_CALL_VARIABLE.inc();
-    let stat_inputs = Statement::Assign(
-        fncall
-            .args
-            .drain(..)
-            .enumerate()
-            .map(|(i, expr)| {
-                let name = format!("arg${}${}${}", *func.name, func.args[i].name, counter);
-                vars_map.insert(func.args[i].name.clone(), name.clone());
-                VarAssign {
-                    var: Loc {
-                        value: name,
-                        loc: expr.loc,
-                    },
-                    expr,
-                }
-            })
-            .collect(),
-    );
-    out_statements.push(stat_inputs);
 
     //simplify the constants, only values should be left.
     let empty_map = HashMap::new();
@@ -224,6 +211,51 @@ fn inline_function(
     for (i, c) in fncall.static_args.iter_mut().enumerate() {
         compute_const(c, &empty_map)?;
         static_args_map.insert(func.static_args[i].clone(), c.clone());
+    }
+    //string with static args
+    let args_string: String = static_args_map
+        .iter()
+        .map(|(s, c)| {
+            if let Const::Value(i) = c {
+                format!("{}_{}-", s, i).to_string()
+            } else {
+                String::new()
+            }
+        })
+        .collect();
+
+    //Link the inpute paramters
+    //remember the names given to the input parameters.
+    let mut vars_map = HashMap::new();
+    let counter = FN_CALL_VARIABLE.get_cloned();
+    FN_CALL_VARIABLE.inc();
+
+    if fncall.args.len() > 0 {
+        let stat_inputs = Statement::Assign(
+            fncall
+                .args
+                .drain(..)
+                .enumerate()
+                .map(|(i, expr)| {
+                    let name = format!(
+                        "$arg${}${}${}${}",
+                        *func.name, args_string, func.args[i].name, counter
+                    );
+                    if let Const::Value(size) = func.args[i].size.value {
+                        type_map.insert(name.clone(), (size, func.args[i].size.loc));
+                    }
+                    vars_map.insert(func.args[i].name.clone(), name.clone());
+                    VarAssign {
+                        var: Loc {
+                            value: name,
+                            loc: expr.loc,
+                        },
+                        expr,
+                    }
+                })
+                .collect(),
+        );
+        out_statements.push(stat_inputs);
     }
 
     //Link the output parameters
@@ -233,21 +265,25 @@ fn inline_function(
             .enumerate()
             .map(|(i, var)| {
                 let name = format!(
-                    "ret${}${}${}",
-                    *func.name, func.return_vars[i].name, counter
+                    "$ret${}${}${}${}",
+                    *func.name, args_string, func.return_vars[i].name, counter
                 );
+                if let Const::Value(size) = func.return_vars[i].size.value {
+                    type_map.insert(name.clone(), (size, func.return_vars[i].size.loc));
+                }
                 vars_map.insert(func.return_vars[i].name.clone(), name.clone());
+                let expr_loc = (fncall.name.loc.0, fncall.name.loc.1, fncall.args.loc.2 + 1);
                 VarAssign {
                     var: Loc {
-                        value: outputs[i].to_string(),
-                        loc: outputs[i].loc.clone(),
+                        value: var.to_string(),
+                        loc: var.loc,
                     },
                     expr: Loc {
                         value: Expr::Var(Loc {
                             value: name,
-                            loc: var.loc,
+                            loc: expr_loc,
                         }),
-                        loc: var.loc,
+                        loc: expr_loc,
                     },
                 }
             })
@@ -257,11 +293,19 @@ fn inline_function(
     //Make the function body
     let mut func_body = func.statements.clone();
     replace_consts(&mut func_body, &static_args_map)?;
-    replace_vars(&mut func_body, &vars_map);
+    replace_vars(
+        &mut func_body,
+        &mut vars_map,
+        &func.name.value,
+        &args_string,
+        counter,
+    );
 
     //push in the right order
     out_statements.append(&mut func_body);
-    out_statements.push(stat_outputs);
+    if outputs.len() > 0 {
+        out_statements.push(stat_outputs);
+    }
     Ok(())
 }
 
@@ -277,10 +321,20 @@ fn replace_consts(
 }
 
 //replace the variables in functions using the input variables (which might be generated if an expr was passed as the argument)
-fn replace_vars(statements: &mut Vec<Statement>, vars: &HashMap<String, String>) {
+fn replace_vars(
+    statements: &mut Vec<Statement>,
+    vars: &mut HashMap<String, String>,
+    fn_name: &String,
+    static_params: &String,
+    counter: u32,
+) {
     let mut closure = |v: &mut String| {
         if let Some(v_rep) = vars.get(&v.to_string()) {
             *v = v_rep.to_string()
+        } else {
+            let name = format!("$in_fn${}${}${}${}", fn_name, static_params, v, counter);
+            vars.insert(v.clone(), name.clone());
+            *v = name;
         }
     };
     for statement in statements {
@@ -306,8 +360,6 @@ where
         }
         Expr::Reg(e) => map_vars_in_expr(e, f),
         Expr::Ram(RamStruct {
-            addr_size: _,
-            word_size: _,
             read_addr,
             write_enable,
             write_addr,
@@ -319,7 +371,6 @@ where
             map_vars_in_expr(write_data, f);
         }
         Expr::Rom(RomStruct {
-            addr_size: _,
             word_size: _,
             read_addr,
         }) => map_vars_in_expr(read_addr, f),
