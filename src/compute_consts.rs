@@ -196,6 +196,8 @@ fn compute_op(op: &ConstBiOp, v1: i32, v2: i32, loc: Pos) -> Result<i32, Compute
         ConstBiOp::Le => Ok((v1 <= v2) as i32),
         ConstBiOp::Gt => Ok((v1 > v2) as i32),
         ConstBiOp::Lt => Ok((v1 < v2) as i32),
+        ConstBiOp::And => Ok(((v1 != 0) && (v2 != 0)) as i32),
+        ConstBiOp::Or => Ok(((v1 != 0) || (v2 != 0)) as i32),
     }
 }
 

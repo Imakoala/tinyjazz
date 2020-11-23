@@ -2,7 +2,7 @@ fn rec<n>() = (a)
     if (n > 0) then
         a = rec<n-1>()
     else 
-        a = [0; 5]
+        a = 1[8]
     end if
 
 module main() = (b)

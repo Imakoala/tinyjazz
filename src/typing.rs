@@ -674,6 +674,7 @@ fn type_expr_term(
 
 fn format_var(var: String) -> String {
     if var.starts_with('$') {
+        println!("{:#?}", var);
         let vec: Vec<&str> = var.split('$').filter(|s| *s != "").collect();
         let _typ = vec[0];
         let fn_name = vec[1];
@@ -691,9 +692,12 @@ fn format_var(var: String) -> String {
 }
 
 fn format_args(args: &str) -> String {
-    args.split('-')
+    args.split('|')
         .filter(|s| *s != "")
         .map(|v| v.split('_').collect::<Vec<&str>>())
-        .map(|v| format!(" {} = {},", v[0], v[1]))
+        .map(|v| {
+            println!("{:#?}", v);
+            format!(" {} = {},", v[0], v[1])
+        })
         .collect::<String>()
 }

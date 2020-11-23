@@ -1,0 +1,6 @@
+module main(b) = (b)
+    shared b = ()
+    automaton
+        node n 
+            b = 0
+        transition

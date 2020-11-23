@@ -217,7 +217,7 @@ fn inline_function(
         .iter()
         .map(|(s, c)| {
             if let Const::Value(i) = c {
-                format!("{}_{}-", s, i).to_string()
+                format!("{}_{}|", s, i).to_string()
             } else {
                 String::new()
             }

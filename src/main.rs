@@ -60,11 +60,11 @@ fn main() {
         Ok(prog) => {
             println!(
                 "{:#?}",
-                prog.get("mod").unwrap().automata[0]
-                    .get("n")
-                    .unwrap()
-                    .statements
-                    .len()
+                prog // prog.get("mod").unwrap().automata[0]
+                     //     .get("n")
+                     //     .unwrap()
+                     //     .statements
+                     //     .len()
             );
         }
     }

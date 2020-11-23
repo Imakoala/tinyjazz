@@ -1,5 +1,5 @@
 fn rec<n>() = (a)
-    if n > 0 then
+    if (n > 0) then
         a = 0
         f = 0
         h = 0

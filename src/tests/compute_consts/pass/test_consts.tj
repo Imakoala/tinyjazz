@@ -10,4 +10,3 @@ module mod(g[n+p*9]) = ()
     automaton
         node no 
             k = c[0..n/p]
-        transition

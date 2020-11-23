@@ -165,6 +165,8 @@ pub enum ConstBiOp {
     Gt,
     Eq,
     Neq,
+    And,
+    Or,
 }
 
 //A variable in which the size must be specified (in arguments or return vars)

@@ -1,5 +1,6 @@
 import "coucou/je/s uis/un/c hemin"
-
+//this is a comment
+(*this as well*)
 const n = 5*98984564
 fn fonction_test(a, b, c[5]) = (e, f, g[8*9/5])
     e = a 

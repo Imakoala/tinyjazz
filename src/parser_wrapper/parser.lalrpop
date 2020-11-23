@@ -163,6 +163,19 @@ Num: i32 = {
 Unit: Expr = {
     <ConstExpr> => Expr::Const(<>),
     <e:Loc<Unit>> "[" <c1:Const> ".." <c2:Const> "]" => Expr::Slice(Box::new(e), c1, c2),
+    <e:Loc<Unit>> "[" <c:Loc<Const>> "]" => 
+    Expr::Slice(
+        Box::new(e), 
+        c.value.clone(), 
+        Const::BiOp(
+            ConstBiOp::Plus, 
+            Box::new(c.value), 
+            Box::new(Loc {
+                value: Const::Value(1),
+                loc: c.loc
+            })
+        )
+    ),
     "(" <Expr> ")",
     "mux(" <e1:Loc<Expr>> "," <e2:Loc<Expr>> "," <e3:Loc<Expr>> ")" => Expr::Mux(Box::new(e1), Box::new(e2), Box::new(e3)),
     "reg(" <Expr> ")" => Expr::Reg(Box::new(<>)),
@@ -232,13 +245,18 @@ CompOp: ConstBiOp = {
     "!=" => ConstBiOp::Neq,
 }
 
-Const: Const = {
+BoolOp: ConstBiOp = {
+    "&&" => ConstBiOp::And, 
+    "||" => ConstBiOp::Or,
+}
+
+
+ConstCmp: Const = {
     <l:Const> <op:AddOp> <r:Loc<ConstFactor>> => Const::BiOp(op, Box::new(l),  Box::new(r)),
     ConstFactor,
 };
 
 ConstFactor: Const = {
-    <l:ConstTerm> <op:CompOp> <r:Loc<ConstTerm>> => Const::BiOp(op, Box::new(l),  Box::new(r)),
     <l:ConstFactor> <op:MulOp> <r:Loc<ConstTerm>> => Const::BiOp(op, Box::new(l),  Box::new(r)),
     ConstTerm,
 };
@@ -248,6 +266,13 @@ ConstTerm: Const = {
     <Num> => Const::Value(<>),
     "(" <Const> ")",
 };
+
+Const: Const = {
+    "(" <l:Const> <op: BoolOp> <r:Loc<Const>> ")" => Const::BiOp(op, Box::new(l),  Box::new(r)),
+    "(" <l:Const> <op: CompOp> <r:Loc<Const>> ")" => Const::BiOp(op, Box::new(l),  Box::new(r)),
+    ConstCmp,
+
+}
 
 Statement: Statement = {
     <v:Loc<Var>> "=" <e:Loc<Expr>> => Statement::Assign(vec![VarAssign {
@@ -422,7 +447,10 @@ GlobalConst : ConstVarAssign = {
     }
 }
 
-// match {
-//     r"\s*" => { }, // The default whitespace skipping is disabled an `ignore pattern` is specified
-//     r"(\(\*([^*]|[\r\n]|(\*+([^*\)]|[\r\n])))*\*+\))|(//.*)" => { }, //skip (**) and // comments
-// }
+match {
+    r"(\(\*([^*]|[\r\n]|(\*+([^*\)]|[\r\n])))*\*+\))|(//.*)" => { }, //skip (**) and // comments
+}
+else {
+    r"\s*" => { }, //skip whitespaces
+    _ //match the rest
+}
