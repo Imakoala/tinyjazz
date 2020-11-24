@@ -176,7 +176,7 @@ fn get_diagnostic(
                 .with_code("E0018")
                 .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
                 .with_message(format!(
-                    "Index out of range : index was {} for a bus of length {}",
+                    "Index out of range : index is {} for a bus of length {}",
                     got, len
                 )),
         },

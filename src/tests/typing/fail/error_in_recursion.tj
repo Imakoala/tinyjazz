@@ -7,7 +7,6 @@ fn rec<n>() = (a)
 
 module main() = (b)
     shared b = ()
-    automaton
-        node n 
-            b = rec<10>()
-        transition
+    n:
+        b = rec<10>()
+    until

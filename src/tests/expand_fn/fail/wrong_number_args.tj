@@ -9,7 +9,6 @@ fn rec<n>() = (a)
     end if
 
 module main() = ()
-    automaton
-        node n 
-            b = rec<1>(0)
-        transition
+    n:
+        b = rec<1>(0)
+    until

@@ -32,7 +32,7 @@ pub struct Module {
     pub outputs: Vec<Arg>,
     pub shared: HashMap<SharedVar, Value>,
     pub extern_modules: Vec<ExtModule>,
-    pub automata: Vec<Automaton>,
+    pub nodes: Vec<Node>,
 }
 
 //Just to be a bit more explicit in the ast, these are all strings
@@ -56,12 +56,13 @@ pub struct ExtModule {
     pub name: Name,
 }
 
-pub type Automaton = HashMap<Name, Node>;
-
 #[derive(Debug, Clone)]
 pub struct Node {
+    pub name: String,
     pub statements: Vec<Statement>,
     pub transitions: Vec<(Var, Name, bool)>,
+    pub extern_modules: Vec<ExtModule>,
+    pub weak: bool,
 }
 #[derive(Debug, Clone)]
 pub struct Statement {

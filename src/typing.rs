@@ -274,30 +274,29 @@ fn type_mod(
             })
         })
         .collect::<Result<Vec<typ::ExtModule>>>()?;
-    let automata = module
-        .automata
+    let nodes_map = module
+        .nodes
+        .iter()
+        .map(|node| (node.name.to_string(), node.name.loc))
+        .collect::<HashMap<String, Pos>>();
+    let nodes = module
+        .nodes
         .drain(..)
-        .map(|mut automaton| {
-            let nodes_map = automaton
-                .iter()
-                .map(|(name, node)| (name.to_string(), node.loc))
-                .collect::<HashMap<String, Pos>>();
-            Ok(automaton
-                .drain()
-                .map(|(name, node)| {
-                    Ok((
-                        name,
-                        type_node(node.value, &nodes_map, &shared_types, type_constraints)?,
-                    ))
-                })
-                .collect::<Result<HashMap<String, typ::Node>>>()?)
+        .map(|node| {
+            Ok(type_node(
+                node,
+                &nodes_map,
+                &shared_types,
+                type_constraints,
+                module_types,
+            )?)
         })
-        .collect::<Result<Vec<typ::Automaton>>>()?;
+        .collect::<Result<Vec<typ::Node>>>()?;
     Ok(typ::Module {
         name: module.name,
         inputs,
         outputs,
-        automata,
+        nodes,
         shared,
         extern_modules,
     })
@@ -308,6 +307,7 @@ fn type_node(
     nodes_map: &HashMap<String, Pos>,
     shared_types: &HashMap<String, (usize, Pos)>,
     type_constraints: &mut HashMap<String, (i32, Pos)>,
+    module_types: &HashMap<String, (Vec<(usize, Pos)>, Vec<(usize, Pos)>)>,
 ) -> Result<typ::Node> {
     let mut var_types: HashMap<String, (usize, Pos)> = HashMap::new();
     let statements = node
@@ -350,8 +350,102 @@ fn type_node(
             }
         })
         .collect::<Result<Vec<(typ::Var, typ::Name, bool)>>>()?;
+
+    let extern_modules = node
+        .extern_modules
+        .drain(..)
+        .map(|mut ext_module| {
+            let (in_types, out_types) =
+                module_types
+                    .get(&ext_module.name.value)
+                    .ok_or(TypingError::UnknownModule(
+                        ext_module.name.value.clone(),
+                        ext_module.name.loc,
+                    ))?;
+
+            //check that the right number of argument and return vars are supplied
+            if in_types.len() != ext_module.inputs.len() {
+                return Err(TypingError::WrongNumber(
+                    WrongNumberType::Args,
+                    ext_module.inputs.loc,
+                    in_types.len(),
+                    ext_module.inputs.len(),
+                ));
+            }
+            if out_types.len() != ext_module.outputs.len() {
+                return Err(TypingError::WrongNumber(
+                    WrongNumberType::ReturnVars,
+                    ext_module.outputs.loc,
+                    out_types.len(),
+                    ext_module.outputs.len(),
+                ));
+            }
+            let inputs = ext_module
+                .inputs
+                .drain(..)
+                .zip(in_types.iter())
+                .map(|(arg, in_type)| {
+                    //An input must be a shared variable. It must be the same type as the module input.
+                    let internal_in_type = shared_types
+                        .get(&arg.value)
+                        .ok_or(TypingError::UnknownVar(arg.value.clone(), arg.loc))?;
+                    if in_type.0 != internal_in_type.0 {
+                        let token1 = Token {
+                            loc: internal_in_type.1,
+                            name: Some(format_var(arg.value.clone())),
+                            length: internal_in_type.0,
+                        };
+                        let token2 = Token {
+                            loc: in_type.1,
+                            name: Some(format_var(arg.value.clone())),
+                            length: in_type.0,
+                        };
+                        Err(TypingError::MismatchedBusSize(token1, token2))
+                    } else {
+                        Ok(arg.value)
+                    }
+                })
+                .collect::<Result<Vec<String>>>()?;
+            let outputs = ext_module
+                .outputs
+                .drain(..)
+                .zip(out_types.iter())
+                .map(|(arg, out_type)| {
+                    //an output can be a shared variable. If it is, it must be the same type as the module output.
+                    if let Some(internal_out_type) = shared_types.get(&arg.value) {
+                        if out_type.0 != internal_out_type.0 {
+                            let token1 = Token {
+                                loc: internal_out_type.1,
+                                name: Some(format_var(arg.value.clone())),
+                                length: internal_out_type.0,
+                            };
+                            let token2 = Token {
+                                loc: out_type.1,
+                                name: Some(format_var(arg.value.clone())),
+                                length: out_type.0,
+                            };
+                            Err(TypingError::MismatchedBusSize(token1, token2))
+                        } else {
+                            Ok(arg.value)
+                        }
+                    } else {
+                        var_types.insert(arg.value.clone(), *out_type);
+                        Ok(arg.value)
+                    }
+                })
+                .collect::<Result<Vec<String>>>()?;
+            Ok(typ::ExtModule {
+                inputs,
+                outputs,
+                name: ext_module.name.to_string(),
+            })
+        })
+        .collect::<Result<Vec<typ::ExtModule>>>()?;
     Ok(typ::Node {
         transitions,
+        name: node.name.value,
+        weak: node.weak,
+        extern_modules,
         statements,
     })
 }

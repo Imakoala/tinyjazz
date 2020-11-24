@@ -67,11 +67,17 @@ pub Program : Program = {
     }
 }
 
+Init : Vec<Loc<String>> = {
+    "init" <ParCommaOrSingle<Loc<Var>>> => <>,
+     => Vec::new()
+}
+
 Module: Module = {
     "module" <name:r"[a-zA-Z_][a-zA-Z_0-9]*\("> <ins:Comma<Arg>> ")" "=" <out:ParCommaOrSingle<Arg>>
+    <init: Init>
     <s:SharedVar*>
     <ext:Loc<ExtModule>*>
-    <auto:Automaton*> 
+    <mut nodes:Node*> 
     => {
         Module {
             name : name.strip_suffix("(").unwrap().to_string(),
@@ -79,7 +85,8 @@ Module: Module = {
             outputs: out,
             shared: s.into_iter().flatten().collect(),
             extern_modules: ext, 
-            automata: auto
+            nodes : nodes.drain(..).collect(),
+            init_nodes: init
         }
     }
 }
@@ -316,24 +323,25 @@ Transition : (Loc<Expr>, Loc<Var>, bool) = {
         reset.is_some()
     )
 }
-Node : (Var, Node) = {
-    "node" <name:Var> <s:Statement*> "transition" <t:Transition*> => 
-    (name, 
+Node : Node = {
+    <name:Loc<Var>> ":" <e:ExtModule*> <s:Statement*> "until" <t:Transition*> => 
     Node {
-        statements : s, 
-        transitions : t
-    })
+        name,
+        extern_modules: e, 
+        statements: s,
+        transitions : t,
+        weak: true
+    },
+    <name:Loc<Var>> ":" <e:ExtModule*> <s:Statement*> "unless" <t:Transition*> =>  
+    Node {
+        name,
+        extern_modules: e, 
+        statements: s, 
+        transitions : t,
+        weak: false
+    },
 }
 
-Automaton : Automaton = {
-    "automaton" <mut n: Loc<Node>*> => {
-        let mut map = HashMap::new();
-        for node in n.drain(..) {
-            map.insert((*node).0.clone(), Loc {value : (*node).1.clone(), loc: node.loc});
-        }
-        map
-    }
-}
 Arg : Arg = {
     <v:Var> <l:@L> => Arg {
         name : v, 
@@ -411,7 +419,7 @@ SharedVar : Vec<VarAssign> = {
 }
 
 ExtModule: ExtModule = {
-    <out:Loc<ParCommaOrSingle<Loc<Var>>>> "=" <name_loc_l:@L> <name:r"[a-zA-Z_][a-zA-Z_0-9]*\("> <name_loc_r:@R> <ins:Loc<Comma<Loc<Var>>>> ")" => 
+    "use" <out:Loc<ParCommaOrSingle<Loc<Var>>>> "=" <name_loc_l:@L> <name:r"[a-zA-Z_][a-zA-Z_0-9]*\("> <name_loc_r:@R> <ins:Loc<Comma<Loc<Var>>>> ")" => 
     ExtModule {
         inputs: ins,
         outputs: out,

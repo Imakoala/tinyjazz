@@ -45,7 +45,8 @@ pub struct Module {
     pub outputs: Vec<Arg>,
     pub shared: Vec<VarAssign>, //Variables shared across nodes and automata must be declared
     pub extern_modules: Vec<Loc<ExtModule>>, //You can call another module, the inpits must be shared variables and the output are automatically shared
-    pub automata: Vec<Automaton>,
+    pub nodes: Vec<Node>,
+    pub init_nodes: Vec<Loc<Var>>,
 }
 
 //A variable assignement
@@ -73,12 +74,13 @@ pub struct ExtModule {
     pub name: Loc<Var>,
 }
 
-pub type Automaton = HashMap<String, Loc<Node>>;
-
 #[derive(Debug, Clone)]
 pub struct Node {
+    pub name: Loc<String>,
+    pub extern_modules: Vec<ExtModule>,
     pub statements: Vec<Statement>,
     pub transitions: Vec<(Loc<Expr>, Loc<Var>, bool)>,
+    pub weak: bool,
 }
 
 //a statement can be either (tuple) = (tuple), var = expr, or (tuple) = function call

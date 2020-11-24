@@ -1,5 +1,4 @@
 module main() = ()
-    automaton
-        node n 
-            b = rec<20>()
-        transition
+    n:
+        b = rec<20>()
+    until

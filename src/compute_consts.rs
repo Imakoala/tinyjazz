@@ -42,14 +42,12 @@ pub fn compute_consts(prog: &mut Program) -> Result<(), ComputeConstError> {
         for shared in &mut m.shared {
             compute_consts_in_expr(&mut shared.expr, &prog.global_consts)?;
         }
-        for automata in &mut m.automata {
-            for (_, node) in automata {
-                for statement in &mut node.statements {
-                    compute_consts_in_statement(statement, &prog.global_consts)?;
-                }
-                for (expr, _, _) in &mut node.transitions {
-                    compute_consts_in_expr(expr, &prog.global_consts)?;
-                }
+        for node in &mut m.nodes {
+            for statement in &mut node.statements {
+                compute_consts_in_statement(statement, &prog.global_consts)?;
+            }
+            for (expr, _, _) in &mut node.transitions {
+                compute_consts_in_expr(expr, &prog.global_consts)?;
             }
         }
     }

@@ -70,7 +70,7 @@ fn replace_fn_calls(
 ) -> Result<Option<Loc<String>>, ExpandFnError> {
     let mut changed = None;
     for (_mod_name, module) in prog.modules.iter_mut() {
-        for (_node_name, node) in module.automata.iter_mut().flatten() {
+        for node in module.nodes.iter_mut() {
             changed = changed.or(replace_fn_calls_in_statements(
                 &mut node.statements,
                 &mut prog.functions,

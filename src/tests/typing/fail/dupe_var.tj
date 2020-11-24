@@ -1,6 +1,5 @@
 module main(b) = (b)
     shared b = ()
-    automaton
-        node n 
-            b = 0
-        transition
+    n:
+        b = 0
+    until

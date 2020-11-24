@@ -34,29 +34,30 @@ pub fn flatten(prog: &mut Program) {
             .collect();
     }
     for (_, m) in &mut prog.modules {
-        for automata in &mut m.automata {
-            for (name, node) in automata {
-                let Node {
-                    statements,
-                    transitions,
-                } = &mut node.value;
-                *statements = statements
-                    .drain(..)
-                    .map(|stat| flatten_statement(stat))
-                    .flatten()
-                    .collect();
-                //transition must be handled as well.
-                //They are flattened into statements in the end of the node body
-                *transitions = transitions
-                    .drain(..)
-                    .map(|(expr, goto, reset)| {
-                        let pos = expr.loc;
-                        let (mut v, expr) = flatten_expr(name, expr);
-                        statements.append(&mut v);
-                        (loc(pos, expr), goto, reset)
-                    })
-                    .collect();
-            }
+        for node in &mut m.nodes {
+            let Node {
+                name,
+                weak: _,
+                extern_modules: _,
+                statements,
+                transitions,
+            } = node;
+            *statements = statements
+                .drain(..)
+                .map(|stat| flatten_statement(stat))
+                .flatten()
+                .collect();
+            //transition must be handled as well.
+            //They are flattened into statements in the end of the node body
+            *transitions = transitions
+                .drain(..)
+                .map(|(expr, goto, reset)| {
+                    let pos = expr.loc;
+                    let (mut v, expr) = flatten_expr(name, expr);
+                    statements.append(&mut v);
+                    (loc(pos, expr), goto, reset)
+                })
+                .collect();
         }
     }
 }
