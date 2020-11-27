@@ -1,5 +1,5 @@
-module main(b) = (b)
-    shared b = ()
+module main() = ()
     n:
-        b = 0
+        a = 0
+        a = 1
     until

@@ -3,14 +3,17 @@ extern crate lalrpop_util;
 extern crate global_counter;
 
 mod ast;
+mod collapse_automata;
 mod compute_consts;
 mod errors;
 mod expand_fn;
 mod flatten;
+mod optimization;
 mod parser_wrapper;
 mod typed_ast;
 mod typing;
 
+use collapse_automata::collapse_automata;
 use compute_consts::compute_consts;
 use docopt::Docopt;
 use errors::TinyjazzError;
@@ -39,7 +42,8 @@ fn process_file(path: PathBuf) -> Result<Program, TinyjazzError> {
     expand_functions(&mut prog, &mut type_map).map_err(|e| (e, files.clone()))?;
     prog.functions = HashMap::new(); //the functions are no longer useful
                                      //at this point, the ast is ready to be typed.
-    let prog = type_prog(prog, type_map).map_err(|e| (e, files.clone()))?;
+    let mut prog = type_prog(prog, type_map).map_err(|e| (e, files.clone()))?;
+    collapse_automata(&mut prog).map_err(|e| (e, files.clone()))?;
     Ok(prog)
 }
 

@@ -72,8 +72,8 @@ and then we can type the rest of the module, including the external calls
 type ModulePreTyping = (
     HashMap<String, (usize, Pos)>,
     HashMap<String, Vec<bool>>,
-    Vec<String>,
-    Vec<String>,
+    Vec<typ::Sized<String>>,
+    Vec<typ::Sized<String>>,
 );
 fn type_mod_inputs_and_outputs(
     module: &mut untyp::Module,
@@ -128,12 +128,15 @@ fn type_mod_inputs_and_outputs(
                     return Err(TypingError::DuplicateVar(arg.name.clone(), loc, *other_loc));
                 }
                 shared_types.insert(arg.name.clone(), (j, loc));
-                Ok(arg.name)
+                Ok(typ::Sized {
+                    value: arg.name,
+                    size: j,
+                })
             } else {
                 panic!("Should not happen : unknown const in typing");
             }
         })
-        .collect::<Result<Vec<String>>>()?;
+        .collect::<Result<Vec<typ::Sized<String>>>>()?;
 
     //outputs must be shared variables or inputs.
     //the types are also added in a vector for use in external module typing.
@@ -160,7 +163,10 @@ fn type_mod_inputs_and_outputs(
                         };
                         Err(TypingError::MismatchedBusSize(token1, token2))
                     } else {
-                        Ok(arg.name)
+                        Ok(typ::Sized {
+                            value: arg.name,
+                            size: j,
+                        })
                     }
                 } else {
                     Err(TypingError::UnknownVar(arg.name, loc))
@@ -169,7 +175,7 @@ fn type_mod_inputs_and_outputs(
                 panic!("Should not happen : unknown const in typing");
             }
         })
-        .collect::<Result<Vec<String>>>()?;
+        .collect::<Result<Vec<typ::Sized<String>>>>()?;
     //for module
     Ok((
         (in_types, out_types),
@@ -177,103 +183,14 @@ fn type_mod_inputs_and_outputs(
     ))
 }
 
+//type a module. The biggest part is to tpe external modules calls, as we have to check every input and output.
 fn type_mod(
     mut module: untyp::Module,
     pre_typing: ModulePreTyping,
     module_types: &HashMap<String, (Vec<(usize, Pos)>, Vec<(usize, Pos)>)>,
     type_constraints: &mut HashMap<String, (i32, Pos)>,
 ) -> Result<typ::Module> {
-    let (mut shared_types, shared, outputs, inputs) = pre_typing;
-    let extern_modules = module
-        .extern_modules
-        .drain(..)
-        .map(|mut ext_module| {
-            let (in_types, out_types) =
-                module_types
-                    .get(&ext_module.name.value)
-                    .ok_or(TypingError::UnknownModule(
-                        ext_module.name.value.clone(),
-                        ext_module.name.loc,
-                    ))?;
-
-            //check that the right number of argument and return vars are supplied
-            if in_types.len() != ext_module.inputs.len() {
-                return Err(TypingError::WrongNumber(
-                    WrongNumberType::Args,
-                    ext_module.inputs.loc,
-                    in_types.len(),
-                    ext_module.inputs.len(),
-                ));
-            }
-            if out_types.len() != ext_module.outputs.len() {
-                return Err(TypingError::WrongNumber(
-                    WrongNumberType::ReturnVars,
-                    ext_module.outputs.loc,
-                    out_types.len(),
-                    ext_module.outputs.len(),
-                ));
-            }
-            let inputs = ext_module
-                .inputs
-                .drain(..)
-                .zip(in_types.iter())
-                .map(|(arg, in_type)| {
-                    //An input must be a shared variable. It must be the same type as the module input.
-                    let internal_in_type = shared_types
-                        .get(&arg.value)
-                        .ok_or(TypingError::UnknownVar(arg.value.clone(), arg.loc))?;
-                    if in_type.0 != internal_in_type.0 {
-                        let token1 = Token {
-                            loc: internal_in_type.1,
-                            name: Some(format_var(arg.value.clone())),
-                            length: internal_in_type.0,
-                        };
-                        let token2 = Token {
-                            loc: in_type.1,
-                            name: Some(format_var(arg.value.clone())),
-                            length: in_type.0,
-                        };
-                        Err(TypingError::MismatchedBusSize(token1, token2))
-                    } else {
-                        Ok(arg.value)
-                    }
-                })
-                .collect::<Result<Vec<String>>>()?;
-            let outputs = ext_module
-                .outputs
-                .drain(..)
-                .zip(out_types.iter())
-                .map(|(arg, out_type)| {
-                    //an input can be a shared variable. If it is, it must be the same type as the module output.
-                    if let Some(internal_out_type) = shared_types.get(&arg.value) {
-                        if out_type.0 != internal_out_type.0 {
-                            let token1 = Token {
-                                loc: internal_out_type.1,
-                                name: Some(format_var(arg.value.clone())),
-                                length: internal_out_type.0,
-                            };
-                            let token2 = Token {
-                                loc: out_type.1,
-                                name: Some(format_var(arg.value.clone())),
-                                length: out_type.0,
-                            };
-                            Err(TypingError::MismatchedBusSize(token1, token2))
-                        } else {
-                            Ok(arg.value)
-                        }
-                    } else {
-                        shared_types.insert(arg.value.clone(), *out_type);
-                        Ok(arg.value)
-                    }
-                })
-                .collect::<Result<Vec<String>>>()?;
-            Ok(typ::ExtModule {
-                inputs,
-                outputs,
-                name: ext_module.name.to_string(),
-            })
-        })
-        .collect::<Result<Vec<typ::ExtModule>>>()?;
+    let (shared_types, shared, outputs, inputs) = pre_typing;
     let nodes_map = module
         .nodes
         .iter()
@@ -283,25 +200,50 @@ fn type_mod(
         .nodes
         .drain(..)
         .map(|node| {
-            Ok(type_node(
-                node,
-                &nodes_map,
-                &shared_types,
-                type_constraints,
-                module_types,
-            )?)
+            Ok((
+                node.name.value.clone(),
+                type_node(
+                    node,
+                    &nodes_map,
+                    &shared_types,
+                    type_constraints,
+                    module_types,
+                )?,
+            ))
         })
-        .collect::<Result<Vec<typ::Node>>>()?;
+        .collect::<Result<HashMap<typ::Name, typ::Node>>>()?;
+
+    //If init nodes were specified, use them. Else, use the first node.
+    let init_nodes = if module.init_nodes.len() > 0 {
+        module
+            .init_nodes
+            .drain(..)
+            .map(|s| {
+                if module_types.contains_key(&s.value) {
+                    Ok(s.value)
+                } else {
+                    Err(TypingError::UnknownModule(s.value, s.loc))
+                }
+            })
+            .collect::<Result<Vec<String>>>()?
+    } else {
+        if let Some(n) = module.nodes.get(0) {
+            vec![n.name.value.clone()]
+        } else {
+            Vec::new()
+        }
+    };
     Ok(typ::Module {
         name: module.name,
         inputs,
         outputs,
         nodes,
         shared,
-        extern_modules,
+        init_nodes,
     })
 }
 
+//type a node. It has to type external module calls again, plus all the statements and transitions
 fn type_node(
     mut node: untyp::Node,
     nodes_map: &HashMap<String, Pos>,
@@ -321,7 +263,7 @@ fn type_node(
                 type_constraints,
             )?)
         })
-        .collect::<Result<Vec<typ::Statement>>>()?;
+        .collect::<Result<HashMap<typ::Var, typ::Expr>>>()?;
     let transitions = node
         .transitions
         .drain(..)
@@ -411,7 +353,7 @@ fn type_node(
                 .drain(..)
                 .zip(out_types.iter())
                 .map(|(arg, out_type)| {
-                    //an output can be a shared variable. If it is, it must be the same type as the module output.
+                    //an output can be a shared or local variable. If it is, it must be the same type as the module output.
                     if let Some(internal_out_type) = shared_types.get(&arg.value) {
                         if out_type.0 != internal_out_type.0 {
                             let token1 = Token {
@@ -426,14 +368,14 @@ fn type_node(
                             };
                             Err(TypingError::MismatchedBusSize(token1, token2))
                         } else {
-                            Ok(arg.value)
+                            Ok(typ::Var::Shared(arg.value))
                         }
                     } else {
                         var_types.insert(arg.value.clone(), *out_type);
-                        Ok(arg.value)
+                        Ok(typ::Var::Local(arg.value))
                     }
                 })
-                .collect::<Result<Vec<String>>>()?;
+                .collect::<Result<Vec<typ::Var>>>()?;
             Ok(typ::ExtModule {
                 inputs,
                 outputs,
@@ -450,12 +392,13 @@ fn type_node(
     })
 }
 
+//type a statement, not much to say here.
 fn type_statement(
     statement: untyp::Statement,
     var_types: &mut HashMap<String, (usize, Pos)>,
     shared_types: &HashMap<String, (usize, Pos)>,
     type_constraints: &mut HashMap<String, (i32, Pos)>,
-) -> Result<typ::Statement> {
+) -> Result<(typ::Var, typ::Expr)> {
     match statement {
         untyp::Statement::Assign(mut var_assigns) => {
             assert_eq!(
@@ -465,31 +408,11 @@ fn type_statement(
             );
             let untyp::VarAssign { var, expr } = var_assigns.drain(..).next().unwrap();
             let sized_expr = type_expr(expr.value, shared_types, var_types, type_constraints)?;
-            if let Some((size, loc)) = var_types.get(&var.value) {
-                if *size == sized_expr.size {
-                    Ok(typ::Statement {
-                        var: typ::Var::Local(var.value),
-                        expr: sized_expr,
-                    })
-                } else {
-                    let token1 = Token {
-                        loc: *loc,
-                        name: Some(format_var(var.value.to_string())),
-                        length: *size,
-                    };
-                    let token2 = Token {
-                        loc: expr.loc,
-                        name: None,
-                        length: sized_expr.size,
-                    };
-                    Err(TypingError::MismatchedBusSize(token1, token2))
-                }
+            if let Some((_, loc)) = var_types.get(&var.value) {
+                Err(TypingError::DuplicateVar(var.value, var.loc, *loc))
             } else if let Some((size, loc)) = shared_types.get(&var.value) {
                 if *size == sized_expr.size {
-                    Ok(typ::Statement {
-                        var: typ::Var::Shared(var.value),
-                        expr: sized_expr,
-                    })
+                    Ok((typ::Var::Shared(var.value), sized_expr))
                 } else {
                     let token1 = Token {
                         loc: *loc,
@@ -507,10 +430,7 @@ fn type_statement(
                 let size_u = usize::try_from(*size)
                     .map_err(|_| TypingError::NegativeSizeBus(*loc, *size))?;
                 if size_u == sized_expr.size {
-                    Ok(typ::Statement {
-                        var: typ::Var::Shared(var.value),
-                        expr: sized_expr,
-                    })
+                    Ok((typ::Var::Shared(var.value), sized_expr))
                 } else {
                     let token1 = Token {
                         loc: *loc,
@@ -526,10 +446,7 @@ fn type_statement(
                 }
             } else {
                 var_types.insert(var.value.clone(), (sized_expr.size, var.loc));
-                Ok(typ::Statement {
-                    var: typ::Var::Local(var.value),
-                    expr: sized_expr,
-                })
+                Ok((typ::Var::Local(var.value), sized_expr))
             }
         }
         _ => panic!(format!(

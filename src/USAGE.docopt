@@ -1,5 +1,5 @@
 Tinyjazz.
-A compiler for a language close to minijazz, extended with a more permissive syntaxe and state automaton
+A compiler for a language close to minijazz, extended with a more permissive syntaxe and state automata
 
 Usage:
   tinyjazz <file>

@@ -1,4 +1,5 @@
 use crate::{
+    collapse_automata::CollapseAutomataError,
     compute_consts::ComputeConstError,
     expand_fn::{ExpandFnError, REC_DEPTH},
     parser_wrapper::{ParseErrorType, ParserError},
@@ -18,6 +19,7 @@ pub enum ErrorType {
     ComputeConst(ComputeConstError),
     ExpandFn(ExpandFnError),
     Typing(TypingError),
+    ColAutomata(CollapseAutomataError),
 }
 
 fn get_diagnostic(
@@ -138,13 +140,13 @@ fn get_diagnostic(
                 .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
                 .with_message(format!("Unknown variable {}", name)),
             TypingError::DuplicateVar(name, loc1, loc2) => Diagnostic::error()
-                .with_message("Error : duplicate shared variable")
+                .with_message("Error : duplicate variable")
                 .with_code("E0013")
                 .with_labels(vec![
                     Label::primary(loc1.0, loc1.1..loc1.2),
                     Label::primary(loc2.0, loc2.1..loc2.2),
                 ])
-                .with_message(format!("Duplicate shared variable {}", name)),
+                .with_message(format!("Duplicate variable {}", name)),
             TypingError::UnknownModule(name, loc) => Diagnostic::error()
                 .with_message("Error : unknown module")
                 .with_code("E0014")
@@ -180,6 +182,14 @@ fn get_diagnostic(
                     got, len
                 )),
         },
+        ErrorType::ColAutomata(CollapseAutomataError::CyclicModuleCall(s)) => Diagnostic::error()
+            .with_message("Error : cyclic module calls")
+            .with_code("E0019")
+            .with_message(format!("Module {} called itself", s)),
+        ErrorType::ColAutomata(CollapseAutomataError::NoMainModule) => Diagnostic::error()
+            .with_message("Error : no main module")
+            .with_code("E0019")
+            .with_message(format!("must have a module called \"main\"")),
     }
 }
 
@@ -231,6 +241,16 @@ impl From<(TypingError, Rc<SimpleFiles<String, String>>)> for TinyjazzError {
         let (typ_error, files) = err;
         TinyjazzError {
             error: ErrorType::Typing(typ_error),
+            files,
+        }
+    }
+}
+
+impl From<(CollapseAutomataError, Rc<SimpleFiles<String, String>>)> for TinyjazzError {
+    fn from(err: (CollapseAutomataError, Rc<SimpleFiles<String, String>>)) -> Self {
+        let (typ_error, files) = err;
+        TinyjazzError {
+            error: ErrorType::ColAutomata(typ_error),
             files,
         }
     }

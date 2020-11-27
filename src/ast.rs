@@ -44,7 +44,6 @@ pub struct Module {
     pub inputs: Vec<Arg>,
     pub outputs: Vec<Arg>,
     pub shared: Vec<VarAssign>, //Variables shared across nodes and automata must be declared
-    pub extern_modules: Vec<Loc<ExtModule>>, //You can call another module, the inpits must be shared variables and the output are automatically shared
     pub nodes: Vec<Node>,
     pub init_nodes: Vec<Loc<Var>>,
 }

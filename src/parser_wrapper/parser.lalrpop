@@ -76,7 +76,6 @@ Module: Module = {
     "module" <name:r"[a-zA-Z_][a-zA-Z_0-9]*\("> <ins:Comma<Arg>> ")" "=" <out:ParCommaOrSingle<Arg>>
     <init: Init>
     <s:SharedVar*>
-    <ext:Loc<ExtModule>*>
     <mut nodes:Node*> 
     => {
         Module {
@@ -84,7 +83,6 @@ Module: Module = {
             inputs: ins, 
             outputs: out,
             shared: s.into_iter().flatten().collect(),
-            extern_modules: ext, 
             nodes : nodes.drain(..).collect(),
             init_nodes: init
         }

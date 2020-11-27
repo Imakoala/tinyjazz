@@ -31,18 +31,18 @@ pub struct Module {
     pub inputs: Vec<Arg>,
     pub outputs: Vec<Arg>,
     pub shared: HashMap<SharedVar, Value>,
-    pub extern_modules: Vec<ExtModule>,
-    pub nodes: Vec<Node>,
+    pub nodes: HashMap<Name, Node>,
+    pub init_nodes: Vec<Name>,
 }
 
 //Just to be a bit more explicit in the ast, these are all strings
-pub type Arg = String;
+pub type Arg = Sized<String>;
 pub type SharedVar = String;
 pub type LocalVar = String;
 pub type Name = String;
 
 //SharedVar and LocalVars are differenciated
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Var {
     Local(LocalVar),
     Shared(SharedVar),
@@ -52,23 +52,19 @@ pub type Value = Vec<bool>;
 #[derive(Debug, Clone)]
 pub struct ExtModule {
     pub inputs: Vec<SharedVar>,
-    pub outputs: Vec<SharedVar>,
+    pub outputs: Vec<Var>,
     pub name: Name,
 }
 
 #[derive(Debug, Clone)]
 pub struct Node {
     pub name: String,
-    pub statements: Vec<Statement>,
+    pub statements: HashMap<Var, Expr>,
     pub transitions: Vec<(Var, Name, bool)>,
     pub extern_modules: Vec<ExtModule>,
     pub weak: bool,
 }
-#[derive(Debug, Clone)]
-pub struct Statement {
-    pub var: Var,
-    pub expr: Expr,
-}
+
 pub type Expr = Sized<ExprType>;
 pub type ExprTerm = Sized<ExprTermType>;
 
