@@ -3,11 +3,11 @@ module main() = ()
     n: 
         use b = other_mod(a)
     until
-//        |b -> p
+        |b -> p
     p:
         use c = third_mod(a)
     unless
-//        |c -> n
+        |c -> n
 
 module other_mod(a) = (b)
     shared b = ()
@@ -18,5 +18,5 @@ module other_mod(a) = (b)
 module third_mod(c) = (a)
     shared a = ()
     n:
-        a = c
+        a = reg(c)
     unless

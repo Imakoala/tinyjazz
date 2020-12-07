@@ -110,7 +110,7 @@ pub enum Expr {
     BiOp(BiOp, Box<Loc<Expr>>, Box<Loc<Expr>>),
     Mux(Box<Loc<Expr>>, Box<Loc<Expr>>, Box<Loc<Expr>>),
     Var(Loc<Var>),
-    Reg(Box<Expr>),
+    Reg(Loc<Const>, Box<Loc<Expr>>),
     Ram(RamStruct),
     Rom(RomStruct),
     FnCall(FnCall),

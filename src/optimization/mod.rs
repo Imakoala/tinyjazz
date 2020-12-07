@@ -45,10 +45,10 @@ mod graphs;
 use std::sync::Arc;
 
 use crate::typed_ast as typ;
-use graphs::*;
+pub use graphs::*;
 use typ::*;
 
-fn make_graph(prog: &typ::Program) -> graphs::Program {
+pub fn make_graph(prog: &typ::Program) -> graphs::ProgramGraph {
     let main_module = prog.get("main").unwrap();
     let node_rename_map = main_module
         .nodes
@@ -64,7 +64,12 @@ fn make_graph(prog: &typ::Program) -> graphs::Program {
         .enumerate()
         .map(|(i, s)| (s.clone(), i))
         .collect::<HashMap<String, usize>>();
-    let n_shared = shared_rename_map.len();
+    let shared = main_module
+        .inputs
+        .iter()
+        .map(|s| vec![false; s.size])
+        .chain(main_module.shared.iter().map(|(_s, init)| init.clone()))
+        .collect::<Vec<Vec<bool>>>();
     let nodes = main_module
         .nodes
         .iter()
@@ -75,10 +80,18 @@ fn make_graph(prog: &typ::Program) -> graphs::Program {
         .iter()
         .map(|s| *node_rename_map.get(s).unwrap())
         .collect();
-    graphs::Program {
+    let outputs = main_module
+        .outputs
+        .iter()
+        .map(|v| (v.value.clone(), *shared_rename_map.get(&v.value).unwrap()))
+        .collect();
+    let inputs = main_module.inputs.iter().map(|var| var.size).collect();
+    graphs::ProgramGraph {
         init_nodes,
-        n_shared,
+        shared,
         nodes,
+        outputs,
+        inputs,
     }
 }
 
@@ -87,7 +100,7 @@ fn make_node(
     node_rename_map: &HashMap<String, usize>,
     shared_rename_map: &HashMap<String, usize>,
 ) -> ProgramNode {
-    let mut expr_map = HashMap::new();
+    let mut expr_map = Some(HashMap::new());
     let mut inputs = Vec::new();
     let local_rename_map = node
         .statements
@@ -108,6 +121,7 @@ fn make_node(
         .map(|(var, node_name, reset)| {
             let node_id = node_rename_map.get(node_name).unwrap();
             let expr_node = var_to_node(
+                None,
                 node,
                 var,
                 shared_rename_map,
@@ -127,12 +141,12 @@ fn make_node(
                 Some((
                     var_id,
                     expr_to_node(
-                        var_id,
+                        None,
                         node,
                         expr,
                         shared_rename_map,
                         &local_rename_map,
-                        &mut expr_map,
+                        &mut None,
                         &mut inputs,
                     ),
                 ))
@@ -148,6 +162,7 @@ fn make_node(
             if let ExprType::Reg(s) = &expr.value {
                 if let ExprTermType::Var(v) = &s.value {
                     let expr_node = var_to_node(
+                        None,
                         node,
                         v,
                         shared_rename_map,
@@ -155,7 +170,7 @@ fn make_node(
                         &mut expr_map,
                         &mut inputs,
                     );
-                    Some(expr_node)
+                    Some((expr.size, expr_node))
                 } else {
                     None
                 }
@@ -170,25 +185,29 @@ fn make_node(
         reg_outputs,
         inputs,
         weak: node.weak,
+        n_vars: local_rename_map.len(),
     }
 }
 
 fn expr_to_node(
-    var_id: usize,
+    var_id: Option<usize>,
     node: &Node,
     expr: &Expr,
     shared_rename_map: &HashMap<String, usize>,
     local_rename_map: &HashMap<String, usize>,
-    expr_map: &mut HashMap<usize, Arc<ExprNode>>,
+    expr_map: &mut Option<HashMap<usize, Arc<ExprNode>>>,
     inputs: &mut Vec<usize>,
 ) -> Arc<ExprNode> {
-    if let Some(node) = expr_map.get(&var_id) {
-        return node.clone();
+    if let Some(id) = var_id {
+        if let Some(node) = expr_map.as_mut().map(|map| map.get(&id)).flatten() {
+            return node.clone();
+        }
     }
     let op = match &expr.value {
         ExprType::Term(e) => match &e.value {
             ExprTermType::Var(v) => {
                 return var_to_node(
+                    var_id,
                     node,
                     &v,
                     shared_rename_map,
@@ -201,6 +220,7 @@ fn expr_to_node(
         },
         ExprType::Not(e) => match &e.value {
             ExprTermType::Var(v) => ExprOperation::Not(var_to_node(
+                None,
                 node,
                 &v,
                 shared_rename_map,
@@ -213,6 +233,7 @@ fn expr_to_node(
         ExprType::Slice(e, i1, i2) => match &e.value {
             ExprTermType::Var(v) => ExprOperation::Slice(
                 var_to_node(
+                    None,
                     node,
                     &v,
                     shared_rename_map,
@@ -228,6 +249,7 @@ fn expr_to_node(
         ExprType::BiOp(op, e1, e2) => {
             let n1 = match &e1.value {
                 ExprTermType::Var(v) => var_to_node(
+                    None,
                     node,
                     &v,
                     shared_rename_map,
@@ -236,12 +258,13 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: 0,
+                    id: None,
                     op: ExprOperation::Const(c.clone()),
                 }),
             };
             let n2 = match &e2.value {
                 ExprTermType::Var(v) => var_to_node(
+                    None,
                     node,
                     &v,
                     shared_rename_map,
@@ -250,7 +273,7 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: 0,
+                    id: None,
                     op: ExprOperation::Const(c.clone()),
                 }),
             };
@@ -259,6 +282,7 @@ fn expr_to_node(
         ExprType::Mux(e1, e2, e3) => {
             let n1 = match &e1.value {
                 ExprTermType::Var(v) => var_to_node(
+                    None,
                     node,
                     &v,
                     shared_rename_map,
@@ -267,12 +291,13 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: 0,
+                    id: None,
                     op: ExprOperation::Const(c.clone()),
                 }),
             };
             let n2 = match &e2.value {
                 ExprTermType::Var(v) => var_to_node(
+                    None,
                     node,
                     &v,
                     shared_rename_map,
@@ -281,12 +306,13 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: 0,
+                    id: None,
                     op: ExprOperation::Const(c.clone()),
                 }),
             };
             let n3 = match &e3.value {
                 ExprTermType::Var(v) => var_to_node(
+                    None,
                     node,
                     &v,
                     shared_rename_map,
@@ -295,7 +321,7 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: 0,
+                    id: None,
                     op: ExprOperation::Const(c.clone()),
                 }),
             };
@@ -303,10 +329,10 @@ fn expr_to_node(
         }
         ExprType::Reg(e) => match &e.value {
             ExprTermType::Var(Var::Local(s)) => {
-                ExprOperation::Reg(false, *local_rename_map.get(s).unwrap())
+                ExprOperation::Reg(false, *local_rename_map.get(s).unwrap(), e.size)
             }
             ExprTermType::Var(Var::Shared(s)) => {
-                ExprOperation::Reg(true, *shared_rename_map.get(s).unwrap())
+                ExprOperation::Reg(true, *shared_rename_map.get(s).unwrap(), e.size)
             }
             ExprTermType::Const(c) => ExprOperation::Const(c.iter().map(|b| !*b).collect()),
         },
@@ -318,6 +344,7 @@ fn expr_to_node(
         }) => {
             let n1 = match &e1.value {
                 ExprTermType::Var(v) => var_to_node(
+                    None,
                     node,
                     &v,
                     shared_rename_map,
@@ -326,12 +353,13 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: 0,
+                    id: None,
                     op: ExprOperation::Const(c.clone()),
                 }),
             };
             let n2 = match &e2.value {
                 ExprTermType::Var(v) => var_to_node(
+                    None,
                     node,
                     &v,
                     shared_rename_map,
@@ -340,12 +368,13 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: 0,
+                    id: None,
                     op: ExprOperation::Const(c.clone()),
                 }),
             };
             let n3 = match &e3.value {
                 ExprTermType::Var(v) => var_to_node(
+                    None,
                     node,
                     &v,
                     shared_rename_map,
@@ -354,12 +383,13 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: 0,
+                    id: None,
                     op: ExprOperation::Const(c.clone()),
                 }),
             };
             let n4 = match &e4.value {
                 ExprTermType::Var(v) => var_to_node(
+                    None,
                     node,
                     &v,
                     shared_rename_map,
@@ -368,7 +398,7 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: 0,
+                    id: None,
                     op: ExprOperation::Const(c.clone()),
                 }),
             };
@@ -377,6 +407,7 @@ fn expr_to_node(
         ExprType::Rom(e) => {
             let n = match &e.value {
                 ExprTermType::Var(v) => var_to_node(
+                    None,
                     node,
                     &v,
                     shared_rename_map,
@@ -385,7 +416,7 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: 0,
+                    id: None,
                     op: ExprOperation::Const(c.clone()),
                 }),
             };
@@ -393,16 +424,21 @@ fn expr_to_node(
         }
     };
     let node = Arc::new(ExprNode { id: var_id, op });
-    expr_map.insert(var_id, node.clone());
+    if let Some(map) = expr_map {
+        if let Some(id) = var_id {
+            map.insert(id, node.clone());
+        }
+    }
     node
 }
 
 fn var_to_node(
+    var_id: Option<usize>,
     node: &Node,
     var: &Var,
     shared_rename_map: &HashMap<String, usize>,
     local_rename_map: &HashMap<String, usize>,
-    expr_map: &mut HashMap<usize, Arc<ExprNode>>,
+    expr_map: &mut Option<HashMap<usize, Arc<ExprNode>>>,
     inputs: &mut Vec<usize>,
 ) -> Arc<ExprNode> {
     match var {
@@ -410,7 +446,7 @@ fn var_to_node(
             let id = *local_rename_map.get(s).unwrap();
             let expr = node.statements.get(var).unwrap();
             expr_to_node(
-                id,
+                var_id.or(Some(id)),
                 node,
                 expr,
                 shared_rename_map,
@@ -424,7 +460,7 @@ fn var_to_node(
             inputs.push(id);
             Arc::new(ExprNode {
                 op: ExprOperation::Input(id),
-                id,
+                id: None,
             })
         }
     }

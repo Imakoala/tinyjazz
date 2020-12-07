@@ -183,7 +183,13 @@ Unit: Expr = {
     ),
     "(" <Expr> ")",
     "mux(" <e1:Loc<Expr>> "," <e2:Loc<Expr>> "," <e3:Loc<Expr>> ")" => Expr::Mux(Box::new(e1), Box::new(e2), Box::new(e3)),
-    "reg(" <Expr> ")" => Expr::Reg(Box::new(<>)),
+    "reg(" <e:Loc<Expr>> ")" => Expr::Reg(
+        Loc {
+            value: Const::Value(1),
+            loc: e.loc
+        }, 
+        Box::new(e)),
+    "reg<" <c:Loc<Const>> ">(" <e:Loc<Expr>> ")" => Expr::Reg(c, Box::new(e)),
     <Ram> => Expr::Ram(<>),
     <Rom> => Expr::Rom(<>),
     <FnCall> => Expr::FnCall(<>),

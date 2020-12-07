@@ -55,7 +55,12 @@ pub fn flatten(prog: &mut Program) {
                     let pos = expr.loc;
                     let (mut v, expr) = flatten_expr(name, expr);
                     statements.append(&mut v);
-                    (loc(pos, expr), goto, reset)
+                    let name = get_name(name);
+                    statements.push(Statement::Assign(vec![VarAssign {
+                        var: loc(pos, name.clone()),
+                        expr: loc(pos, expr),
+                    }]));
+                    (loc(pos, Expr::Var(loc(pos, name))), goto, reset)
                 })
                 .collect();
         }
@@ -114,6 +119,7 @@ fn get_name(name: &String) -> String {
 //this is very, very verbose. Find a way to simplify it ?
 fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
     let mut res = Vec::new();
+    let glob_pos = expr.loc;
     let e_ret = match expr.value {
         Expr::Const(_) | Expr::Var(_) | Expr::FnCall(_) => expr.value,
         Expr::Not(e_in) => {
@@ -122,9 +128,9 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
             res.append(&mut v);
             res.push(Statement::Assign(vec![VarAssign {
                 var: name.clone(),
-                expr: loc(expr.loc, e_out),
+                expr: loc(expr.loc, Expr::Not(Box::new(e_out))),
             }]));
-            Expr::Not(Box::new(Expr::Var(name)))
+            Expr::Var(name)
         }
         Expr::Slice(e_in, c1, c2) => {
             let pos = e_in.loc;
@@ -133,32 +139,26 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
             res.append(&mut v);
             res.push(Statement::Assign(vec![VarAssign {
                 var: name.clone(),
-                expr: loc(expr.loc, e_out),
+                expr: loc(expr.loc, Expr::Slice(Box::new(loc(pos, e_out)), c1, c2)),
             }]));
-            Expr::Slice(Box::new(loc(pos, Expr::Var(name))), c1, c2)
+            Expr::Var(name)
         }
         Expr::BiOp(op, e1, e2) => {
             let pos1 = e1.loc;
             let pos2 = e2.loc;
             let (mut v1, e_out1) = flatten_expr(name, *e1);
             let (mut v2, e_out2) = flatten_expr(name, *e2);
-            let name1 = loc(pos1, get_name(name));
-            let name2 = loc(pos2, get_name(name));
+            let name = loc(pos1, get_name(name));
             res.append(&mut v1);
             res.append(&mut v2);
             res.push(Statement::Assign(vec![VarAssign {
-                var: name1.clone(),
-                expr: loc(pos1, e_out1),
+                var: name.clone(),
+                expr: loc(
+                    pos1,
+                    Expr::BiOp(op, Box::new(loc(pos1, e_out1)), Box::new(loc(pos2, e_out2))),
+                ),
             }]));
-            res.push(Statement::Assign(vec![VarAssign {
-                var: name2.clone(),
-                expr: loc(pos2, e_out2),
-            }]));
-            Expr::BiOp(
-                op,
-                Box::new(loc(pos1, Expr::Var(name1))),
-                Box::new(loc(pos2, Expr::Var(name2))),
-            )
+            Expr::Var(name)
         }
         Expr::Mux(e1, e2, e3) => {
             let pos1 = e1.loc;
@@ -167,39 +167,33 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
             let (mut v1, e_out1) = flatten_expr(name, *e1);
             let (mut v2, e_out2) = flatten_expr(name, *e2);
             let (mut v3, e_out3) = flatten_expr(name, *e3);
-            let name1 = loc(pos1, get_name(name));
-            let name2 = loc(pos2, get_name(name));
-            let name3 = loc(pos3, get_name(name));
+            let name = loc(glob_pos, get_name(name));
             res.append(&mut v1);
             res.append(&mut v2);
             res.append(&mut v3);
             res.push(Statement::Assign(vec![VarAssign {
-                var: name1.clone(),
-                expr: loc(pos1, e_out1),
+                var: name.clone(),
+                expr: loc(
+                    glob_pos,
+                    Expr::Mux(
+                        Box::new(loc(pos1, e_out1)),
+                        Box::new(loc(pos2, e_out2)),
+                        Box::new(loc(pos3, e_out3)),
+                    ),
+                ),
             }]));
-            res.push(Statement::Assign(vec![VarAssign {
-                var: name2.clone(),
-                expr: loc(pos2, e_out2),
-            }]));
-            res.push(Statement::Assign(vec![VarAssign {
-                var: name3.clone(),
-                expr: loc(pos3, e_out3),
-            }]));
-            Expr::Mux(
-                Box::new(loc(pos1, Expr::Var(name1))),
-                Box::new(loc(pos2, Expr::Var(name2))),
-                Box::new(loc(pos3, Expr::Var(name3))),
-            )
+            Expr::Var(name)
         }
-        Expr::Reg(e_in) => {
-            let (mut v, e_out) = flatten_expr(name, loc(expr.loc, *e_in));
-            let name = loc(expr.loc, get_name(name));
+        Expr::Reg(c, e_in) => {
+            let loc2 = e_in.loc;
+            let (mut v, e_out) = flatten_expr(name, *e_in);
+            let name = loc(glob_pos, get_name(name));
             res.append(&mut v);
             res.push(Statement::Assign(vec![VarAssign {
                 var: name.clone(),
-                expr: loc(expr.loc, e_out),
+                expr: loc(glob_pos, Expr::Reg(c, Box::new(loc(loc2, e_out)))),
             }]));
-            Expr::Reg(Box::new(Expr::Var(name)))
+            Expr::Var(name)
         }
         Expr::Ram(RamStruct {
             read_addr: e1,
@@ -215,36 +209,24 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
             let (mut v2, e_out2) = flatten_expr(name, *e2);
             let (mut v3, e_out3) = flatten_expr(name, *e3);
             let (mut v4, e_out4) = flatten_expr(name, *e4);
-            let name1 = loc(pos1, get_name(name));
-            let name2 = loc(pos2, get_name(name));
-            let name3 = loc(pos3, get_name(name));
-            let name4 = loc(pos4, get_name(name));
+            let name = loc(pos1, get_name(name));
             res.append(&mut v1);
             res.append(&mut v2);
             res.append(&mut v3);
             res.append(&mut v4);
             res.push(Statement::Assign(vec![VarAssign {
-                var: name1.clone(),
-                expr: loc(pos1, e_out1),
+                var: name.clone(),
+                expr: loc(
+                    pos1,
+                    Expr::Ram(RamStruct {
+                        read_addr: Box::new(loc(pos1, e_out1)),
+                        write_enable: Box::new(loc(pos2, e_out2)),
+                        write_addr: Box::new(loc(pos3, e_out3)),
+                        write_data: Box::new(loc(pos4, e_out4)),
+                    }),
+                ),
             }]));
-            res.push(Statement::Assign(vec![VarAssign {
-                var: name2.clone(),
-                expr: loc(pos2, e_out2),
-            }]));
-            res.push(Statement::Assign(vec![VarAssign {
-                var: name3.clone(),
-                expr: loc(pos3, e_out3),
-            }]));
-            res.push(Statement::Assign(vec![VarAssign {
-                var: name4.clone(),
-                expr: loc(pos4, e_out4),
-            }]));
-            Expr::Ram(RamStruct {
-                read_addr: Box::new(loc(pos1, Expr::Var(name1))),
-                write_enable: Box::new(loc(pos2, Expr::Var(name2))),
-                write_addr: Box::new(loc(pos3, Expr::Var(name3))),
-                write_data: Box::new(loc(pos4, Expr::Var(name4))),
-            })
+            Expr::Var(name)
         }
         Expr::Rom(RomStruct {
             word_size,
@@ -256,12 +238,15 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
             res.append(&mut v);
             res.push(Statement::Assign(vec![VarAssign {
                 var: name.clone(),
-                expr: loc(pos, e_out),
+                expr: loc(
+                    pos,
+                    Expr::Rom(RomStruct {
+                        read_addr: Box::new(loc(pos, e_out)),
+                        word_size,
+                    }),
+                ),
             }]));
-            Expr::Rom(RomStruct {
-                read_addr: Box::new(loc(pos, Expr::Var(name))),
-                word_size,
-            })
+            Expr::Var(name)
         }
     };
     (res, e_ret)

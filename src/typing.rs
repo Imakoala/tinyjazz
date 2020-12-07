@@ -27,6 +27,7 @@ pub enum TypingError {
     WrongNumber(WrongNumberType, Pos, usize, usize),
     ExpectedSizeOne(Pos, usize),
     IndexOutOfRange(Pos, i32, usize),
+    LocalVarInUnless(Pos, String),
 }
 #[derive(Debug)]
 pub struct Token {
@@ -183,7 +184,7 @@ fn type_mod_inputs_and_outputs(
     ))
 }
 
-//type a module. The biggest part is to tpe external modules calls, as we have to check every input and output.
+//type a module.
 fn type_mod(
     mut module: untyp::Module,
     pre_typing: ModulePreTyping,
@@ -196,6 +197,26 @@ fn type_mod(
         .iter()
         .map(|node| (node.name.to_string(), node.name.loc))
         .collect::<HashMap<String, Pos>>();
+    //If init nodes were specified, use them. Else, use the first node.
+    let init_nodes = if module.init_nodes.len() > 0 {
+        module
+            .init_nodes
+            .drain(..)
+            .map(|s| {
+                if nodes_map.contains_key(&s.value) {
+                    Ok(s.value)
+                } else {
+                    Err(TypingError::UnknownNode(s.value, s.loc))
+                }
+            })
+            .collect::<Result<Vec<String>>>()?
+    } else {
+        if let Some(n) = module.nodes.get(0) {
+            vec![n.name.value.clone()]
+        } else {
+            Vec::new()
+        }
+    };
     let nodes = module
         .nodes
         .drain(..)
@@ -212,27 +233,6 @@ fn type_mod(
             ))
         })
         .collect::<Result<HashMap<typ::Name, typ::Node>>>()?;
-
-    //If init nodes were specified, use them. Else, use the first node.
-    let init_nodes = if module.init_nodes.len() > 0 {
-        module
-            .init_nodes
-            .drain(..)
-            .map(|s| {
-                if module_types.contains_key(&s.value) {
-                    Ok(s.value)
-                } else {
-                    Err(TypingError::UnknownModule(s.value, s.loc))
-                }
-            })
-            .collect::<Result<Vec<String>>>()?
-    } else {
-        if let Some(n) = module.nodes.get(0) {
-            vec![n.name.value.clone()]
-        } else {
-            Vec::new()
-        }
-    };
     Ok(typ::Module {
         name: module.name,
         inputs,
@@ -243,7 +243,7 @@ fn type_mod(
     })
 }
 
-//type a node. It has to type external module calls again, plus all the statements and transitions
+//type a node. It has to type external module calls, plus all the statements and transitions
 fn type_node(
     mut node: untyp::Node,
     nodes_map: &HashMap<String, Pos>,
@@ -252,47 +252,6 @@ fn type_node(
     module_types: &HashMap<String, (Vec<(usize, Pos)>, Vec<(usize, Pos)>)>,
 ) -> Result<typ::Node> {
     let mut var_types: HashMap<String, (usize, Pos)> = HashMap::new();
-    let statements = node
-        .statements
-        .drain(..)
-        .map(|s| {
-            Ok(type_statement(
-                s,
-                &mut var_types,
-                &shared_types,
-                type_constraints,
-            )?)
-        })
-        .collect::<Result<HashMap<typ::Var, typ::Expr>>>()?;
-    let transitions = node
-        .transitions
-        .drain(..)
-        .map(|(expr, name, reset)| {
-            if let untyp::Expr::Var(s) = expr.value {
-                if nodes_map.contains_key(&name.value) {
-                    return Err(TypingError::UnknownNode(name.value, name.loc));
-                }
-                if let Some((size, _loc)) = var_types.get(&s.value) {
-                    if *size != 1 {
-                        return Err(TypingError::ExpectedSizeOne(s.loc, *size));
-                    }
-                    Ok((typ::Var::Local(s.value), name.value, reset))
-                } else {
-                    if let Some((size, _loc)) = shared_types.get(&s.value) {
-                        if *size != 1 {
-                            return Err(TypingError::ExpectedSizeOne(s.loc, *size));
-                        }
-                        Ok((typ::Var::Shared(s.value), name.value, reset))
-                    } else {
-                        Err(TypingError::UnknownVar(s.value, s.loc))
-                    }
-                }
-            } else {
-                panic!("Should not happen : Expected a variable in transition")
-            }
-        })
-        .collect::<Result<Vec<(typ::Var, typ::Name, bool)>>>()?;
-
     let extern_modules = node
         .extern_modules
         .drain(..)
@@ -383,6 +342,50 @@ fn type_node(
             })
         })
         .collect::<Result<Vec<typ::ExtModule>>>()?;
+    let statements = node
+        .statements
+        .drain(..)
+        .map(|s| {
+            Ok(type_statement(
+                s,
+                &mut var_types,
+                &shared_types,
+                type_constraints,
+            )?)
+        })
+        .collect::<Result<HashMap<typ::Var, typ::Expr>>>()?;
+    let weak = node.weak;
+    let transitions = node
+        .transitions
+        .drain(..)
+        .map(|(expr, name, reset)| {
+            if let untyp::Expr::Var(s) = expr.value {
+                if !nodes_map.contains_key(&name.value) {
+                    return Err(TypingError::UnknownNode(name.value, name.loc));
+                }
+                if let Some((size, _loc)) = var_types.get(&s.value) {
+                    if weak == false {
+                        return Err(TypingError::LocalVarInUnless(s.loc, s.value));
+                    }
+                    if *size != 1 {
+                        return Err(TypingError::ExpectedSizeOne(s.loc, *size));
+                    }
+                    Ok((typ::Var::Local(s.value), name.value, reset))
+                } else {
+                    if let Some((size, _loc)) = shared_types.get(&s.value) {
+                        if *size != 1 {
+                            return Err(TypingError::ExpectedSizeOne(s.loc, *size));
+                        }
+                        Ok((typ::Var::Shared(s.value), name.value, reset))
+                    } else {
+                        Err(TypingError::UnknownVar(s.value, s.loc))
+                    }
+                }
+            } else {
+                panic!("Should not happen : Expected a variable in transition")
+            }
+        })
+        .collect::<Result<Vec<(typ::Var, typ::Name, bool)>>>()?;
     Ok(typ::Node {
         transitions,
         name: node.name.value,
@@ -407,7 +410,7 @@ fn type_statement(
                 "Should not happen : Var assign of size different from 1"
             );
             let untyp::VarAssign { var, expr } = var_assigns.drain(..).next().unwrap();
-            let sized_expr = type_expr(expr.value, shared_types, var_types, type_constraints)?;
+            let sized_expr = type_expr(expr.value, var_types, shared_types, type_constraints)?;
             if let Some((_, loc)) = var_types.get(&var.value) {
                 Err(TypingError::DuplicateVar(var.value, var.loc, *loc))
             } else if let Some((size, loc)) = shared_types.get(&var.value) {
@@ -430,7 +433,8 @@ fn type_statement(
                 let size_u = usize::try_from(*size)
                     .map_err(|_| TypingError::NegativeSizeBus(*loc, *size))?;
                 if size_u == sized_expr.size {
-                    Ok((typ::Var::Shared(var.value), sized_expr))
+                    var_types.insert(var.value.clone(), (sized_expr.size, var.loc));
+                    Ok((typ::Var::Local(var.value), sized_expr))
                 } else {
                     let token1 = Token {
                         loc: *loc,
@@ -486,7 +490,7 @@ fn type_expr(
                     .map_err(|_| TypingError::IndexOutOfRange(loc, i1, sized_expr.size))?;
                 let j2 = usize::try_from(i2)
                     .map_err(|_| TypingError::IndexOutOfRange(loc, i2, sized_expr.size))?;
-                if j2 >= sized_expr.size {
+                if j2 > sized_expr.size {
                     Err(TypingError::IndexOutOfRange(
                         loc,
                         j2 as i32,
@@ -565,12 +569,38 @@ fn type_expr(
                 })
             }
         }
-        untyp::Expr::Reg(expr_term) => {
-            let sized_expr = type_expr_term(*expr_term, var_types, shared_types, type_constraints)?;
-            Ok(typ::Sized {
-                size: sized_expr.size,
-                value: typ::ExprType::Reg(sized_expr),
-            })
+        untyp::Expr::Reg(c, expr_term) => {
+            let loc1 = c.loc;
+            let loc2 = expr_term.loc;
+            let (size, expr) =
+                type_expr_term_reg(expr_term.value, var_types, shared_types, type_constraints)?;
+            if let untyp::Const::Value(i) = c.value {
+                let j = usize::try_from(i).map_err(|_| TypingError::NegativeSizeBus(c.loc, i))?;
+                if let Some(size) = size {
+                    if size != j {
+                        let token1 = Token {
+                            loc: loc1,
+                            name: None,
+                            length: j,
+                        };
+                        let token2 = Token {
+                            loc: loc2,
+                            name: None,
+                            length: size,
+                        };
+                        return Err(TypingError::MismatchedBusSize(token1, token2));
+                    }
+                }
+                Ok(typ::Sized {
+                    size: j,
+                    value: typ::ExprType::Reg(typ::Sized {
+                        size: j,
+                        value: expr,
+                    }),
+                })
+            } else {
+                panic!("Should not happen : unknown const while typing")
+            }
         }
         untyp::Expr::Ram(untyp::RamStruct {
             read_addr: e1,
@@ -683,9 +713,53 @@ fn type_expr_term(
     }
 }
 
+fn type_expr_term_reg(
+    expr: untyp::Expr,
+    var_types: &HashMap<String, (usize, Pos)>,
+    shared_types: &HashMap<String, (usize, Pos)>,
+    type_constraints: &mut HashMap<String, (i32, Pos)>,
+) -> Result<(Option<usize>, typ::ExprTermType)> {
+    match expr {
+        untyp::Expr::Const(c) => match c {
+            untyp::ConstExpr::Known(v) => Ok((Some(v.len()), typ::ExprTermType::Const(v))),
+            untyp::ConstExpr::Unknown(b, c) => {
+                if let untyp::Const::Value(i) = c.value {
+                    let j =
+                        usize::try_from(i).map_err(|_| TypingError::NegativeSizeBus(c.loc, i))?;
+                    Ok((Some(j), typ::ExprTermType::Const(vec![b; j])))
+                } else {
+                    panic!("Should not happen : unknown const while typing")
+                }
+            }
+        },
+        untyp::Expr::Var(v) => {
+            if let Some((size, _loc)) = var_types.get(&v.value) {
+                Ok((
+                    Some(*size),
+                    typ::ExprTermType::Var(typ::Var::Local(v.value)),
+                ))
+            } else if let Some((size, _loc)) = shared_types.get(&v.value) {
+                Ok((
+                    Some(*size),
+                    typ::ExprTermType::Var(typ::Var::Shared(v.value)),
+                ))
+            } else if let Some((size, loc)) = type_constraints.get(&v.value) {
+                let size_u = usize::try_from(*size)
+                    .map_err(|_| TypingError::NegativeSizeBus(*loc, *size))?;
+                Ok((
+                    Some(size_u),
+                    typ::ExprTermType::Var(typ::Var::Local(v.value)),
+                ))
+            } else {
+                Ok((None, typ::ExprTermType::Var(typ::Var::Local(v.value))))
+            }
+        }
+        _ => panic!("Should not happen : non terminal expr at depth 1 in typing"),
+    }
+}
+
 fn format_var(var: String) -> String {
     if var.starts_with('$') {
-        println!("{:#?}", var);
         let vec: Vec<&str> = var.split('$').filter(|s| *s != "").collect();
         let _typ = vec[0];
         let fn_name = vec[1];
@@ -706,9 +780,6 @@ fn format_args(args: &str) -> String {
     args.split('|')
         .filter(|s| *s != "")
         .map(|v| v.split('_').collect::<Vec<&str>>())
-        .map(|v| {
-            println!("{:#?}", v);
-            format!(" {} = {},", v[0], v[1])
-        })
+        .map(|v| format!(" {} = {},", v[0], v[1]))
         .collect::<String>()
 }

@@ -231,7 +231,10 @@ where
             map_consts_in_expr(e2, f)?;
             map_consts_in_expr(e3, f)
         }
-        Expr::Reg(e) => map_consts_in_expr(e, f),
+        Expr::Reg(c, e) => {
+            f(c)?;
+            map_consts_in_expr(e, f)
+        }
         Expr::Ram(RamStruct {
             read_addr,
             write_enable,

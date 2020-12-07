@@ -11,7 +11,7 @@ use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use std::rc::Rc;
 
 /*
-This file is dedicated to the handling of all errors, to pretty_print them using codespan_diagnostic, among others.
+This file is dedicated to the handling of all errors, to pretty print them using codespan_diagnostic.
 It is a bit verbose, but provides very clear error messages
 */
 pub enum ErrorType {
@@ -181,6 +181,11 @@ fn get_diagnostic(
                     "Index out of range : index is {} for a bus of length {}",
                     got, len
                 )),
+            TypingError::LocalVarInUnless(loc, name) => Diagnostic::error()
+                .with_message("Error : local var in strong transition")
+                .with_code("E0021")
+                .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
+                .with_message(format!("Local var {} in strong transition", name)),
         },
         ErrorType::ColAutomata(CollapseAutomataError::CyclicModuleCall(s)) => Diagnostic::error()
             .with_message("Error : cyclic module calls")
@@ -188,7 +193,7 @@ fn get_diagnostic(
             .with_message(format!("Module {} called itself", s)),
         ErrorType::ColAutomata(CollapseAutomataError::NoMainModule) => Diagnostic::error()
             .with_message("Error : no main module")
-            .with_code("E0019")
+            .with_code("E0020")
             .with_message(format!("must have a module called \"main\"")),
     }
 }

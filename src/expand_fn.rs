@@ -258,37 +258,40 @@ fn inline_function(
         out_statements.push(stat_inputs);
     }
 
+    for (i, var) in outputs.iter().enumerate() {
+        if let Const::Value(size) = func.return_vars[i].size.value {
+            type_map.insert(var.value.clone(), (size, func.return_vars[i].size.loc));
+        }
+        vars_map.insert(func.return_vars[i].name.clone(), var.value.clone());
+    }
     //Link the output parameters
-    let stat_outputs = Statement::Assign(
-        outputs
-            .iter()
-            .enumerate()
-            .map(|(i, var)| {
-                let name = format!(
-                    "$ret${}${}${}${}",
-                    *func.name, args_string, func.return_vars[i].name, counter
-                );
-                if let Const::Value(size) = func.return_vars[i].size.value {
-                    type_map.insert(name.clone(), (size, func.return_vars[i].size.loc));
-                }
-                vars_map.insert(func.return_vars[i].name.clone(), name.clone());
-                let expr_loc = (fncall.name.loc.0, fncall.name.loc.1, fncall.args.loc.2 + 1);
-                VarAssign {
-                    var: Loc {
-                        value: var.to_string(),
-                        loc: var.loc,
-                    },
-                    expr: Loc {
-                        value: Expr::Var(Loc {
-                            value: name,
-                            loc: expr_loc,
-                        }),
-                        loc: expr_loc,
-                    },
-                }
-            })
-            .collect(),
-    );
+    // let stat_outputs = Statement::Assign(
+    //     outputs
+    //         .iter()
+    //         .enumerate()
+    //         .map(|(i, var)| {
+    //             // let name = format!(
+    //             //     "$ret${}${}${}${}",
+    //             //     *func.name, args_string, func.return_vars[i].name, counter
+    //             // );
+
+    //             let expr_loc = (fncall.name.loc.0, fncall.name.loc.1, fncall.args.loc.2 + 1);
+    //             VarAssign {
+    //                 var: Loc {
+    //                     value: var.to_string(),
+    //                     loc: var.loc,
+    //                 },
+    //                 expr: Loc {
+    //                     value: Expr::Var(Loc {
+    //                         value: var.value.clone(),
+    //                         loc: expr_loc,
+    //                     }),
+    //                     loc: expr_loc,
+    //                 },
+    //             }
+    //         })
+    //         .collect(),
+    // );
 
     //Make the function body
     let mut func_body = func.statements.clone();
@@ -303,9 +306,9 @@ fn inline_function(
 
     //push in the right order
     out_statements.append(&mut func_body);
-    if outputs.len() > 0 {
-        out_statements.push(stat_outputs);
-    }
+    // if outputs.len() > 0 {
+    //     out_statements.push(stat_outputs);
+    // }
     Ok(())
 }
 
@@ -358,7 +361,7 @@ where
             map_vars_in_expr(e2, f);
             map_vars_in_expr(e3, f);
         }
-        Expr::Reg(e) => map_vars_in_expr(e, f),
+        Expr::Reg(_, e) => map_vars_in_expr(e, f),
         Expr::Ram(RamStruct {
             read_addr,
             write_enable,
@@ -408,7 +411,7 @@ where
             }
         }
         Statement::FnAssign(FnAssign {
-            vars: _,
+            vars,
             f:
                 FnCall {
                     name: _,
@@ -418,6 +421,9 @@ where
         }) => {
             for arg in &mut **args {
                 map_vars_in_expr(arg, f);
+            }
+            for v in vars {
+                f(&mut v.value)
             }
         }
     }
