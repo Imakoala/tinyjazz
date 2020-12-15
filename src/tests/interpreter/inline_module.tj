@@ -14,15 +14,16 @@ fn inc<n>(in[n]) = (o[n], r)
 
 module main() = o[p]
     init n1
-    shared o = [0; p]
+    shared (o, i) = [0; p]
     n1:
-        (o, r) = inc<p>(o)
+        a = reg<p>(o)
+        (o, r) = inc<p>(a)
     until
-        |o[p/2 - 1] -> n2
-        |not o[p/2 - 1] -> n1
+        |a[p/2 - 1] -> n2
+        |not a[p/2 - 1] -> n1
     
     n2:
-        use o = m2(o)
+        use i = m2(o)
     until 
         |1 -> n1
 
@@ -32,8 +33,8 @@ module m2(a[p]) = o[p]
     n1:
         o = not a
     until
-        |o[5] -> n2
-        |not o[5] -> n1
+        |a[5] -> n2
+        |not a[5] -> n1
     n2:
         o = [0; p]
     until 

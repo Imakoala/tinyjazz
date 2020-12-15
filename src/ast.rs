@@ -15,6 +15,12 @@ pub struct Loc<T> {
     pub value: T,
 }
 
+impl<T: PartialEq> PartialEq for Loc<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
 impl<T> Deref for Loc<T> {
     type Target = T;
     fn deref(&self) -> &T {
@@ -44,7 +50,7 @@ pub struct Module {
     pub inputs: Vec<Arg>,
     pub outputs: Vec<Arg>,
     pub shared: Vec<VarAssign>, //Variables shared across nodes and automata must be declared
-    pub nodes: Vec<Node>,
+    pub nodes: HashMap<String, Node>,
     pub init_nodes: Vec<Loc<Var>>,
 }
 
@@ -140,7 +146,7 @@ pub struct IfStruct {
     pub if_block: Vec<Statement>,
     pub else_block: Vec<Statement>,
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum BiOp {
     And,  //*
     Or,   //+

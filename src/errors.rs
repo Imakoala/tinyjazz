@@ -2,6 +2,8 @@ use crate::{
     collapse_automata::CollapseAutomataError,
     compute_consts::ComputeConstError,
     expand_fn::{ExpandFnError, REC_DEPTH},
+    flatten::FlattenError,
+    optimization::ScheduleError,
     parser_wrapper::{ParseErrorType, ParserError},
     typing::TypingError,
 };
@@ -20,6 +22,8 @@ pub enum ErrorType {
     ExpandFn(ExpandFnError),
     Typing(TypingError),
     ColAutomata(CollapseAutomataError),
+    FlattenError(FlattenError),
+    ScheduleError(ScheduleError),
 }
 
 fn get_diagnostic(
@@ -38,7 +42,7 @@ fn get_diagnostic(
                 .with_notes(vec![format!("{}", file_error.error,)]),
             ParserError::Parse(file_id, parser_error) => match parser_error {
                 ParseErrorType::Syntax(syntaxe_error) => Diagnostic::error()
-                    .with_message("Syntaxe Error")
+                    .with_message("Syntax Error")
                     .with_code("E0001")
                     .with_labels(vec![Label::primary(
                         *file_id,
@@ -147,24 +151,11 @@ fn get_diagnostic(
                     Label::primary(loc2.0, loc2.1..loc2.2),
                 ])
                 .with_message(format!("Duplicate variable {}", name)),
-            TypingError::UnknownModule(name, loc) => Diagnostic::error()
-                .with_message("Error : unknown module")
-                .with_code("E0014")
-                .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
-                .with_message(format!("Unknown module {}", name)),
             TypingError::UnknownNode(name, loc) => Diagnostic::error()
                 .with_message("Error : unknown node")
                 .with_code("E0015")
                 .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
                 .with_message(format!("Unknown node {}", name)),
-            TypingError::WrongNumber(typ, loc, expected, got) => Diagnostic::error()
-                .with_message(format!("Error : wrong number of {}", typ))
-                .with_code("E0016")
-                .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
-                .with_message(format!(
-                    "Wrong number of {}:expected {}, got {}",
-                    typ, expected, got
-                )),
             TypingError::ExpectedSizeOne(loc, n) => Diagnostic::error()
                 .with_message("Error : expected us of length 1")
                 .with_code("E0017")
@@ -186,15 +177,81 @@ fn get_diagnostic(
                 .with_code("E0021")
                 .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
                 .with_message(format!("Local var {} in strong transition", name)),
+            TypingError::ConflictingNodeShared(loc1, name, loc2) => Diagnostic::error()
+                .with_message("Error : Conflicting node name and shared variable name")
+                .with_code("E0025")
+                .with_labels(vec![
+                    Label::primary(loc1.0, loc1.1..loc1.2),
+                    Label::primary(loc2.0, loc2.1..loc2.2),
+                ])
+                .with_message(format!(
+                    "A node and a shared variable cannot have the same name {}",
+                    name
+                )),
         },
-        ErrorType::ColAutomata(CollapseAutomataError::CyclicModuleCall(s)) => Diagnostic::error()
-            .with_message("Error : cyclic module calls")
-            .with_code("E0019")
-            .with_message(format!("Module {} called itself", s)),
-        ErrorType::ColAutomata(CollapseAutomataError::NoMainModule) => Diagnostic::error()
-            .with_message("Error : no main module")
-            .with_code("E0020")
-            .with_message(format!("must have a module called \"main\"")),
+        ErrorType::ColAutomata(err) => match err {
+            CollapseAutomataError::CyclicModuleCall(s) => Diagnostic::error()
+                .with_message("Error : cyclic module calls")
+                .with_code("E0019")
+                .with_message(format!("Module {} called itself", s)),
+            CollapseAutomataError::NoMainModule => Diagnostic::error()
+                .with_message("Error : no main module")
+                .with_code("E0020")
+                .with_message(format!("must have a module called \"main\"")),
+            CollapseAutomataError::UnknownModule(loc, name) => Diagnostic::error()
+                .with_message("Error : unknown module")
+                .with_code("E0014")
+                .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
+                .with_message(format!("Unknown module {}", name)),
+            CollapseAutomataError::UnknownVar(loc, name) => Diagnostic::error()
+                .with_message("Error : unknown shared variable")
+                .with_code("E0012")
+                .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
+                .with_message(format!("Unknown shared variable {}", name)),
+            CollapseAutomataError::WrongNumber(typ, loc, expected, got) => Diagnostic::error()
+                .with_message(format!("Error : wrong number of {}", typ))
+                .with_code("E0016")
+                .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
+                .with_message(format!(
+                    "Wrong number of {}:expected {}, got {}",
+                    typ, expected, got
+                )),
+        },
+        ErrorType::FlattenError(flatten_error) => {
+            let (pos, message, note) = match flatten_error {
+                FlattenError::MemoryInReg(pos) => (
+                    pos,
+                    "Error: Access to memory in register",
+                    "Can't access rom or ram memory in a register",
+                ),
+                FlattenError::ConcatInReg(pos) => (
+                    pos,
+                    "Error: Concatenation in register",
+                    "Cannot statically determine the length of these expressions",
+                ),
+                FlattenError::SliceInReg(pos) => (
+                    pos,
+                    "Error: Slice in register",
+                    "Cannot statically determine the length of this expression<",
+                ),
+            };
+            Diagnostic::error()
+                .with_message(message)
+                .with_code("E0022")
+                .with_labels(vec![Label::primary(pos.0, pos.1..pos.2)])
+                .with_message(note)
+        }
+        ErrorType::ScheduleError(error) => match error {
+            ScheduleError::CycleError => Diagnostic::error()
+                .with_message("Error : cyclic immediate shared variable assignment")
+                .with_notes(vec![
+                    "Could not derive a sound node execution order".to_string()
+                ])
+                .with_code("E0023"),
+            ScheduleError::Other(s) => Diagnostic::error()
+                .with_message(format!("Error : {}", s))
+                .with_code("E0024"),
+        },
     }
 }
 
@@ -256,6 +313,26 @@ impl From<(CollapseAutomataError, Rc<SimpleFiles<String, String>>)> for Tinyjazz
         let (typ_error, files) = err;
         TinyjazzError {
             error: ErrorType::ColAutomata(typ_error),
+            files,
+        }
+    }
+}
+
+impl From<(FlattenError, Rc<SimpleFiles<String, String>>)> for TinyjazzError {
+    fn from(err: (FlattenError, Rc<SimpleFiles<String, String>>)) -> Self {
+        let (typ_error, files) = err;
+        TinyjazzError {
+            error: ErrorType::FlattenError(typ_error),
+            files,
+        }
+    }
+}
+
+impl From<(ScheduleError, Rc<SimpleFiles<String, String>>)> for TinyjazzError {
+    fn from(err: (ScheduleError, Rc<SimpleFiles<String, String>>)) -> Self {
+        let (error, files) = err;
+        TinyjazzError {
+            error: ErrorType::ScheduleError(error),
             files,
         }
     }

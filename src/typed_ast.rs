@@ -24,10 +24,8 @@ impl<T> DerefMut for Sized<T> {
     }
 }
 //the main program
-pub type Program = HashMap<String, Module>;
 #[derive(Debug, Clone)]
-pub struct Module {
-    pub name: String,
+pub struct Program {
     pub inputs: Vec<Arg>,
     pub outputs: Vec<Arg>,
     pub shared: HashMap<SharedVar, Value>,
@@ -50,18 +48,10 @@ pub enum Var {
 pub type Value = Vec<bool>;
 
 #[derive(Debug, Clone)]
-pub struct ExtModule {
-    pub inputs: Vec<SharedVar>,
-    pub outputs: Vec<Var>,
-    pub name: Name,
-}
-
-#[derive(Debug, Clone)]
 pub struct Node {
     pub name: String,
     pub statements: HashMap<Var, Expr>,
     pub transitions: Vec<(Var, Name, bool)>,
-    pub extern_modules: Vec<ExtModule>,
     pub weak: bool,
 }
 

@@ -1,5 +1,5 @@
 // auto-generated: "lalrpop 0.19.1"
-// sha256: fd0926bebd7f6c271b12e4128eeab92d2145d34df29968866531e050f76421
+// sha256: 19348439fce29099d516769bc4f07d868582554ae5f95bde90bb188cc36d37
 use crate::ast::*;
 use lalrpop_util::ParseError;
 use std::path::PathBuf;
@@ -8909,17 +8909,23 @@ fn __action7<'input>(
     (_, _, _): (usize, &'input str, usize),
     (_, _, _): (usize, &'input str, usize),
     (_, out, _): (usize, Vec<Arg>, usize),
-    (_, init, _): (usize, Vec<Loc<String>>, usize),
+    (_, mut init, _): (usize, Vec<Loc<String>>, usize),
     (_, s, _): (usize, ::std::vec::Vec<Vec<VarAssign>>, usize),
     (_, mut nodes, _): (usize, ::std::vec::Vec<Node>, usize),
 ) -> Module {
     {
+        if init.is_empty() && !nodes.is_empty() {
+            init.push(nodes[0].name.clone())
+        }
         Module {
             name: name.strip_suffix("(").unwrap().to_string(),
             inputs: ins,
             outputs: out,
             shared: s.into_iter().flatten().collect(),
-            nodes: nodes.drain(..).collect(),
+            nodes: nodes
+                .drain(..)
+                .map(|node| (node.name.value.clone(), node))
+                .collect::<HashMap<String, Node>>(),
             init_nodes: init,
         }
     }

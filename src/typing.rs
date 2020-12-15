@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
+use crate::ast as untyp;
 use crate::typed_ast as typ;
-use crate::{ast as untyp, expand_fn::WrongNumberType};
 use std::convert::TryFrom;
 use untyp::Pos;
+
 /*
 This file aims to type the program.
 This is mostly veryfying all operations are between expressions of the right size, and attributing a bus size
@@ -15,19 +16,17 @@ Scoping is also done in this file. It just means shared variables are particular
 
 The compiler / interpreter is unable to fail after this point, and so every possible error must be detected and reported now.
 */
-
 #[derive(Debug)]
 pub enum TypingError {
     NegativeSizeBus(Pos, i32),
     MismatchedBusSize(Token, Token), //expected, got
     UnknownVar(String, Pos),
     DuplicateVar(String, Pos, Pos),
-    UnknownModule(String, Pos),
     UnknownNode(String, Pos),
-    WrongNumber(WrongNumberType, Pos, usize, usize),
     ExpectedSizeOne(Pos, usize),
     IndexOutOfRange(Pos, i32, usize),
     LocalVarInUnless(Pos, String),
+    ConflictingNodeShared(Pos, String, Pos),
 }
 #[derive(Debug)]
 pub struct Token {
@@ -40,48 +39,10 @@ pub fn type_prog(
     mut prog: untyp::Program,
     mut type_constraints: HashMap<String, (i32, Pos)>,
 ) -> Result<typ::Program> {
-    let mut mod_types_map = HashMap::new();
-    //make the pre_typing and allocates it in a vec (I did not find a way to do it without a new allocation)
-    let mut mod_in_out_map = prog
-        .modules
-        .drain()
-        .map(|(n, mut m)| {
-            let (mod_type, mod_pre_typing) = type_mod_inputs_and_outputs(&mut m)?;
-            mod_types_map.insert(n.clone(), mod_type);
-            Ok((mod_pre_typing, m))
-        })
-        .collect::<Result<Vec<(ModulePreTyping, untyp::Module)>>>()?;
-    //Now type it
-    mod_in_out_map
-        .drain(..)
-        .map(|(pre_typing, m)| {
-            Ok((
-                m.name.clone(),
-                type_mod(m, pre_typing, &mod_types_map, &mut type_constraints)?,
-            ))
-        })
-        .collect()
-}
-
-/*
-To type the external module calls, all module need to be typed.
-So we first type the inputs and outputs of all module (and everything which comes first),
-and then we can type the rest of the module, including the external calls
-*/
-
-//this type is too long to write.
-type ModulePreTyping = (
-    HashMap<String, (usize, Pos)>,
-    HashMap<String, Vec<bool>>,
-    Vec<typ::Sized<String>>,
-    Vec<typ::Sized<String>>,
-);
-fn type_mod_inputs_and_outputs(
-    module: &mut untyp::Module,
-) -> Result<((Vec<(usize, Pos)>, Vec<(usize, Pos)>), ModulePreTyping)> {
     let mut shared_types: HashMap<String, (usize, Pos)> = HashMap::new();
     //build the map from shared variables, and type them as well.
-    let shared_map = module
+    let main_module = prog.modules.get_mut("main").unwrap();
+    let shared_map = main_module
         .shared
         .drain(..)
         .map(|untyp::VarAssign { var, expr }| {
@@ -114,10 +75,22 @@ fn type_mod_inputs_and_outputs(
             }
         })
         .collect::<Result<HashMap<String, Vec<bool>>>>()?;
+    //Nodes name are shared variable which indicated the state of the node (running or not)
+    for (name, node) in main_module.nodes.iter() {
+        if shared_map.contains_key(name) {
+            let (_, loc) = shared_types.get(name).unwrap();
+            return Err(TypingError::ConflictingNodeShared(
+                node.name.loc,
+                node.name.value.clone(),
+                *loc,
+            ));
+        }
+        shared_types.insert(name.clone(), (1, node.name.loc));
+    }
     //inputs are added as shared variables.
     //the types are also added in a vector for use in external module typing.
     let mut in_types = Vec::new();
-    let inputs = module
+    let inputs = main_module
         .inputs
         .drain(..)
         .map(|arg| {
@@ -142,7 +115,7 @@ fn type_mod_inputs_and_outputs(
     //outputs must be shared variables or inputs.
     //the types are also added in a vector for use in external module typing.
     let mut out_types = Vec::new();
-    let outputs = module
+    let outputs = main_module
         .outputs
         .drain(..)
         .map(|arg| {
@@ -177,171 +150,50 @@ fn type_mod_inputs_and_outputs(
             }
         })
         .collect::<Result<Vec<typ::Sized<String>>>>()?;
-    //for module
-    Ok((
-        (in_types, out_types),
-        (shared_types, shared_map, outputs, inputs),
-    ))
-}
-
-//type a module.
-fn type_mod(
-    mut module: untyp::Module,
-    pre_typing: ModulePreTyping,
-    module_types: &HashMap<String, (Vec<(usize, Pos)>, Vec<(usize, Pos)>)>,
-    type_constraints: &mut HashMap<String, (i32, Pos)>,
-) -> Result<typ::Module> {
-    let (shared_types, shared, outputs, inputs) = pre_typing;
-    let nodes_map = module
+    let nodes_map = main_module
         .nodes
         .iter()
-        .map(|node| (node.name.to_string(), node.name.loc))
+        .map(|(_, node)| (node.name.to_string(), node.name.loc))
         .collect::<HashMap<String, Pos>>();
     //If init nodes were specified, use them. Else, use the first node.
-    let init_nodes = if module.init_nodes.len() > 0 {
-        module
-            .init_nodes
-            .drain(..)
-            .map(|s| {
-                if nodes_map.contains_key(&s.value) {
-                    Ok(s.value)
-                } else {
-                    Err(TypingError::UnknownNode(s.value, s.loc))
-                }
-            })
-            .collect::<Result<Vec<String>>>()?
-    } else {
-        if let Some(n) = module.nodes.get(0) {
-            vec![n.name.value.clone()]
-        } else {
-            Vec::new()
-        }
-    };
-    let nodes = module
-        .nodes
+    let init_nodes = main_module
+        .init_nodes
         .drain(..)
-        .map(|node| {
+        .map(|s| {
+            if nodes_map.contains_key(&s.value) {
+                Ok(s.value)
+            } else {
+                Err(TypingError::UnknownNode(s.value, s.loc))
+            }
+        })
+        .collect::<Result<Vec<String>>>()?;
+    let nodes = main_module
+        .nodes
+        .drain()
+        .map(|(_, node)| {
             Ok((
                 node.name.value.clone(),
-                type_node(
-                    node,
-                    &nodes_map,
-                    &shared_types,
-                    type_constraints,
-                    module_types,
-                )?,
+                type_node(node, &nodes_map, &shared_types, &mut type_constraints)?,
             ))
         })
         .collect::<Result<HashMap<typ::Name, typ::Node>>>()?;
-    Ok(typ::Module {
-        name: module.name,
+    Ok(typ::Program {
         inputs,
         outputs,
         nodes,
-        shared,
+        shared: shared_map,
         init_nodes,
     })
 }
 
-//type a node. It has to type external module calls, plus all the statements and transitions
+//type a node. It has to type all the statements and transitions
 fn type_node(
     mut node: untyp::Node,
     nodes_map: &HashMap<String, Pos>,
     shared_types: &HashMap<String, (usize, Pos)>,
     type_constraints: &mut HashMap<String, (i32, Pos)>,
-    module_types: &HashMap<String, (Vec<(usize, Pos)>, Vec<(usize, Pos)>)>,
 ) -> Result<typ::Node> {
     let mut var_types: HashMap<String, (usize, Pos)> = HashMap::new();
-    let extern_modules = node
-        .extern_modules
-        .drain(..)
-        .map(|mut ext_module| {
-            let (in_types, out_types) =
-                module_types
-                    .get(&ext_module.name.value)
-                    .ok_or(TypingError::UnknownModule(
-                        ext_module.name.value.clone(),
-                        ext_module.name.loc,
-                    ))?;
-
-            //check that the right number of argument and return vars are supplied
-            if in_types.len() != ext_module.inputs.len() {
-                return Err(TypingError::WrongNumber(
-                    WrongNumberType::Args,
-                    ext_module.inputs.loc,
-                    in_types.len(),
-                    ext_module.inputs.len(),
-                ));
-            }
-            if out_types.len() != ext_module.outputs.len() {
-                return Err(TypingError::WrongNumber(
-                    WrongNumberType::ReturnVars,
-                    ext_module.outputs.loc,
-                    out_types.len(),
-                    ext_module.outputs.len(),
-                ));
-            }
-            let inputs = ext_module
-                .inputs
-                .drain(..)
-                .zip(in_types.iter())
-                .map(|(arg, in_type)| {
-                    //An input must be a shared variable. It must be the same type as the module input.
-                    let internal_in_type = shared_types
-                        .get(&arg.value)
-                        .ok_or(TypingError::UnknownVar(arg.value.clone(), arg.loc))?;
-                    if in_type.0 != internal_in_type.0 {
-                        let token1 = Token {
-                            loc: internal_in_type.1,
-                            name: Some(format_var(arg.value.clone())),
-                            length: internal_in_type.0,
-                        };
-                        let token2 = Token {
-                            loc: in_type.1,
-                            name: Some(format_var(arg.value.clone())),
-                            length: in_type.0,
-                        };
-                        Err(TypingError::MismatchedBusSize(token1, token2))
-                    } else {
-                        Ok(arg.value)
-                    }
-                })
-                .collect::<Result<Vec<String>>>()?;
-            let outputs = ext_module
-                .outputs
-                .drain(..)
-                .zip(out_types.iter())
-                .map(|(arg, out_type)| {
-                    //an output can be a shared or local variable. If it is, it must be the same type as the module output.
-                    if let Some(internal_out_type) = shared_types.get(&arg.value) {
-                        if out_type.0 != internal_out_type.0 {
-                            let token1 = Token {
-                                loc: internal_out_type.1,
-                                name: Some(format_var(arg.value.clone())),
-                                length: internal_out_type.0,
-                            };
-                            let token2 = Token {
-                                loc: out_type.1,
-                                name: Some(format_var(arg.value.clone())),
-                                length: out_type.0,
-                            };
-                            Err(TypingError::MismatchedBusSize(token1, token2))
-                        } else {
-                            Ok(typ::Var::Shared(arg.value))
-                        }
-                    } else {
-                        var_types.insert(arg.value.clone(), *out_type);
-                        Ok(typ::Var::Local(arg.value))
-                    }
-                })
-                .collect::<Result<Vec<typ::Var>>>()?;
-            Ok(typ::ExtModule {
-                inputs,
-                outputs,
-                name: ext_module.name.to_string(),
-            })
-        })
-        .collect::<Result<Vec<typ::ExtModule>>>()?;
     let statements = node
         .statements
         .drain(..)
@@ -390,7 +242,6 @@ fn type_node(
         transitions,
         name: node.name.value,
         weak: node.weak,
-        extern_modules,
         statements,
     })
 }
@@ -767,7 +618,7 @@ fn format_var(var: String) -> String {
         let var_name = vec[3];
         format!(
             "\"{}\" in call of function \"{}\" with arguments{}",
-            var_name,
+            var_name.split('#').next().unwrap(),
             fn_name,
             format_args(args)
         )

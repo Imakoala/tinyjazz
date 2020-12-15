@@ -9,5 +9,5 @@ Usage:
 Options:
   -h --help     Show this screen.
   --version     Show version.
-  -i <file>     A Rhai scripting file giving the inputs of the main module
+  -i <file>     Specify a Rhai scripting file giving the inputs of the main module.
   -s <steps>    Simulate the file using a high-level interpreter, for a number of steps. 

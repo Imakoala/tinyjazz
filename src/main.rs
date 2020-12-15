@@ -20,7 +20,7 @@ use errors::TinyjazzError;
 use expand_fn::expand_functions;
 use flatten::flatten;
 use interpreter::interprete;
-use optimization::make_graph;
+use optimization::{make_graph, ProgramGraph};
 use parser_wrapper::parse;
 use serde::Deserialize;
 use std::{collections::HashMap, path::PathBuf, process::exit};
@@ -61,9 +61,9 @@ struct Args {
 // }
 
 // fn print_prog(prog: &ast::Program) {
-//     for (i, modules) in &prog.modules {
+//     for (_, modules) in &prog.modules {
 //         println!("{} : \n\n", modules.name);
-//         for node in &modules.nodes {
+//         for (_, node) in &modules.nodes {
 //             println!("  {} : \n\n", node.name.value);
 //             for stat in &node.statements {
 //                 print_stat(stat)
@@ -75,28 +75,26 @@ struct Args {
 //         }
 //     }
 // }
-
-fn process_file(path: PathBuf) -> Result<HashMap<String, typed_ast::Module>, TinyjazzError> {
+//println!("{:#?}", expr);
+fn process_file(path: PathBuf) -> Result<ProgramGraph, TinyjazzError> {
     let (mut prog, files) = parse(path)?;
     compute_consts(&mut prog).map_err(|e| (e, files.clone()))?;
-    flatten(&mut prog);
+    collapse_automata(&mut prog).map_err(|e| (e, files.clone()))?;
+    //print_prog(&prog);
+    flatten(&mut prog).map_err(|e| (e, files.clone()))?;
     let mut type_map = HashMap::new();
     expand_functions(&mut prog, &mut type_map).map_err(|e| (e, files.clone()))?;
     prog.functions = HashMap::new(); //the functions are no longer useful
                                      //at this point, the ast is ready to be typed.
-                                     // print_prog(&prog);
-    let mut prog = type_prog(prog, type_map).map_err(|e| (e, files.clone()))?;
-    collapse_automata(&mut prog).map_err(|e| (e, files.clone()))?;
-    Ok(prog)
+    let prog = type_prog(prog, type_map).map_err(|e| (e, files.clone()))?;
+    //println!("{:#?}", prog);
+    let graph = make_graph(&prog).map_err(|e| (e, files.clone()))?;
+    println!("{:#?}", graph);
+    Ok(graph)
 }
 
-fn run_interpreter(
-    prog: &HashMap<String, typed_ast::Module>,
-    steps: usize,
-    input_script_path: Option<String>,
-) {
-    let graph = make_graph(prog);
-    for outputs in interprete(&graph, input_script_path).take(steps) {
+fn run_interpreter(graph: &ProgramGraph, steps: usize, input_script_path: Option<String>) {
+    for outputs in interprete(graph, input_script_path).take(steps) {
         println!("{:?}", outputs);
     }
 }

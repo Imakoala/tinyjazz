@@ -1,22 +1,18 @@
-module main() = ()
-    shared a = ()
+module main() = (o)
+    shared (i, o) = 0
     n: 
-        use b = other_mod(a)
+        use o = m2(i)
     until
-        |b -> p
-    p:
-        use c = third_mod(a)
-    unless
-        |c -> n
 
-module other_mod(a) = (b)
-    shared b = ()
-    n:
-        b = 1
-    unless
-
-module third_mod(c) = (a)
-    shared a = ()
-    n:
-        a = reg(c)
-    unless
+module m2(a) = (o)
+    shared o = 0
+    n1:
+        o = a
+    until 
+        |a -> n1
+        |not a -> n2
+    n2:
+        o = 1
+    until 
+        |a -> n1
+        |not a -> n2

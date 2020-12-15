@@ -23,18 +23,31 @@ I choose to use strings for name as netlists allow for it and it makes the gener
 //the global counter
 global_counter!(FLATTEN_EXPR_COUNTER, u32, 0);
 
+pub enum FlattenError {
+    ConcatInReg(Pos),
+    SliceInReg(Pos),
+    MemoryInReg(Pos),
+}
+
+type Result<T> = std::result::Result<T, FlattenError>;
+
 //wrapper function
-pub fn flatten(prog: &mut Program) {
+pub fn flatten(prog: &mut Program) -> Result<()> {
     for (_, f) in prog.functions.iter_mut() {
         f.statements = f
             .statements
             .drain(..)
-            .map(|stat| flatten_statement(stat))
-            .flatten()
-            .collect();
+            .flat_map(|stat| {
+                let (v, r) = match flatten_statement(stat) {
+                    Ok(v) => (Some(v.into_iter().map(|s| Ok(s))), None),
+                    Err(e) => (None, Some(Err(e))),
+                };
+                v.into_iter().flatten().chain(r)
+            })
+            .collect::<Result<Vec<Statement>>>()?;
     }
     for (_, m) in &mut prog.modules {
-        for node in &mut m.nodes {
+        for (_, node) in &mut m.nodes {
             let Node {
                 name,
                 weak: _,
@@ -44,29 +57,35 @@ pub fn flatten(prog: &mut Program) {
             } = node;
             *statements = statements
                 .drain(..)
-                .map(|stat| flatten_statement(stat))
-                .flatten()
-                .collect();
+                .flat_map(|stat| {
+                    let (v, r) = match flatten_statement(stat) {
+                        Ok(v) => (Some(v.into_iter().map(|s| Ok(s))), None),
+                        Err(e) => (None, Some(Err(e))),
+                    };
+                    v.into_iter().flatten().chain(r)
+                })
+                .collect::<Result<Vec<Statement>>>()?;
             //transition must be handled as well.
             //They are flattened into statements in the end of the node body
             *transitions = transitions
                 .drain(..)
                 .map(|(expr, goto, reset)| {
                     let pos = expr.loc;
-                    let (mut v, expr) = flatten_expr(name, expr);
+                    let (mut v, expr) = flatten_expr(name, expr)?;
                     statements.append(&mut v);
                     let name = get_name(name);
                     statements.push(Statement::Assign(vec![VarAssign {
                         var: loc(pos, name.clone()),
                         expr: loc(pos, expr),
                     }]));
-                    (loc(pos, Expr::Var(loc(pos, name))), goto, reset)
+                    Ok((loc(pos, Expr::Var(loc(pos, name))), goto, reset))
                 })
-                .collect();
+                .collect::<Result<Vec<(Loc<Expr>, Loc<String>, bool)>>>()?;
         }
     }
+    Ok(())
 }
-fn flatten_statement(statement: Statement) -> Vec<Statement> {
+fn flatten_statement(statement: Statement) -> Result<Vec<Statement>> {
     match statement {
         Statement::Assign(var_assign) => flatten_assigns(var_assign),
         Statement::If(IfStruct {
@@ -74,36 +93,42 @@ fn flatten_statement(statement: Statement) -> Vec<Statement> {
             mut if_block,
             mut else_block,
         }) => {
-            let v1 = if_block
-                .drain(..)
-                .map(|stat| flatten_statement(stat))
-                .flatten();
-            let v2 = else_block
-                .drain(..)
-                .map(|stat| flatten_statement(stat))
-                .flatten();
-            vec![Statement::If(IfStruct {
+            let v1 = if_block.drain(..).flat_map(|stat| {
+                let (v, r) = match flatten_statement(stat) {
+                    Ok(v) => (Some(v.into_iter().map(|s| Ok(s))), None),
+                    Err(e) => (None, Some(Err(e))),
+                };
+                v.into_iter().flatten().chain(r)
+            });
+            let v2 = else_block.drain(..).flat_map(|stat| {
+                let (v, r) = match flatten_statement(stat) {
+                    Ok(v) => (Some(v.into_iter().map(|s| Ok(s))), None),
+                    Err(e) => (None, Some(Err(e))),
+                };
+                v.into_iter().flatten().chain(r)
+            });
+            Ok(vec![Statement::If(IfStruct {
                 condition: condition,
-                if_block: v1.collect(),
-                else_block: v2.collect(),
-            })]
+                if_block: v1.collect::<Result<Vec<Statement>>>()?,
+                else_block: v2.collect::<Result<Vec<Statement>>>()?,
+            })])
         }
-        Statement::FnAssign(fn_assign) => vec![Statement::FnAssign(fn_assign)],
+        Statement::FnAssign(fn_assign) => Ok(vec![Statement::FnAssign(fn_assign)]),
     }
 }
-pub fn flatten_assigns(mut statement: Vec<VarAssign>) -> Vec<Statement> {
+pub fn flatten_assigns(mut statement: Vec<VarAssign>) -> Result<Vec<Statement>> {
     let mut res = Vec::new();
     for assign in statement.drain(..) {
         let name = assign.var.value.clone();
         let expr_pos = assign.expr.loc;
-        let (mut statements, expr_out) = flatten_expr(&name, assign.expr);
+        let (mut statements, expr_out) = flatten_expr(&name, assign.expr)?;
         res.append(&mut statements);
         res.push(Statement::Assign(vec![VarAssign {
             expr: loc(expr_pos, expr_out),
             var: assign.var,
         }]))
     }
-    res
+    Ok(res)
 }
 fn loc<T>(loc: Pos, value: T) -> Loc<T> {
     Loc { loc, value }
@@ -113,17 +138,23 @@ fn loc<T>(loc: Pos, value: T) -> Loc<T> {
 fn get_name(name: &String) -> String {
     let counter = FLATTEN_EXPR_COUNTER.get_cloned();
     FLATTEN_EXPR_COUNTER.inc();
-    format!("flatten${}$${}", name, counter)
+    format!("{}#flatten#{}", name, counter)
 }
-
-//this is very, very verbose. Find a way to simplify it ?
-fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
+fn flatten_expr(name: &String, expr: Loc<Expr>) -> Result<(Vec<Statement>, Expr)> {
     let mut res = Vec::new();
     let glob_pos = expr.loc;
     let e_ret = match expr.value {
-        Expr::Const(_) | Expr::Var(_) | Expr::FnCall(_) => expr.value,
+        Expr::Const(_) | Expr::Var(_) => expr.value,
+        Expr::FnCall(fn_call) => {
+            let name = loc(glob_pos, get_name(name));
+            res.push(Statement::FnAssign(FnAssign {
+                vars: vec![name.clone()],
+                f: fn_call,
+            }));
+            Expr::Var(name)
+        }
         Expr::Not(e_in) => {
-            let (mut v, e_out) = flatten_expr(name, loc(expr.loc, *e_in));
+            let (mut v, e_out) = flatten_expr(name, loc(expr.loc, *e_in))?;
             let name = loc(expr.loc, get_name(name));
             res.append(&mut v);
             res.push(Statement::Assign(vec![VarAssign {
@@ -134,7 +165,7 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
         }
         Expr::Slice(e_in, c1, c2) => {
             let pos = e_in.loc;
-            let (mut v, e_out) = flatten_expr(name, *e_in);
+            let (mut v, e_out) = flatten_expr(name, *e_in)?;
             let name = loc(expr.loc, get_name(name));
             res.append(&mut v);
             res.push(Statement::Assign(vec![VarAssign {
@@ -146,8 +177,8 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
         Expr::BiOp(op, e1, e2) => {
             let pos1 = e1.loc;
             let pos2 = e2.loc;
-            let (mut v1, e_out1) = flatten_expr(name, *e1);
-            let (mut v2, e_out2) = flatten_expr(name, *e2);
+            let (mut v1, e_out1) = flatten_expr(name, *e1)?;
+            let (mut v2, e_out2) = flatten_expr(name, *e2)?;
             let name = loc(pos1, get_name(name));
             res.append(&mut v1);
             res.append(&mut v2);
@@ -164,9 +195,9 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
             let pos1 = e1.loc;
             let pos2 = e2.loc;
             let pos3 = e3.loc;
-            let (mut v1, e_out1) = flatten_expr(name, *e1);
-            let (mut v2, e_out2) = flatten_expr(name, *e2);
-            let (mut v3, e_out3) = flatten_expr(name, *e3);
+            let (mut v1, e_out1) = flatten_expr(name, *e1)?;
+            let (mut v2, e_out2) = flatten_expr(name, *e2)?;
+            let (mut v3, e_out3) = flatten_expr(name, *e3)?;
             let name = loc(glob_pos, get_name(name));
             res.append(&mut v1);
             res.append(&mut v2);
@@ -184,16 +215,20 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
             }]));
             Expr::Var(name)
         }
-        Expr::Reg(c, e_in) => {
-            let loc2 = e_in.loc;
-            let (mut v, e_out) = flatten_expr(name, *e_in);
-            let name = loc(glob_pos, get_name(name));
-            res.append(&mut v);
-            res.push(Statement::Assign(vec![VarAssign {
-                var: name.clone(),
-                expr: loc(glob_pos, Expr::Reg(c, Box::new(loc(loc2, e_out)))),
-            }]));
-            Expr::Var(name)
+        Expr::Reg(c, mut e_in) => {
+            if let Expr::Var(_) = e_in.value {
+                let name = loc(e_in.loc, get_name(name));
+                res.push(Statement::Assign(vec![VarAssign {
+                    var: name.clone(),
+                    expr: loc(e_in.loc, Expr::Reg(c, e_in)),
+                }]));
+                Expr::Var(name)
+            } else {
+                regify_expr(&mut e_in.value, e_in.loc, &c)?;
+                let (mut v, e_out) = flatten_expr(name, *e_in)?;
+                res.append(&mut v);
+                e_out
+            }
         }
         Expr::Ram(RamStruct {
             read_addr: e1,
@@ -205,10 +240,10 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
             let pos2 = e2.loc;
             let pos3 = e3.loc;
             let pos4 = e4.loc;
-            let (mut v1, e_out1) = flatten_expr(name, *e1);
-            let (mut v2, e_out2) = flatten_expr(name, *e2);
-            let (mut v3, e_out3) = flatten_expr(name, *e3);
-            let (mut v4, e_out4) = flatten_expr(name, *e4);
+            let (mut v1, e_out1) = flatten_expr(name, *e1)?;
+            let (mut v2, e_out2) = flatten_expr(name, *e2)?;
+            let (mut v3, e_out3) = flatten_expr(name, *e3)?;
+            let (mut v4, e_out4) = flatten_expr(name, *e4)?;
             let name = loc(pos1, get_name(name));
             res.append(&mut v1);
             res.append(&mut v2);
@@ -233,7 +268,7 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
             read_addr,
         }) => {
             let pos = read_addr.loc;
-            let (mut v, e_out) = flatten_expr(name, *read_addr);
+            let (mut v, e_out) = flatten_expr(name, *read_addr)?;
             let name = loc(pos, get_name(name));
             res.append(&mut v);
             res.push(Statement::Assign(vec![VarAssign {
@@ -249,5 +284,39 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> (Vec<Statement>, Expr) {
             Expr::Var(name)
         }
     };
-    (res, e_ret)
+    Ok((res, e_ret))
+}
+
+fn regify_expr(expr: &mut Expr, pos: Pos, c: &Loc<Const>) -> Result<()> {
+    match expr {
+        Expr::Var(_) => *expr = Expr::Reg(c.clone(), Box::new(loc(pos, expr.clone()))),
+        Expr::Const(_) => {}
+        Expr::Not(e) => regify_expr(e, pos, c)?,
+        Expr::Slice(_, _, _) => return Err(FlattenError::SliceInReg(pos)),
+        Expr::BiOp(op, e1, e2) => {
+            if let BiOp::Concat = op {
+                return Err(FlattenError::ConcatInReg(pos));
+            }
+            regify_expr(e1, pos, c)?;
+            regify_expr(e2, pos, c)?
+        }
+        Expr::Mux(e1, e2, e3) => {
+            regify_expr(e1, pos, c)?;
+            regify_expr(e2, pos, c)?;
+            regify_expr(e3, pos, c)?
+        }
+        Expr::Reg(_, _) => {}
+        Expr::Ram(_) => return Err(FlattenError::MemoryInReg(pos)),
+        Expr::Rom(_) => return Err(FlattenError::MemoryInReg(pos)),
+        Expr::FnCall(FnCall {
+            name: _,
+            static_args: _,
+            args,
+        }) => {
+            for e in &mut args.value {
+                regify_expr(e, pos, c)?
+            }
+        }
+    };
+    Ok(())
 }

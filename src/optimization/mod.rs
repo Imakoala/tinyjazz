@@ -42,57 +42,66 @@ With this representation, simulation can be done with a threadpool : each node i
 */
 
 mod graphs;
+mod scheduler;
 use std::sync::Arc;
 
 use crate::typed_ast as typ;
 pub use graphs::*;
+pub use scheduler::ScheduleError;
 use typ::*;
 
-pub fn make_graph(prog: &typ::Program) -> graphs::ProgramGraph {
-    let main_module = prog.get("main").unwrap();
-    let node_rename_map = main_module
+pub fn make_graph(prog: &typ::Program) -> Result<graphs::ProgramGraph, ScheduleError> {
+    let node_rename_map = prog
         .nodes
         .iter()
         .enumerate()
         .map(|(i, (name, _))| (name.clone(), i))
         .collect::<HashMap<String, usize>>();
-    let shared_rename_map = main_module
+    let shared_rename_map = prog
         .inputs
         .iter()
         .map(|s| &s.value)
-        .chain(main_module.shared.iter().map(|(s, _)| s))
+        .chain(prog.shared.iter().map(|(s, _)| s))
+        .chain(prog.nodes.iter().map(|(name, _)| name))
         .enumerate()
         .map(|(i, s)| (s.clone(), i))
         .collect::<HashMap<String, usize>>();
-    let shared = main_module
+    let shared = prog
         .inputs
         .iter()
         .map(|s| vec![false; s.size])
-        .chain(main_module.shared.iter().map(|(_s, init)| init.clone()))
+        .chain(prog.shared.iter().map(|(_s, init)| init.clone()))
+        .chain(
+            prog.nodes
+                .iter()
+                .map(|(name, _)| vec![prog.init_nodes.contains(name)]),
+        )
         .collect::<Vec<Vec<bool>>>();
-    let nodes = main_module
+    let nodes = prog
         .nodes
         .iter()
         .map(|(_, node)| make_node(node, &node_rename_map, &shared_rename_map))
         .collect();
-    let init_nodes = main_module
+    let init_nodes = prog
         .init_nodes
         .iter()
         .map(|s| *node_rename_map.get(s).unwrap())
         .collect();
-    let outputs = main_module
+    let outputs = prog
         .outputs
         .iter()
         .map(|v| (v.value.clone(), *shared_rename_map.get(&v.value).unwrap()))
         .collect();
-    let inputs = main_module.inputs.iter().map(|var| var.size).collect();
-    graphs::ProgramGraph {
+    let inputs = prog.inputs.iter().map(|var| var.size).collect();
+    let schedule = scheduler::schedule(&nodes, shared.len())?;
+    Ok(graphs::ProgramGraph {
         init_nodes,
         shared,
         nodes,
+        schedule,
         outputs,
         inputs,
-    }
+    })
 }
 
 fn make_node(
@@ -127,7 +136,7 @@ fn make_node(
                 shared_rename_map,
                 &local_rename_map,
                 &mut expr_map,
-                &mut inputs,
+                &mut Some(&mut inputs),
             );
             (*node_id, expr_node, *reset)
         })
@@ -147,33 +156,9 @@ fn make_node(
                         shared_rename_map,
                         &local_rename_map,
                         &mut None,
-                        &mut inputs,
+                        &mut Some(&mut inputs),
                     ),
                 ))
-            } else {
-                None
-            }
-        })
-        .collect();
-    let reg_outputs = node
-        .statements
-        .iter()
-        .filter_map(|(_, expr)| {
-            if let ExprType::Reg(s) = &expr.value {
-                if let ExprTermType::Var(v) = &s.value {
-                    let expr_node = var_to_node(
-                        None,
-                        node,
-                        v,
-                        shared_rename_map,
-                        &local_rename_map,
-                        &mut expr_map,
-                        &mut inputs,
-                    );
-                    Some((expr.size, expr_node))
-                } else {
-                    None
-                }
             } else {
                 None
             }
@@ -182,13 +167,12 @@ fn make_node(
     ProgramNode {
         transition_outputs,
         shared_outputs,
-        reg_outputs,
         inputs,
         weak: node.weak,
         n_vars: local_rename_map.len(),
     }
 }
-
+//inputs = None means that we are inside a register.
 fn expr_to_node(
     var_id: Option<usize>,
     node: &Node,
@@ -196,7 +180,7 @@ fn expr_to_node(
     shared_rename_map: &HashMap<String, usize>,
     local_rename_map: &HashMap<String, usize>,
     expr_map: &mut Option<HashMap<usize, Arc<ExprNode>>>,
-    inputs: &mut Vec<usize>,
+    inputs: &mut Option<&mut Vec<usize>>,
 ) -> Arc<ExprNode> {
     if let Some(id) = var_id {
         if let Some(node) = expr_map.as_mut().map(|map| map.get(&id)).flatten() {
@@ -328,11 +312,23 @@ fn expr_to_node(
             ExprOperation::Mux(n1, n2, n3)
         }
         ExprType::Reg(e) => match &e.value {
-            ExprTermType::Var(Var::Local(s)) => {
-                ExprOperation::Reg(false, *local_rename_map.get(s).unwrap(), e.size)
-            }
-            ExprTermType::Var(Var::Shared(s)) => {
-                ExprOperation::Reg(true, *shared_rename_map.get(s).unwrap(), e.size)
+            ExprTermType::Var(v) => {
+                if inputs.is_none() {
+                    ExprOperation::Reg(e.size, None)
+                } else {
+                    ExprOperation::Reg(
+                        e.size,
+                        Some(var_to_node(
+                            None,
+                            node,
+                            v,
+                            shared_rename_map,
+                            local_rename_map,
+                            expr_map,
+                            &mut None,
+                        )),
+                    )
+                }
             }
             ExprTermType::Const(c) => ExprOperation::Const(c.iter().map(|b| !*b).collect()),
         },
@@ -439,7 +435,7 @@ fn var_to_node(
     shared_rename_map: &HashMap<String, usize>,
     local_rename_map: &HashMap<String, usize>,
     expr_map: &mut Option<HashMap<usize, Arc<ExprNode>>>,
-    inputs: &mut Vec<usize>,
+    inputs: &mut Option<&mut Vec<usize>>,
 ) -> Arc<ExprNode> {
     match var {
         Var::Local(s) => {
@@ -457,7 +453,11 @@ fn var_to_node(
         }
         Var::Shared(s) => {
             let id = *shared_rename_map.get(s).unwrap();
-            inputs.push(id);
+            inputs.as_mut().map(|ins| {
+                if !ins.contains(&id) {
+                    ins.push(id)
+                }
+            });
             Arc::new(ExprNode {
                 op: ExprOperation::Input(id),
                 id: None,

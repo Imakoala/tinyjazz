@@ -2,7 +2,8 @@ use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
 };
-
+//TODO: add instant shared vars
+//TODO: nodes as shared vars
 use scripting::get_inputs_closure;
 
 use crate::{ast::BiOp, optimization::*};
@@ -10,7 +11,8 @@ mod scripting;
 pub struct InterpreterIterator<'a> {
     graph: &'a ProgramGraph,
     shared: Vec<Vec<bool>>,
-    reg_map: Vec<HashMap<usize, Vec<bool>>>,
+    reg_map: Vec<HashMap<Arc<ExprNode>, Vec<bool>>>,
+    next_reg_map: Vec<HashMap<Arc<ExprNode>, Vec<bool>>>,
     to_run: Vec<usize>,
     ram: Arc<Mutex<HashMap<Vec<bool>, Vec<bool>>>>,
     nodes_mem: Vec<Vec<Vec<bool>>>,
@@ -20,15 +22,8 @@ pub struct InterpreterIterator<'a> {
 impl<'a> Iterator for InterpreterIterator<'a> {
     type Item = Vec<(&'a String, Vec<bool>)>;
     fn next(self: &mut Self) -> Option<Vec<(&'a String, Vec<bool>)>> {
-        program_step(
-            self.graph,
-            &mut self.shared,
-            &mut self.reg_map,
-            &mut self.to_run,
-            self.ram.clone(),
-            &mut self.nodes_mem,
-            &mut self.inputs,
-        );
+        program_step(self);
+        std::mem::swap(&mut self.next_reg_map, &mut self.reg_map);
         Some(
             self.graph
                 .outputs
@@ -46,22 +41,8 @@ pub fn interprete<'a>(
     let to_run = graph.init_nodes.clone();
     let shared = graph.shared.clone();
     let inputs = get_inputs_closure(inputs_script_path, graph.inputs.clone());
-    let reg_map: Vec<HashMap<usize, Vec<bool>>> = graph
-        .nodes
-        .iter()
-        .map(|n| {
-            n.reg_outputs
-                .iter()
-                .filter_map(|(size, expr_node)| {
-                    if let Some(id) = expr_node.id {
-                        Some((id, vec![false; *size]))
-                    } else {
-                        None
-                    }
-                })
-                .collect::<HashMap<usize, Vec<bool>>>()
-        })
-        .collect();
+    let reg_map = vec![HashMap::new(); graph.nodes.len()];
+    let next_reg_map = vec![HashMap::new(); graph.nodes.len()];
     let ram = Arc::new(Mutex::new(HashMap::new()));
     let nodes_mem = graph
         .nodes
@@ -72,6 +53,7 @@ pub fn interprete<'a>(
         graph,
         shared,
         reg_map,
+        next_reg_map,
         to_run,
         ram,
         nodes_mem,
@@ -79,15 +61,15 @@ pub fn interprete<'a>(
     }
 }
 
-fn program_step(
-    graph: &ProgramGraph,
-    shared: &mut Vec<Vec<bool>>,
-    reg_map: &mut Vec<HashMap<usize, Vec<bool>>>,
-    to_run: &mut Vec<usize>,
-    ram: Arc<Mutex<HashMap<Vec<bool>, Vec<bool>>>>,
-    nodes_mem: &mut Vec<Vec<Vec<bool>>>,
-    inputs: &mut Box<dyn FnMut() -> Vec<Vec<bool>>>,
-) {
+fn program_step(interpreter_state: &mut InterpreterIterator) {
+    let graph = interpreter_state.graph;
+    let shared = &mut interpreter_state.shared;
+    let reg_map = &mut interpreter_state.reg_map;
+    let next_reg_map = &mut interpreter_state.next_reg_map;
+    let to_run = &mut interpreter_state.to_run;
+    let ram = interpreter_state.ram.clone();
+    let nodes_mem = &mut interpreter_state.nodes_mem;
+    let inputs = &mut interpreter_state.inputs;
     let nodes_to_run = to_run
         .drain(..)
         .map(|i| (i, &graph.nodes[i]))
@@ -96,29 +78,15 @@ fn program_step(
         .iter()
         .map(|(i, node)| node.shared_outputs.iter().map(move |o| (i, o)))
         .flatten();
-    let next_reg = nodes_to_run
-        .iter()
-        .map(|(i, node)| node.reg_outputs.iter().map(move |o| (i, o)))
-        .flatten();
-    for (node_id, (_size, node)) in next_reg {
-        let value = calc_node(
-            node.clone(),
-            shared,
-            &reg_map[*node_id],
-            &mut nodes_mem[*node_id],
-            ram.clone(),
-        );
-        if let Some(id) = node.id {
-            reg_map[*node_id].insert(id, value);
-        }
-    }
     for (node_id, (u, n)) in new_shared {
         let value = calc_node(
             n.clone(),
             shared,
             &reg_map[*node_id],
+            &mut next_reg_map[*node_id],
             &mut nodes_mem[*node_id],
             ram.clone(),
+            None,
         );
         shared[*u] = value
     }
@@ -135,8 +103,10 @@ fn program_step(
                 n.clone(),
                 shared,
                 &reg_map[*node_id],
+                &mut next_reg_map[*node_id],
                 &mut nodes_mem[*node_id],
                 ram.clone(),
+                None,
             );
             if v[0] && !next_map[*u] {
                 if *b {
@@ -161,9 +131,11 @@ fn program_step(
 fn calc_node(
     node: Arc<ExprNode>,
     shared: &Vec<Vec<bool>>,
-    reg_map: &HashMap<usize, Vec<bool>>,
+    reg_map: &HashMap<Arc<ExprNode>, Vec<bool>>,
+    next_reg_map: &mut HashMap<Arc<ExprNode>, Vec<bool>>,
     node_mem: &mut Vec<Vec<bool>>,
     ram: Arc<Mutex<HashMap<Vec<bool>, Vec<bool>>>>,
+    current_reg: Option<&Vec<bool>>,
 ) -> Vec<bool> {
     if let Some(id) = node.id {
         if node_mem[id].len() > 0 {
@@ -175,48 +147,149 @@ fn calc_node(
         ExprOperation::Input(i) => shared[*i].clone(),
         ExprOperation::Const(c) => c.clone(),
         ExprOperation::Not(nd) => {
-            let mut v = calc_node(nd.clone(), shared, reg_map, node_mem, ram);
+            let mut v = calc_node(
+                nd.clone(),
+                shared,
+                reg_map,
+                next_reg_map,
+                node_mem,
+                ram,
+                current_reg,
+            );
             for b in &mut v {
                 *b = !*b;
             }
             v
         }
         ExprOperation::Slice(nd, i1, i2) => {
-            let v = calc_node(nd.clone(), shared, reg_map, node_mem, ram);
+            let v = calc_node(
+                nd.clone(),
+                shared,
+                reg_map,
+                next_reg_map,
+                node_mem,
+                ram,
+                current_reg,
+            );
             v[*i1..*i2].to_vec()
         }
         ExprOperation::BiOp(op, n1, n2) => {
-            let mut v1 = calc_node(n1.clone(), shared, reg_map, node_mem, ram.clone());
-            let v2 = calc_node(n2.clone(), shared, reg_map, node_mem, ram);
+            let mut v1 = calc_node(
+                n1.clone(),
+                shared,
+                reg_map,
+                next_reg_map,
+                node_mem,
+                ram.clone(),
+                current_reg,
+            );
+            let v2 = calc_node(
+                n2.clone(),
+                shared,
+                reg_map,
+                next_reg_map,
+                node_mem,
+                ram,
+                current_reg,
+            );
             apply_op(op.clone(), &mut v1, v2);
             v1
         }
         ExprOperation::Mux(n1, n2, n3) => {
-            let v1 = calc_node(n1.clone(), shared, reg_map, node_mem, ram.clone());
+            let v1 = calc_node(
+                n1.clone(),
+                shared,
+                reg_map,
+                next_reg_map,
+                node_mem,
+                ram.clone(),
+                current_reg,
+            );
             if v1[0] {
-                calc_node(n2.clone(), shared, reg_map, node_mem, ram.clone())
+                calc_node(
+                    n2.clone(),
+                    shared,
+                    reg_map,
+                    next_reg_map,
+                    node_mem,
+                    ram.clone(),
+                    current_reg,
+                )
             } else {
-                calc_node(n3.clone(), shared, reg_map, node_mem, ram)
+                calc_node(
+                    n3.clone(),
+                    shared,
+                    reg_map,
+                    next_reg_map,
+                    node_mem,
+                    ram,
+                    current_reg,
+                )
             }
         }
-        ExprOperation::Reg(share, var_id, size) => {
-            if *share {
-                shared[*var_id].clone()
+        ExprOperation::Reg(size, nopt) => {
+            if let Some(n) = nopt {
+                let v = reg_map.get(n).unwrap_or(&vec![false; *size]).clone();
+                let v_next = calc_node(
+                    n.clone(),
+                    shared,
+                    reg_map,
+                    next_reg_map,
+                    node_mem,
+                    ram.clone(),
+                    Some(&v),
+                );
+                next_reg_map.insert(n.clone(), v_next);
+                v
             } else {
-                reg_map.get(var_id).unwrap_or(&vec![false; *size]).clone()
+                current_reg
+                    .expect("Should not happen: expected a nested reg")
+                    .clone()
             }
         }
         ExprOperation::Ram(n1, n2, n3, n4) => {
-            let v1 = calc_node(n1.clone(), shared, reg_map, node_mem, ram.clone());
-            let v2 = calc_node(n2.clone(), shared, reg_map, node_mem, ram.clone());
-            let v4 = calc_node(n4.clone(), shared, reg_map, node_mem, ram.clone());
+            let v1 = calc_node(
+                n1.clone(),
+                shared,
+                reg_map,
+                next_reg_map,
+                node_mem,
+                ram.clone(),
+                current_reg,
+            );
+            let v2 = calc_node(
+                n2.clone(),
+                shared,
+                reg_map,
+                next_reg_map,
+                node_mem,
+                ram.clone(),
+                current_reg,
+            );
+            let v4 = calc_node(
+                n4.clone(),
+                shared,
+                reg_map,
+                next_reg_map,
+                node_mem,
+                ram.clone(),
+                current_reg,
+            );
             let ret = if let Some(value) = ram.lock().unwrap().get(&v1) {
                 value.clone()
             } else {
                 vec![false; v4.len()]
             };
             if v2[0] {
-                let v3 = calc_node(n3.clone(), shared, reg_map, node_mem, ram.clone());
+                let v3 = calc_node(
+                    n3.clone(),
+                    shared,
+                    reg_map,
+                    next_reg_map,
+                    node_mem,
+                    ram.clone(),
+                    current_reg,
+                );
                 ram.lock().unwrap().insert(v3, v4);
             }
             ret

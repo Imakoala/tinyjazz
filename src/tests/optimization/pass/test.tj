@@ -1,15 +1,15 @@
-const size = 4096
+const size = 2
 
 fn or_n<n>(a[n], b[n]) = o[n]
     if (n <= 1) then
         o = a + b
     else
-        o = or_n<n/2>(a[0..n/2], a[0..n/2]) . or_n<n-n/2>(a[n/2..n], a[n/2..n])
+        o = or_n<n/2>(a[0..n/2], b[0..n/2]) . or_n<n-n/2>(a[n/2..n], b[n/2..n])
     end if
 
 module main(a[size], b[size]) = (o[size])
     shared o = [0; size]
     n:
         c = or_n<size>(a, b)
-        o = or_n<size>(c, reg(c))
+        o = or_n<size>(c, reg<size>(c))
     unless

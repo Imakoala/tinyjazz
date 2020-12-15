@@ -74,16 +74,19 @@ Init : Vec<Loc<String>> = {
 
 Module: Module = {
     "module" <name:r"[a-zA-Z_][a-zA-Z_0-9]*\("> <ins:Comma<Arg>> ")" "=" <out:ParCommaOrSingle<Arg>>
-    <init: Init>
+    <mut init: Init>
     <s:SharedVar*>
     <mut nodes:Node*> 
     => {
+        if init.is_empty() && !nodes.is_empty() {
+            init.push(nodes[0].name.clone())
+        }
         Module {
             name : name.strip_suffix("(").unwrap().to_string(),
             inputs: ins, 
             outputs: out,
             shared: s.into_iter().flatten().collect(),
-            nodes : nodes.drain(..).collect(),
+            nodes : nodes.drain(..).map(|node| (node.name.value.clone(), node)).collect::<HashMap<String, Node>>(),
             init_nodes: init
         }
     }

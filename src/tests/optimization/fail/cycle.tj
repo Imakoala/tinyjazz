@@ -1,0 +1,10 @@
+module main() = o
+    init n1
+    shared (a, b, o) = ()
+    n1: 
+        a = 0
+        o = b
+    until
+    n2:
+        b = a
+    until
