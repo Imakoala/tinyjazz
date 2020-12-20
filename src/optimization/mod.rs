@@ -61,8 +61,8 @@ pub fn make_graph(prog: &typ::Program) -> Result<graphs::ProgramGraph, ScheduleE
         .inputs
         .iter()
         .map(|s| &s.value)
-        .chain(prog.shared.iter().map(|(s, _)| s))
         .chain(prog.nodes.iter().map(|(name, _)| name))
+        .chain(prog.shared.iter().map(|(s, _)| s))
         .enumerate()
         .map(|(i, s)| (s.clone(), i))
         .collect::<HashMap<String, usize>>();
@@ -70,18 +70,18 @@ pub fn make_graph(prog: &typ::Program) -> Result<graphs::ProgramGraph, ScheduleE
         .inputs
         .iter()
         .map(|s| vec![false; s.size])
-        .chain(prog.shared.iter().map(|(_s, init)| init.clone()))
         .chain(
             prog.nodes
                 .iter()
                 .map(|(name, _)| vec![prog.init_nodes.contains(name)]),
         )
+        .chain(prog.shared.iter().map(|(_s, init)| init.clone()))
         .collect::<Vec<Vec<bool>>>();
     let nodes = prog
         .nodes
         .iter()
         .map(|(_, node)| make_node(node, &node_rename_map, &shared_rename_map))
-        .collect();
+        .collect::<Vec<ProgramNode>>();
     let init_nodes = prog
         .init_nodes
         .iter()
@@ -93,6 +93,11 @@ pub fn make_graph(prog: &typ::Program) -> Result<graphs::ProgramGraph, ScheduleE
         .map(|v| (v.value.clone(), *shared_rename_map.get(&v.value).unwrap()))
         .collect();
     let inputs = prog.inputs.iter().map(|var| var.size).collect();
+    // println!("{:#?}", shared_rename_map);
+    // for node in &nodes {
+    //     println!("--------------------------------------------------\n inputs : {:#?} \n \n outputs : {:#?} "
+    //     ,node.inputs, node.shared_outputs.iter().map(|(s, _)| *s).collect::<Vec<usize>>())
+    // }
     let schedule = scheduler::schedule(&nodes, shared.len())?;
     Ok(graphs::ProgramGraph {
         init_nodes,
@@ -136,7 +141,7 @@ fn make_node(
                 shared_rename_map,
                 &local_rename_map,
                 &mut expr_map,
-                &mut Some(&mut inputs),
+                &mut None, //shared variables used in transitions are not added as outputs
             );
             (*node_id, expr_node, *reset)
         })

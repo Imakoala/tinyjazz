@@ -22,7 +22,7 @@ pub enum ExprOperation {
 pub struct ProgramNode {
     pub shared_outputs: Vec<(usize, Arc<ExprNode>)>,
     pub transition_outputs: Vec<(usize, Arc<ExprNode>, bool)>, //node_id, var, reset
-    pub inputs: Vec<usize>,
+    pub inputs: Vec<usize>, //does not include the inputs in transitions
     pub weak: bool,
     pub n_vars: usize,
 }

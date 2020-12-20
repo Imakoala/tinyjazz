@@ -13,6 +13,7 @@ mod optimization;
 mod parser_wrapper;
 mod typed_ast;
 mod typing;
+mod viz;
 use collapse_automata::collapse_automata;
 use compute_consts::compute_consts;
 use docopt::Docopt;
@@ -32,49 +33,51 @@ const USAGE: &'static str = include_str!("USAGE.docopt");
 struct Args {
     arg_file: String,
     flag_version: bool,
+    flag_dot: bool,
+    flag_print: bool,
     flag_i: Option<String>,
     flag_s: Option<usize>,
 }
 
-// fn print_expr(expr: &ast::Expr) -> String {
-//     if let ast::Expr::Var(v) = expr {
-//         format!("{}", v.value)
-//     } else {
-//         format!("{:?}", expr)
-//     }
-// }
+fn print_expr(expr: &ast::Expr) -> String {
+    if let ast::Expr::Var(v) = expr {
+        format!("{}", v.value)
+    } else {
+        format!("{:?}", expr)
+    }
+}
 
-// fn print_stat(stat: &ast::Statement) {
-//     match stat {
-//         ast::Statement::Assign(vec) => {
-//             for v in vec {
-//                 println!("      {} = {}", v.var.value, print_expr(&v.expr.value));
-//             }
-//         }
-//         ast::Statement::If(a) => {
-//             println!("      {:?}", a);
-//         }
-//         ast::Statement::FnAssign(a) => {
-//             println!("      {:?}", a);
-//         }
-//     }
-// }
+fn print_stat(stat: &ast::Statement) {
+    match stat {
+        ast::Statement::Assign(vec) => {
+            for v in vec {
+                println!("      {} = {}", v.var.value, print_expr(&v.expr.value));
+            }
+        }
+        ast::Statement::If(a) => {
+            println!("      {:?}", a);
+        }
+        ast::Statement::FnAssign(a) => {
+            println!("      {:?}", a);
+        }
+    }
+}
 
-// fn print_prog(prog: &ast::Program) {
-//     for (_, modules) in &prog.modules {
-//         println!("{} : \n\n", modules.name);
-//         for (_, node) in &modules.nodes {
-//             println!("  {} : \n\n", node.name.value);
-//             for stat in &node.statements {
-//                 print_stat(stat)
-//             }
-//             println!("\n\n  transitions : ");
-//             for (expr, a, _b) in &node.transitions {
-//                 println!("  |{} -> {}", print_expr(&expr.value), a.value);
-//             }
-//         }
-//     }
-// }
+pub fn print_prog(prog: &ast::Program) {
+    for (_, modules) in &prog.modules {
+        println!("{} : \n\n", modules.name);
+        for (_, node) in &modules.nodes {
+            println!("  {} : \n\n", node.name.value);
+            for stat in &node.statements {
+                print_stat(stat)
+            }
+            println!("\n\n  transitions : ");
+            for (expr, a, _b) in &node.transitions {
+                println!("  |{} -> {}", print_expr(&expr.value), a.value);
+            }
+        }
+    }
+}
 //println!("{:#?}", expr);
 fn process_file(path: PathBuf) -> Result<ProgramGraph, TinyjazzError> {
     let (mut prog, files) = parse(path)?;
@@ -87,9 +90,7 @@ fn process_file(path: PathBuf) -> Result<ProgramGraph, TinyjazzError> {
     prog.functions = HashMap::new(); //the functions are no longer useful
                                      //at this point, the ast is ready to be typed.
     let prog = type_prog(prog, type_map).map_err(|e| (e, files.clone()))?;
-    //println!("{:#?}", prog);
     let graph = make_graph(&prog).map_err(|e| (e, files.clone()))?;
-    println!("{:#?}", graph);
     Ok(graph)
 }
 
@@ -114,6 +115,12 @@ fn main() {
             exit(1)
         }
         Ok(prog) => {
+            if args.flag_print {
+                println!("{:#?}", prog)
+            }
+            if args.flag_dot {
+                viz::render(&prog);
+            }
             if let Some(steps) = args.flag_s {
                 run_interpreter(&prog, steps, args.flag_i)
             }

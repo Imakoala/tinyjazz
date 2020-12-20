@@ -560,7 +560,10 @@ fn type_expr_term(
                 Err(TypingError::UnknownVar(v.value, v.loc))
             }
         }
-        _ => panic!("Should not happen : non terminal expr at depth 1 in typing"),
+        e => panic!(format!(
+            "Should not happen : non terminal expr at depth 1 in typing {:#?}",
+            e
+        )),
     }
 }
 

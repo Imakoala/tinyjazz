@@ -1,5 +1,6 @@
 pub use std::collections::HashMap;
 use std::{
+    hash::Hash,
     ops::{Deref, DerefMut},
     path::PathBuf,
 };
@@ -9,15 +10,27 @@ pub type Pos = (usize, usize, usize);
 
 //A wrapper to include position information in the tree
 //It implements deref for easier use
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq)]
 pub struct Loc<T> {
     pub loc: Pos,
     pub value: T,
 }
 
+impl<T> Loc<T> {
+    pub fn new(loc: Pos, value: T) -> Self {
+        Loc { value, loc }
+    }
+}
+
 impl<T: PartialEq> PartialEq for Loc<T> {
     fn eq(&self, other: &Self) -> bool {
         self.value == other.value
+    }
+}
+
+impl<T: Hash> Hash for Loc<T> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.value.hash(state)
     }
 }
 

@@ -3,16 +3,16 @@ module main() = (o)
     n: 
         use o = m2(i)
     until
+        |o -> reset n
+        |i -> n
 
 module m2(a) = (o)
     shared o = 0
     n1:
         o = a
     until 
-        |a -> n1
-        |not a -> n2
+        |o -> n2
     n2:
-        o = 1
+        o = not a
     until 
-        |a -> n1
-        |not a -> n2
+        |o -> n1

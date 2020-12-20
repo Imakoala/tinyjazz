@@ -19,7 +19,6 @@ a = y + z
 and a global counter.)
 I choose to use strings for name as netlists allow for it and it makes the generated code a bit cleared, albeit not much
 */
-
 //the global counter
 global_counter!(FLATTEN_EXPR_COUNTER, u32, 0);
 
@@ -70,6 +69,10 @@ pub fn flatten(prog: &mut Program) -> Result<()> {
             *transitions = transitions
                 .drain(..)
                 .map(|(expr, goto, reset)| {
+                    //important to avoid creating cycles by taking shared vars out of transitions.
+                    if let Expr::Var(_) = expr.value {
+                        return Ok((expr, goto, reset));
+                    }
                     let pos = expr.loc;
                     let (mut v, expr) = flatten_expr(name, expr)?;
                     statements.append(&mut v);
@@ -113,7 +116,26 @@ fn flatten_statement(statement: Statement) -> Result<Vec<Statement>> {
                 else_block: v2.collect::<Result<Vec<Statement>>>()?,
             })])
         }
-        Statement::FnAssign(fn_assign) => Ok(vec![Statement::FnAssign(fn_assign)]),
+        Statement::FnAssign(mut fn_assign) => {
+            let pos = fn_assign.f.name.loc;
+            let fn_name = fn_assign.f.name.value.clone();
+            let mut res = Vec::new();
+            fn_assign.f.args = loc(
+                pos,
+                fn_assign
+                    .f
+                    .args
+                    .drain(..)
+                    .map(|a| {
+                        let (mut stmts, e_out) = flatten_expr(&fn_name, a.clone())?;
+                        res.append(&mut stmts);
+                        Ok(loc(a.loc, e_out))
+                    })
+                    .collect::<Result<Vec<Loc<Expr>>>>()?,
+            );
+            res.push(Statement::FnAssign(fn_assign));
+            Ok(res)
+        }
     }
 }
 pub fn flatten_assigns(mut statement: Vec<VarAssign>) -> Result<Vec<Statement>> {
@@ -140,13 +162,29 @@ fn get_name(name: &String) -> String {
     FLATTEN_EXPR_COUNTER.inc();
     format!("{}#flatten#{}", name, counter)
 }
+
+//takes a variable name and an expression as an arg, returns a variable and statements,
+//such that if the statements are computed the variable contains the value of the expr
 fn flatten_expr(name: &String, expr: Loc<Expr>) -> Result<(Vec<Statement>, Expr)> {
     let mut res = Vec::new();
     let glob_pos = expr.loc;
     let e_ret = match expr.value {
         Expr::Const(_) | Expr::Var(_) => expr.value,
-        Expr::FnCall(fn_call) => {
+        Expr::FnCall(mut fn_call) => {
             let name = loc(glob_pos, get_name(name));
+            let fn_name = fn_call.name.value.clone();
+            fn_call.args = loc(
+                glob_pos,
+                fn_call
+                    .args
+                    .drain(..)
+                    .map(|a| {
+                        let (mut stmts, e_out) = flatten_expr(&fn_name, a.clone())?;
+                        res.append(&mut stmts);
+                        Ok(loc(a.loc, e_out))
+                    })
+                    .collect::<Result<Vec<Loc<Expr>>>>()?,
+            );
             res.push(Statement::FnAssign(FnAssign {
                 vars: vec![name.clone()],
                 f: fn_call,

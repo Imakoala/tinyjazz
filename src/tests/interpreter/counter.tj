@@ -16,11 +16,11 @@ module main() = o[p]
     init n1
     shared o = [0; p]
     n1:
-        (o, r) = inc<p>(o)
+        (a, r) = inc<p>(reg<p>(o))
+        o = a
     until
-        |o[p/2 - 1] -> n2
-        |not o[p/2 - 1] -> n1
-    
+        |a[7] -> n2
+        |not a[7] -> n1
     n2:
         o = [0; p]
     until 
