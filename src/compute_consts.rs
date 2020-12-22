@@ -46,8 +46,13 @@ pub fn compute_consts(prog: &mut Program) -> Result<(), ComputeConstError> {
             for statement in &mut node.statements {
                 compute_consts_in_statement(statement, &prog.global_consts)?;
             }
-            for (expr, _, _) in &mut node.transitions {
-                compute_consts_in_expr(expr, &prog.global_consts)?;
+            for transition in &mut node.transitions {
+                if let TrCond::Expr(expr) = &mut transition.condition.value {
+                    compute_consts_in_expr(
+                        &mut Loc::new(transition.condition.loc, expr),
+                        &prog.global_consts,
+                    )?;
+                }
             }
         }
     }
@@ -266,7 +271,7 @@ where
             }
             Ok(())
         }
-        Expr::Var(_) | Expr::Const(_) => Ok(()),
+        Expr::Var(_) | Expr::Const(_) | Expr::Last(_) => Ok(()),
     }
 }
 //replace the constants with simple Value(i32).

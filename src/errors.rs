@@ -188,6 +188,11 @@ fn get_diagnostic(
                     "A node and a shared variable cannot have the same name {}",
                     name
                 )),
+            TypingError::NonSharedInLast(loc, name) => Diagnostic::error()
+                .with_message("Error : Non-shared var in last")
+                .with_code("E0026")
+                .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
+                .with_message(format!("Non shared var {} in last", name)),
         },
         ErrorType::ColAutomata(err) => match err {
             CollapseAutomataError::CyclicModuleCall(s) => Diagnostic::error()

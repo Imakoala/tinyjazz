@@ -17,11 +17,12 @@ pub enum ExprOperation {
     Reg(usize, Option<Arc<ExprNode>>), //size, node. None means a reference to itself.
     Ram(Arc<ExprNode>, Arc<ExprNode>, Arc<ExprNode>, Arc<ExprNode>),
     Rom(Arc<ExprNode>),
+    Last(usize),
 }
 #[derive(Debug, Clone)]
 pub struct ProgramNode {
     pub shared_outputs: Vec<(usize, Arc<ExprNode>)>,
-    pub transition_outputs: Vec<(usize, Arc<ExprNode>, bool)>, //node_id, var, reset
+    pub transition_outputs: Vec<(Option<usize>, Arc<ExprNode>, bool)>, //node_id, var, reset
     pub inputs: Vec<usize>, //does not include the inputs in transitions
     pub weak: bool,
     pub n_vars: usize,

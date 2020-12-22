@@ -68,22 +68,31 @@ pub fn flatten(prog: &mut Program) -> Result<()> {
             //They are flattened into statements in the end of the node body
             *transitions = transitions
                 .drain(..)
-                .map(|(expr, goto, reset)| {
+                .map(|transition| {
                     //important to avoid creating cycles by taking shared vars out of transitions.
-                    if let Expr::Var(_) = expr.value {
-                        return Ok((expr, goto, reset));
+                    if let Expr::Var(_) = transition.condition.unwrap_ref() {
+                        return Ok(transition);
                     }
-                    let pos = expr.loc;
-                    let (mut v, expr) = flatten_expr(name, expr)?;
+                    let pos = transition.condition.loc;
+                    let (mut v, expr) = flatten_expr(
+                        name,
+                        Loc::new(
+                            transition.condition.loc,
+                            transition.condition.value.unwrap(),
+                        ),
+                    )?;
                     statements.append(&mut v);
                     let name = get_name(name);
                     statements.push(Statement::Assign(vec![VarAssign {
                         var: loc(pos, name.clone()),
                         expr: loc(pos, expr),
                     }]));
-                    Ok((loc(pos, Expr::Var(loc(pos, name))), goto, reset))
+                    Ok(Transition {
+                        condition: loc(pos, TrCond::Expr(Expr::Var(loc(pos, name)))),
+                        ..transition
+                    })
                 })
-                .collect::<Result<Vec<(Loc<Expr>, Loc<String>, bool)>>>()?;
+                .collect::<Result<Vec<Transition>>>()?;
         }
     }
     Ok(())
@@ -169,7 +178,7 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> Result<(Vec<Statement>, Expr)
     let mut res = Vec::new();
     let glob_pos = expr.loc;
     let e_ret = match expr.value {
-        Expr::Const(_) | Expr::Var(_) => expr.value,
+        Expr::Const(_) | Expr::Var(_) | Expr::Last(_) => expr.value,
         Expr::FnCall(mut fn_call) => {
             let name = loc(glob_pos, get_name(name));
             let fn_name = fn_call.name.value.clone();
@@ -327,7 +336,9 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> Result<(Vec<Statement>, Expr)
 
 fn regify_expr(expr: &mut Expr, pos: Pos, c: &Loc<Const>) -> Result<()> {
     match expr {
-        Expr::Var(_) => *expr = Expr::Reg(c.clone(), Box::new(loc(pos, expr.clone()))),
+        Expr::Var(_) | Expr::Last(_) => {
+            *expr = Expr::Reg(c.clone(), Box::new(loc(pos, expr.clone())))
+        }
         Expr::Const(_) => {}
         Expr::Not(e) => regify_expr(e, pos, c)?,
         Expr::Slice(_, _, _) => return Err(FlattenError::SliceInReg(pos)),

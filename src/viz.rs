@@ -25,7 +25,9 @@ pub fn render_prog_to<W: Write>(output: &mut W, prog: &ProgramGraph) {
     for (i, node) in prog.nodes.iter().enumerate() {
         nodes.push(i.to_string());
         for (k, (j, _, _)) in node.transition_outputs.iter().enumerate() {
-            edges.push((i, *j, format!("t{}", k)))
+            if let Some(j) = j {
+                edges.push((i, *j, format!("t{}", k)))
+            }
         }
     }
 
@@ -158,6 +160,9 @@ fn render_rec(
                 String::new(),
             ));
             render_rec(e.clone(), nodes, edges, nodes_mem)
+        }
+        ExprOperation::Last(i) => {
+            nodes.push(format!("Last : {}", i));
         }
     }
 }

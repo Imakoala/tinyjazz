@@ -133,7 +133,11 @@ fn make_node(
         .transitions
         .iter()
         .map(|(var, node_name, reset)| {
-            let node_id = node_rename_map.get(node_name).unwrap();
+            let node_id = if node_name.is_none() {
+                None
+            } else {
+                Some(*node_rename_map.get(node_name.as_ref().unwrap()).unwrap())
+            };
             let expr_node = var_to_node(
                 None,
                 node,
@@ -143,7 +147,7 @@ fn make_node(
                 &mut expr_map,
                 &mut None, //shared variables used in transitions are not added as outputs
             );
-            (*node_id, expr_node, *reset)
+            (node_id, expr_node, *reset)
         })
         .collect();
     let shared_outputs = node
@@ -423,6 +427,7 @@ fn expr_to_node(
             };
             ExprOperation::Rom(n)
         }
+        ExprType::Last(v) => ExprOperation::Last(*shared_rename_map.get(v).unwrap()),
     };
     let node = Arc::new(ExprNode { id: var_id, op });
     if let Some(map) = expr_map {

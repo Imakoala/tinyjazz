@@ -51,7 +51,7 @@ pub type Value = Vec<bool>;
 pub struct Node {
     pub name: String,
     pub statements: HashMap<Var, Expr>,
-    pub transitions: Vec<(Var, Name, bool)>,
+    pub transitions: Vec<(Var, Option<Name>, bool)>,
     pub weak: bool,
 }
 
@@ -74,6 +74,7 @@ pub enum ExprType {
     BiOp(BiOp, ExprTerm, ExprTerm),
     Mux(ExprTerm, ExprTerm, ExprTerm),
     Reg(ExprTerm),
+    Last(SharedVar),
     Ram(RamStruct),
     Rom(ExprTerm),
 }

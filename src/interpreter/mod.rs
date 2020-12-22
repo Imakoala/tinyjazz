@@ -112,33 +112,46 @@ fn program_step(interpreter_state: &mut InterpreterIterator) {
         shared[*u] = value
     }
     //then computes all the transitions.
+    //TODO : add default loop
     let mut next_map = vec![false; graph.nodes.len()];
     let next_nodes = nodes_to_run
         .iter()
-        .map(|(i, node)| node.transition_outputs.iter().map(move |o| (i, o)))
-        .flatten()
-        .filter_map(|(node_id, (u, n, b))| {
-            let v = calc_node(
-                n.clone(),
-                shared,
-                prev_shared,
-                &reg_map[*node_id],
-                &mut next_reg_map[*node_id],
-                &mut nodes_mem[*node_id],
-                ram.clone(),
-                None,
-            );
-            if v[0] && !next_map[*u] {
-                //if it is a reset node, reset all the regs to 0.
-                if *b {
-                    reg_map[*node_id] = HashMap::new();
+        .filter_map(|(node_id, node)| {
+            let mut terminate = false;
+            let it = node.transition_outputs.iter().filter_map(move |(u, n, b)| {
+                let v = calc_node(
+                    n.clone(),
+                    shared,
+                    prev_shared,
+                    &reg_map[*node_id],
+                    &mut next_reg_map[*node_id],
+                    &mut nodes_mem[*node_id],
+                    ram.clone(),
+                    None,
+                );
+                if v[0] && u.is_none() {
+                    terminate = true;
+                    None
+                } else if v[0] && !next_map[u.unwrap()] {
+                    //if it is a reset node, reset all the regs to 0.
+                    if *b {
+                        reg_map[*node_id] = HashMap::new();
+                        next_reg_map[*node_id] = HashMap::new();
+                    }
+                    next_map[u.unwrap()] = true;
+                    Some(*u)
+                } else {
+                    None
                 }
-                next_map[*u] = true;
-                Some(*u)
-            } else {
+            });
+            if terminate {
                 None
+            } else {
+                Some(it)
             }
         })
+        .flatten()
+        .flatten()
         .collect::<Vec<usize>>();
     *to_run = next_nodes;
     //reset the node memoisation
@@ -333,6 +346,7 @@ fn calc_node(
             ret
         }
         ExprOperation::Rom(_) => todo!(),
+        ExprOperation::Last(i) => prev_shared[*i].clone(),
     }
 }
 

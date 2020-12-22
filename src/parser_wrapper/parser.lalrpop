@@ -36,7 +36,7 @@ ParCommaOrSingle<T> : Vec<T> = {
     },
     <T> => vec![<>]
 };
-
+#[inline]
 Loc<T> : Loc<T> = {
     <l:@L> <val:T> <r:@R> => {
         Loc {
@@ -73,7 +73,7 @@ Init : Vec<Loc<String>> = {
 }
 
 Module: Module = {
-    "module" <name:r"[a-zA-Z_][a-zA-Z_0-9]*\("> <ins:Comma<Arg>> ")" "=" <out:ParCommaOrSingle<Arg>>
+    "automaton" <name:r"[a-zA-Z_][a-zA-Z_0-9]*\("> <ins:Comma<Arg>> ")" "=" <out:ParCommaOrSingle<Arg>>
     <mut init: Init>
     <s:SharedVar*>
     <mut nodes:Node*> 
@@ -186,6 +186,7 @@ Unit: Expr = {
     ),
     "(" <Expr> ")",
     "mux(" <e1:Loc<Expr>> "," <e2:Loc<Expr>> "," <e3:Loc<Expr>> ")" => Expr::Mux(Box::new(e1), Box::new(e2), Box::new(e3)),
+    "last(" <v:Loc<Var>> ")" => Expr::Last(v),
     "reg(" <e:Loc<Expr>> ")" => Expr::Reg(
         Loc {
             value: Const::Value(1),
@@ -316,20 +317,26 @@ Statement: Statement = {
     })
 
 
-};
-
-Transition : (Loc<Expr>, Loc<Var>, bool) = {
-    "|" <e:Loc<Expr>> "->" <reset:"reset"?> <v:Loc<Var>> => (e, v, reset.is_some()),
-    "|" <l:@L> "default" <r:@R> "->" <reset:"reset"?> <v:Loc<Var>> => 
-    (
-        Loc {
-            loc: (file_id, l, r),
-            value: Expr::Const(ConstExpr::Known(vec![true]))
-        },
-        v,
-        reset.is_some()
-    )
 }
+
+NodeName : Loc<Option<Var>> = {
+    <l:@L> "terminate" <r:@R> => Loc::new((file_id, l, r), None),
+    <v:Loc<Var>> => Loc::new(v.loc, Some(v.value))
+}
+
+TrCond: TrCond = {
+    "default" => TrCond::Default, 
+    <Expr> => TrCond::Expr(<>)
+}
+
+Transition : Transition = {
+    "|" <c:Loc<TrCond>> "->" <reset:"reset"?> <v:NodeName> => Transition {
+        condition: c, 
+        node: v, 
+        reset: reset.is_some()
+    }
+}
+
 Node : Node = {
     <name:Loc<Var>> ":" <e:ExtModule*> <s:Statement*> "until" <t:Transition*> => 
     Node {
@@ -398,14 +405,14 @@ SharedVar : Vec<VarAssign> = {
         if e.len() == 0 {
             Ok(v.drain(..)
             .map(|arg| VarAssign {
-                var : Loc {value: arg.name.clone(), loc: arg.loc},
+                var: Loc::new(arg.loc, arg.name.clone()),
                 expr : Loc {value: Expr::Const(ConstExpr::Unknown(false, arg.size.clone())), loc: arg.loc}
             }).collect())
         }
         else if e.len() == 1 {
             Ok(v.drain(..)
             .map(|arg| VarAssign {
-                var : Loc {value: arg.name.clone(), loc: arg.loc},
+                var: Loc::new(arg.loc, arg.name.clone()),
                 expr : Loc {value: Expr::Const((*e[0]).clone()), loc: e[0].loc}
             }).collect())
         }
@@ -418,11 +425,17 @@ SharedVar : Vec<VarAssign> = {
             Ok(v.drain(..)
             .zip(e.drain(..))
             .map(|(arg, expr)| VarAssign {
-                var : Loc {value: arg.name.clone(), loc: arg.loc},
+                var: Loc::new(arg.loc, arg.name.clone()),
                 expr : Loc {value: Expr::Const((*expr).clone()), loc: expr.loc}
             }).collect())
         }
     },
+    "shared" <mut v:ParCommaOrSingle<Loc<Arg>>> => {
+        v.drain(..).map(|arg| {VarAssign {
+            var: Loc::new(arg.loc, arg.name.clone()),
+            expr: Loc::new(arg.loc, Expr::Const(ConstExpr::Unknown(false, arg.size.clone())))
+        }}).collect()
+    }
 }
 
 ExtModule: ExtModule = {

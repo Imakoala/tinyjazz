@@ -39,45 +39,45 @@ struct Args {
     flag_s: Option<usize>,
 }
 
-fn print_expr(expr: &ast::Expr) -> String {
-    if let ast::Expr::Var(v) = expr {
-        format!("{}", v.value)
-    } else {
-        format!("{:?}", expr)
-    }
-}
+// fn print_expr(expr: &ast::Expr) -> String {
+//     if let ast::Expr::Var(v) = expr {
+//         format!("{}", v.value)
+//     } else {
+//         format!("{:?}", expr)
+//     }
+// }
 
-fn print_stat(stat: &ast::Statement) {
-    match stat {
-        ast::Statement::Assign(vec) => {
-            for v in vec {
-                println!("      {} = {}", v.var.value, print_expr(&v.expr.value));
-            }
-        }
-        ast::Statement::If(a) => {
-            println!("      {:?}", a);
-        }
-        ast::Statement::FnAssign(a) => {
-            println!("      {:?}", a);
-        }
-    }
-}
+// fn print_stat(stat: &ast::Statement) {
+//     match stat {
+//         ast::Statement::Assign(vec) => {
+//             for v in vec {
+//                 println!("      {} = {}", v.var.value, print_expr(&v.expr.value));
+//             }
+//         }
+//         ast::Statement::If(a) => {
+//             println!("      {:?}", a);
+//         }
+//         ast::Statement::FnAssign(a) => {
+//             println!("      {:?}", a);
+//         }
+//     }
+// }
 
-pub fn print_prog(prog: &ast::Program) {
-    for (_, modules) in &prog.modules {
-        println!("{} : \n\n", modules.name);
-        for (_, node) in &modules.nodes {
-            println!("  {} : \n\n", node.name.value);
-            for stat in &node.statements {
-                print_stat(stat)
-            }
-            println!("\n\n  transitions : ");
-            for (expr, a, _b) in &node.transitions {
-                println!("  |{} -> {}", print_expr(&expr.value), a.value);
-            }
-        }
-    }
-}
+// pub fn print_prog(prog: &ast::Program) {
+//     for (_, modules) in &prog.modules {
+//         println!("{} : \n\n", modules.name);
+//         for (_, node) in &modules.nodes {
+//             println!("  {} : \n\n", node.name.value);
+//             for stat in &node.statements {
+//                 print_stat(stat)
+//             }
+//             println!("\n\n  transitions : ");
+//             for (expr, a, _b) in &node.transitions {
+//                 println!("  |{} -> {}", print_expr(&expr.value), a.value);
+//             }
+//         }
+//     }
+// }
 //println!("{:#?}", expr);
 fn process_file(path: PathBuf) -> Result<ProgramGraph, TinyjazzError> {
     let (mut prog, files) = parse(path)?;

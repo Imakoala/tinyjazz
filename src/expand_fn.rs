@@ -386,7 +386,7 @@ where
                 map_vars_in_expr(arg, f);
             }
         }
-        Expr::Var(v) => f(&mut **v),
+        Expr::Var(v) | Expr::Last(v) => f(&mut **v),
         Expr::Const(_) => (),
     }
 }

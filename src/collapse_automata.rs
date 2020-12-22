@@ -9,7 +9,6 @@ Then it renames every shared var and node in the called module, and copies all t
 
 This repeats until there are no more external modules.
 */
-
 //TODO: instant transitions
 
 pub enum CollapseAutomataError {
@@ -34,24 +33,73 @@ pub fn make_transitions_shared(prog: &mut Program) {
             .collect();
         for (node_name, node) in module.nodes.iter_mut() {
             let mut statement = Vec::new();
-            for (i, (e, _, _)) in node.transitions.iter_mut().enumerate() {
-                if let Expr::Var(v) = &e.value {
-                    if shared_map.contains(&v.value) {
-                        continue;
+            for (i, transition) in node.transitions.iter_mut().enumerate() {
+                if let TrCond::Expr(e) = &mut transition.condition.value {
+                    if let Expr::Var(v) = e {
+                        if shared_map.contains(&v.value) {
+                            continue;
+                        }
                     }
+                    let new_name = Loc::new(
+                        transition.condition.loc,
+                        format!("s_r$t{}${}${}", i, node_name, mod_name),
+                    );
+                    module.shared.push(VarAssign {
+                        var: new_name.clone(),
+                        expr: Loc::new(new_name.loc, Expr::Const(ConstExpr::Known(vec![false]))),
+                    });
+                    let old_expr = std::mem::replace(e, Expr::Var(new_name.clone()));
+                    statement.push(VarAssign {
+                        var: new_name,
+                        expr: Loc::new(transition.condition.loc, old_expr),
+                    });
                 }
-                let new_name = Loc::new(e.loc, format!("s_r$t{}${}${}", i, node_name, mod_name));
-                module.shared.push(VarAssign {
-                    var: new_name.clone(),
-                    expr: Loc::new(new_name.loc, Expr::Const(ConstExpr::Known(vec![false]))),
-                });
-                let old_expr = std::mem::replace(e, Loc::new(e.loc, Expr::Var(new_name.clone())));
-                statement.push(VarAssign {
-                    var: new_name,
-                    expr: old_expr,
-                });
             }
             node.statements.push(Statement::Assign(statement));
+        }
+    }
+}
+
+//replace default transitions
+pub fn make_transitions_explicit(prog: &mut Program) {
+    for (_mod_name, module) in prog.modules.iter_mut() {
+        for (_node_name, node) in module.nodes.iter_mut() {
+            let all_conditions = node
+                .transitions
+                .iter()
+                .fold(None, |prev, transition| {
+                    match (prev, &transition.condition.value) {
+                        (None, TrCond::Default) => None,
+                        (Some(p), TrCond::Default) => Some(p),
+                        (None, TrCond::Expr(e)) => {
+                            Some(Loc::new(transition.condition.loc, e.clone()))
+                        }
+                        (Some(p), TrCond::Expr(e)) => Some(Loc::new(
+                            p.loc,
+                            Expr::BiOp(
+                                BiOp::And,
+                                Box::new(Loc::new(transition.condition.loc, e.clone())),
+                                Box::new(p),
+                            ),
+                        )),
+                    }
+                })
+                .unwrap_or(Loc::new(
+                    node.name.loc,
+                    Expr::Const(ConstExpr::Known(vec![true])),
+                ));
+            let default_condition = Loc::new(
+                all_conditions.loc,
+                Expr::Not(Box::new(all_conditions.value)),
+            );
+            for transition in node.transitions.iter_mut() {
+                if transition.condition.is_default() {
+                    transition.condition = Loc::new(
+                        default_condition.loc,
+                        TrCond::Expr(default_condition.value.clone()),
+                    );
+                }
+            }
         }
     }
 }
@@ -59,6 +107,7 @@ pub fn make_transitions_shared(prog: &mut Program) {
 //collapse all hierarchical automata, to build one big non deterministic automaton (or multiple parallel deterministic automata)
 pub fn collapse_automata(prog: &mut Program) -> Result<()> {
     make_transitions_shared(prog);
+    make_transitions_explicit(prog);
     let mut changed = true;
     let mut new_nodes = Vec::new();
     let mut new_init_nodes = Vec::new();
@@ -91,16 +140,21 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
                 .iter()
                 .map(|s| {
                     let parent = main_module.nodes.get(*s).unwrap();
-                    parent.transitions.iter().filter_map(|(e, n, b)| {
-                        if n.value == node.name.value {
+                    parent.transitions.iter().filter_map(|transition| {
+                        if transition.node.value.is_some()
+                            && transition.node.value.clone().unwrap() == node.name.value
+                        {
                             Some((
-                                *b,
+                                transition.reset,
                                 Loc::new(
-                                    e.loc,
+                                    transition.condition.loc,
                                     //condition = the transition condition is true, and the automaton is currently executing the parent node
                                     Expr::BiOp(
                                         BiOp::And,
-                                        Box::new(e.clone()),
+                                        Box::new(Loc::new(
+                                            transition.condition.loc,
+                                            transition.condition.clone().value.unwrap(),
+                                        )),
                                         Box::new(Loc::new(
                                             node.name.loc,
                                             Expr::Var(node.name.clone()),
@@ -134,19 +188,23 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
                 ));
             let resume_condition = in_conditions_resume
                 .drain(..)
-                .fold(None, |e, (_, n)| {
+                .fold(None, |e: Option<Loc<TrCond>>, (_, n)| {
                     if let Some(e) = e {
                         Some(Loc::new(
                             n.loc,
-                            Expr::BiOp(BiOp::And, Box::new(e), Box::new(n)),
+                            TrCond::Expr(Expr::BiOp(
+                                BiOp::And,
+                                Box::new(Loc::new(e.loc, e.value.clone().unwrap())),
+                                Box::new(n),
+                            )),
                         ))
                     } else {
-                        Some(n)
+                        Some(Loc::new(n.loc, TrCond::Expr(n.value)))
                     }
                 })
                 .unwrap_or(Loc::new(
                     node.name.loc,
-                    Expr::Const(ConstExpr::Known(vec![false])),
+                    TrCond::Expr(Expr::Const(ConstExpr::Known(vec![false]))),
                 ));
             //This is the node which reads the value of the automaton and write them to shared variables.
             let mut link_node = Node {
@@ -233,10 +291,17 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
 //Get a condition for the exit of a node.
 fn get_exit_condition(node: &Node) -> Loc<Expr> {
     let mut expr = Loc::new(node.name.loc, Expr::Var(node.name.clone()));
-    for (e, _, _) in node.transitions.iter() {
+    for transition in node.transitions.iter() {
         expr = Loc::new(
-            e.loc,
-            Expr::BiOp(BiOp::And, Box::new(e.clone()), Box::new(expr)),
+            transition.condition.loc,
+            Expr::BiOp(
+                BiOp::And,
+                Box::new(Loc::new(
+                    transition.condition.loc,
+                    transition.condition.value.clone().unwrap(),
+                )),
+                Box::new(expr),
+            ),
         );
     }
     expr
@@ -248,12 +313,15 @@ fn compute_nodes_parents(module: &Module) -> HashMap<&str, Vec<&str>> {
         if !node_parents.contains_key(&*node.name.value) {
             node_parents.insert(&*node.name.value, Vec::new());
         }
-        for (_, n, _) in node.transitions.iter() {
-            if !node_parents.contains_key(&*n.value) {
-                node_parents.insert(&*n.value, Vec::new());
+        for transition in node.transitions.iter() {
+            if transition.node.is_none() {
+                continue;
+            }
+            if !node_parents.contains_key(&**transition.node.as_ref().unwrap()) {
+                node_parents.insert(&**transition.node.as_ref().unwrap(), Vec::new());
             }
             node_parents
-                .get_mut(&*n.value)
+                .get_mut(&**transition.node.as_ref().unwrap())
                 .unwrap()
                 .push(&*node.name.value)
         }
@@ -270,7 +338,7 @@ fn get_pause_name(counter: u32, name: &str, namespace: &str) -> String {
 
 //Build the inline automaton corresponding to a module and a contexts
 pub fn make_automaton(
-    resume_condition: &Loc<Expr>,
+    resume_condition: &Loc<TrCond>,
     reset_condition: &Loc<Expr>,
     exit_condition: Loc<Expr>,
     mut inputs: Vec<String>,
@@ -298,8 +366,15 @@ pub fn make_automaton(
         .init_nodes
         .iter()
         .map(|s| {
-            let new_name = Loc::new(s.loc, get_rename(counter, &s.value, &module.name));
-            (reset_condition.clone(), new_name, true)
+            let new_name = Loc::new(s.loc, Some(get_rename(counter, &s.value, &module.name)));
+            Transition {
+                condition: Loc::new(
+                    reset_condition.loc,
+                    TrCond::Expr(reset_condition.value.clone()),
+                ),
+                node: new_name,
+                reset: true,
+            }
         })
         .collect();
     for (_, node) in &module.nodes {
@@ -346,8 +421,8 @@ pub fn make_automaton(
 pub fn make_node(
     counter: u32,
     namespace: &str,
-    resume_condition: &Loc<Expr>,
-    reset_transitions: &Vec<(Loc<Expr>, Loc<String>, bool)>,
+    resume_condition: &Loc<TrCond>,
+    reset_transitions: &Vec<Transition>,
     exit_condition: &Loc<Expr>,
     shared_rename_map: &HashMap<String, String>,
     node: &Node,
@@ -362,51 +437,111 @@ pub fn make_node(
     let transitions = node
         .transitions
         .iter()
-        .map(|(e, n, b)| {
+        .map(|transition| {
             let renamed_expr = Loc::new(
-                e.loc,
-                replace_var_in_expr(&e.value, shared_rename_map, counter, namespace),
+                transition.condition.loc,
+                replace_var_in_expr(
+                    transition.condition.unwrap_ref(),
+                    shared_rename_map,
+                    counter,
+                    namespace,
+                ),
             );
             let transition_stay = Loc::new(
                 renamed_expr.loc,
-                Expr::BiOp(
+                TrCond::Expr(Expr::BiOp(
                     BiOp::And,
                     Box::new(renamed_expr.clone()),
                     Box::new(Loc::new(
                         exit_condition.loc,
                         Expr::Not(Box::new(exit_condition.value.clone())),
                     )),
-                ),
+                )),
             );
             let transition_pause = Loc::new(
                 renamed_expr.loc,
-                Expr::BiOp(
+                TrCond::Expr(Expr::BiOp(
                     BiOp::And,
                     Box::new(renamed_expr.clone()),
                     Box::new(exit_condition.clone()),
-                ),
+                )),
+            );
+            let new_node_name = Loc::new(
+                transition.node.loc,
+                transition
+                    .node
+                    .value
+                    .clone()
+                    .map(|s| get_rename(counter, &s, namespace)),
+            );
+            let pause_node_name = Loc::new(
+                transition.node.loc,
+                transition
+                    .node
+                    .value
+                    .clone()
+                    .map(|s| get_pause_name(counter, &s, namespace)),
             );
             vec![
-                (
-                    transition_stay,
-                    Loc::new(n.loc, get_rename(counter, &n.value, namespace)),
-                    *b,
-                ),
-                (
-                    transition_pause,
-                    Loc::new(n.loc, get_pause_name(counter, &n.value, namespace)),
-                    *b,
-                ),
+                Transition {
+                    condition: transition_stay,
+                    node: new_node_name,
+                    reset: transition.reset,
+                },
+                Transition {
+                    condition: transition_pause,
+                    node: pause_node_name,
+                    reset: transition.reset,
+                },
             ]
         })
         .flatten()
-        .collect::<Vec<(Loc<Expr>, Loc<Var>, bool)>>();
+        .collect::<Vec<Transition>>();
     let mut pause_transitions = reset_transitions.clone();
-    pause_transitions.push((
-        Loc::new(pos, resume_condition.value.clone()),
-        Loc::new(pos, new_name.clone()),
-        false,
-    ));
+    let reset_condition = reset_transitions
+        .iter()
+        .fold(None, |prev: Option<Loc<TrCond>>, transition| {
+            if let Some(prev) = prev {
+                Some(Loc::new(
+                    pos,
+                    TrCond::Expr(Expr::BiOp(
+                        BiOp::Or,
+                        Box::new(Loc::new(prev.loc, prev.value.clone().unwrap())),
+                        Box::new(Loc::new(
+                            transition.condition.loc,
+                            transition.condition.value.clone().unwrap(),
+                        )),
+                    )),
+                ))
+            } else {
+                Some(transition.condition.clone())
+            }
+        })
+        .unwrap();
+    pause_transitions.push(Transition {
+        condition: resume_condition.clone(),
+        node: Loc::new(pos, Some(new_name.clone())),
+        reset: false,
+    });
+    //Stay paused while we don't come back to the node.
+    pause_transitions.push(Transition {
+        condition: Loc::new(
+            pos,
+            TrCond::Expr(Expr::Not(Box::new(Expr::BiOp(
+                BiOp::Or,
+                Box::new(Loc::new(
+                    resume_condition.loc,
+                    resume_condition.value.clone().unwrap(),
+                )),
+                Box::new(Loc::new(
+                    reset_condition.loc,
+                    reset_condition.value.unwrap(),
+                )),
+            )))),
+        ),
+        node: Loc::new(pos, Some(get_pause_name(counter, &node.name, namespace))),
+        reset: false,
+    });
     let pause_node = Node {
         name: Loc::new(pos, get_pause_name(counter, &node.name, namespace)),
         extern_modules: Vec::new(),
@@ -514,7 +649,7 @@ fn replace_var_in_expr(
     module_name: &str,
 ) -> Expr {
     match expr {
-        Expr::Var(v) => Expr::Var(Loc::new(
+        Expr::Var(v) | Expr::Last(v) => Expr::Var(Loc::new(
             v.loc,
             replace_map.get(&v.value).cloned().unwrap_or(get_rename(
                 counter,

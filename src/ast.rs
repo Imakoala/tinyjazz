@@ -1,3 +1,4 @@
+use core::panic;
 pub use std::collections::HashMap;
 use std::{
     hash::Hash,
@@ -56,7 +57,7 @@ pub struct Program {
 }
 pub type Import = PathBuf; //an import is just a Path
 
-//A module is basiaclly a group of automata, taking some input and ouputs
+//A module is basically a group of automata, taking some input and ouputs
 #[derive(Debug, Clone)]
 pub struct Module {
     pub name: String,
@@ -97,10 +98,51 @@ pub struct Node {
     pub name: Loc<String>,
     pub extern_modules: Vec<ExtModule>,
     pub statements: Vec<Statement>,
-    pub transitions: Vec<(Loc<Expr>, Loc<Var>, bool)>,
+    pub transitions: Vec<Transition>,
     pub weak: bool,
 }
+#[derive(Debug, Clone)]
+pub struct Transition {
+    pub condition: Loc<TrCond>,
+    pub node: Loc<Option<Var>>,
+    pub reset: bool,
+}
+#[derive(Debug, Clone)]
+pub enum TrCond {
+    Default,
+    Expr(Expr),
+}
 
+impl TrCond {
+    pub fn is_default(&self) -> bool {
+        if let TrCond::Default = self {
+            true
+        } else {
+            false
+        }
+    }
+    pub fn is_expr(&self) -> bool {
+        if let TrCond::Default = self {
+            false
+        } else {
+            true
+        }
+    }
+    pub fn unwrap(self) -> Expr {
+        if let TrCond::Expr(e) = self {
+            e
+        } else {
+            panic!("Unwrap TrCond on Default value")
+        }
+    }
+    pub fn unwrap_ref(&self) -> &Expr {
+        if let TrCond::Expr(e) = self {
+            e
+        } else {
+            panic!("Unwrap TrCond on Default value")
+        }
+    }
+}
 //a statement can be either (tuple) = (tuple), var = expr, or (tuple) = function call
 #[derive(Debug, Clone)]
 pub enum Statement {
@@ -129,6 +171,7 @@ pub enum Expr {
     BiOp(BiOp, Box<Loc<Expr>>, Box<Loc<Expr>>),
     Mux(Box<Loc<Expr>>, Box<Loc<Expr>>, Box<Loc<Expr>>),
     Var(Loc<Var>),
+    Last(Loc<Var>),
     Reg(Loc<Const>, Box<Loc<Expr>>),
     Ram(RamStruct),
     Rom(RomStruct),

@@ -26,6 +26,7 @@ pub enum TypingError {
     ExpectedSizeOne(Pos, usize),
     IndexOutOfRange(Pos, i32, usize),
     LocalVarInUnless(Pos, String),
+    NonSharedInLast(Pos, String),
     ConflictingNodeShared(Pos, String, Pos),
 }
 #[derive(Debug)]
@@ -210,34 +211,47 @@ fn type_node(
     let transitions = node
         .transitions
         .drain(..)
-        .map(|(expr, name, reset)| {
-            if let untyp::Expr::Var(s) = expr.value {
-                if !nodes_map.contains_key(&name.value) {
-                    return Err(TypingError::UnknownNode(name.value, name.loc));
+        .map(|transition| {
+            if let untyp::Expr::Var(s) = transition.condition.unwrap_ref() {
+                if transition.node.is_some()
+                    && !nodes_map.contains_key(transition.node.as_ref().unwrap())
+                {
+                    return Err(TypingError::UnknownNode(
+                        transition.node.value.unwrap(),
+                        transition.node.loc,
+                    ));
                 }
                 if let Some((size, _loc)) = var_types.get(&s.value) {
                     if weak == false {
-                        return Err(TypingError::LocalVarInUnless(s.loc, s.value));
+                        return Err(TypingError::LocalVarInUnless(s.loc, s.value.clone()));
                     }
                     if *size != 1 {
                         return Err(TypingError::ExpectedSizeOne(s.loc, *size));
                     }
-                    Ok((typ::Var::Local(s.value), name.value, reset))
+                    Ok((
+                        typ::Var::Local(s.value.clone()),
+                        transition.node.value,
+                        transition.reset,
+                    ))
                 } else {
                     if let Some((size, _loc)) = shared_types.get(&s.value) {
                         if *size != 1 {
                             return Err(TypingError::ExpectedSizeOne(s.loc, *size));
                         }
-                        Ok((typ::Var::Shared(s.value), name.value, reset))
+                        Ok((
+                            typ::Var::Shared(s.value.clone()),
+                            transition.node.value,
+                            transition.reset,
+                        ))
                     } else {
-                        Err(TypingError::UnknownVar(s.value, s.loc))
+                        Err(TypingError::UnknownVar(s.value.clone(), s.loc))
                     }
                 }
             } else {
                 panic!("Should not happen : Expected a variable in transition")
             }
         })
-        .collect::<Result<Vec<(typ::Var, typ::Name, bool)>>>()?;
+        .collect::<Result<Vec<(typ::Var, Option<typ::Name>, bool)>>>()?;
     Ok(typ::Node {
         transitions,
         name: node.name.value,
@@ -324,6 +338,16 @@ fn type_expr(
                 size: sized_expr.size,
                 value: typ::ExprType::Term(sized_expr),
             })
+        }
+        untyp::Expr::Last(v) => {
+            if let Some(s) = shared_types.get(&v.value) {
+                Ok(typ::Sized {
+                    size: s.0,
+                    value: typ::ExprType::Last(v.value),
+                })
+            } else {
+                Err(TypingError::NonSharedInLast(v.loc, v.value))
+            }
         }
         untyp::Expr::Not(expr_term) => {
             let sized_expr = type_expr_term(*expr_term, var_types, shared_types, type_constraints)?;
