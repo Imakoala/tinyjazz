@@ -1,4 +1,4 @@
-use crate::ast::*;
+use crate::ast::parse_ast::*;
 use solvent::DepGraph;
 /*
 In this file, we try to simplify all the constants as much as possible, to prepare for

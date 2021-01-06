@@ -1,16 +1,19 @@
-use crate::{
-    collapse_automata::CollapseAutomataError,
-    compute_consts::ComputeConstError,
-    expand_fn::{ExpandFnError, REC_DEPTH},
-    flatten::FlattenError,
-    optimization::ScheduleError,
-    parser_wrapper::{ParseErrorType, ParserError},
-    typing::TypingError,
-};
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFiles;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use std::rc::Rc;
+
+use crate::{
+    frontend::{
+        constants::ComputeConstError,
+        functions::{ExpandFnError, REC_DEPTH},
+        hierarchical_automata::CollapseAutomataError,
+        nested_expr::FlattenError,
+        scheduler::ScheduleError,
+        typing::TypingError,
+    },
+    parser_wrapper::{ParseErrorType, ParserError},
+};
 
 /*
 This file is dedicated to the handling of all errors, to pretty print them using codespan_diagnostic.

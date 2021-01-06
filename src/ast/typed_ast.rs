@@ -1,4 +1,4 @@
-use crate::ast::BiOp;
+pub use crate::ast::BiOp;
 pub use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 /*

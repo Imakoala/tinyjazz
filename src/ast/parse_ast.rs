@@ -6,6 +6,8 @@ use std::{
     path::PathBuf,
 };
 
+pub use crate::ast::BiOp;
+
 //filed_id, left index, right index
 pub type Pos = (usize, usize, usize);
 
@@ -121,13 +123,6 @@ impl TrCond {
             false
         }
     }
-    pub fn is_expr(&self) -> bool {
-        if let TrCond::Default = self {
-            false
-        } else {
-            true
-        }
-    }
     pub fn unwrap(self) -> Expr {
         if let TrCond::Expr(e) = self {
             e
@@ -201,14 +196,6 @@ pub struct IfStruct {
     pub condition: Const,
     pub if_block: Vec<Statement>,
     pub else_block: Vec<Statement>,
-}
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum BiOp {
-    And,  //*
-    Or,   //+
-    Xor,  //^
-    Nand, //-*
-    Concat,
 }
 #[derive(Debug, Clone)]
 pub enum Const {

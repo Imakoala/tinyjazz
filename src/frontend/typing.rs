@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use crate::ast as untyp;
-use crate::typed_ast as typ;
+use crate::ast::parse_ast as untyp;
+use crate::ast::typed_ast as typ;
 use std::convert::TryFrom;
 use untyp::Pos;
 

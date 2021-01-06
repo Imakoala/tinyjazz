@@ -4,7 +4,7 @@ use std::{fs::read_to_string, rc::Rc};
 
 use lalrpop_util::lexer::Token;
 
-use crate::ast::*;
+use crate::ast::parse_ast::*;
 
 use self::parser::ProgramParser;
 use codespan_reporting::files::SimpleFiles;

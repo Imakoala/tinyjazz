@@ -41,16 +41,13 @@ With this representation, simulation can be done with a threadpool : each node i
 
 */
 
-mod graphs;
-mod scheduler;
 use std::sync::Arc;
 
-use crate::typed_ast as typ;
-pub use graphs::*;
-pub use scheduler::ScheduleError;
+use crate::ast::{graph_automaton::*, typed_ast as typ};
+use crate::frontend::scheduler;
 use typ::*;
 
-pub fn make_graph(prog: &typ::Program) -> Result<graphs::ProgramGraph, ScheduleError> {
+pub fn make_graph(prog: &typ::Program) -> Result<ProgramGraph, scheduler::ScheduleError> {
     let node_rename_map = prog
         .nodes
         .iter()
@@ -93,13 +90,13 @@ pub fn make_graph(prog: &typ::Program) -> Result<graphs::ProgramGraph, ScheduleE
         .map(|v| (v.value.clone(), *shared_rename_map.get(&v.value).unwrap()))
         .collect();
     let inputs = prog.inputs.iter().map(|var| var.size).collect();
-    // println!("{:#?}", shared_rename_map);
-    // for node in &nodes {
-    //     println!("--------------------------------------------------\n inputs : {:#?} \n \n outputs : {:#?} "
-    //     ,node.inputs, node.shared_outputs.iter().map(|(s, _)| *s).collect::<Vec<usize>>())
-    // }
+    println!("{:#?}", shared_rename_map);
+    for node in &nodes {
+        println!("--------------------------------------------------\n inputs : {:#?} \n \n outputs : {:#?} "
+        ,node.inputs, node.shared_outputs.iter().map(|(s, _)| *s).collect::<Vec<usize>>())
+    }
     let schedule = scheduler::schedule(&nodes, shared.len())?;
-    Ok(graphs::ProgramGraph {
+    Ok(ProgramGraph {
         init_nodes,
         shared,
         nodes,
@@ -323,6 +320,7 @@ fn expr_to_node(
         ExprType::Reg(e) => match &e.value {
             ExprTermType::Var(v) => {
                 if inputs.is_none() {
+                    //means we are inside a reg
                     ExprOperation::Reg(e.size, None)
                 } else {
                     ExprOperation::Reg(

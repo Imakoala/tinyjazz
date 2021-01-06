@@ -4,7 +4,7 @@ It fails if there is a cycle.
 TODO : it should also fail if a shared variable can be assigned to twice.
 */
 
-use super::graphs::*;
+use crate::ast::graph_automaton::*;
 use solvent::DepGraph;
 pub enum ScheduleError {
     CycleError,

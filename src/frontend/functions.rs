@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
-use crate::compute_consts::{compute_const, compute_consts_in_statement};
-use crate::{ast::*, compute_consts::ComputeConstError};
+use crate::ast::parse_ast::*;
+use crate::frontend::constants::{compute_const, compute_consts_in_statement, ComputeConstError};
 use global_counter::global_counter;
 
 /*

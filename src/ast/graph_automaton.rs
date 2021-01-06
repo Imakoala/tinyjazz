@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::ast::BiOp;
+pub use crate::ast::BiOp;
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ExprNode {
     pub id: Option<usize>,

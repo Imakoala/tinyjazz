@@ -1,11 +1,10 @@
-use scripting::get_inputs_closure;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
 };
 
-use crate::{ast::BiOp, optimization::*};
-mod scripting;
+use crate::ast::graph_automaton::*;
+
 pub struct InterpreterIterator<'a> {
     graph: &'a ProgramGraph,
     shared: Vec<Vec<bool>>,
@@ -21,7 +20,7 @@ pub struct InterpreterIterator<'a> {
 impl<'a> Iterator for InterpreterIterator<'a> {
     type Item = Vec<(&'a String, Vec<bool>)>;
     fn next(self: &mut Self) -> Option<Vec<(&'a String, Vec<bool>)>> {
-        std::mem::swap(&mut self.next_reg_map, &mut self.reg_map);
+        self.reg_map = self.next_reg_map.clone();
         self.prev_shared = self.shared.clone();
         program_step(self);
         Some(
@@ -41,7 +40,8 @@ pub fn interprete<'a>(
     let to_run = graph.init_nodes.clone();
     let shared = graph.shared.clone();
     let prev_shared = graph.shared.clone();
-    let inputs = get_inputs_closure(inputs_script_path, graph.inputs.clone());
+    let inputs =
+        crate::util::scripting::get_inputs_closure(inputs_script_path, graph.inputs.clone());
     let reg_map = vec![HashMap::new(); graph.nodes.len()];
     let next_reg_map = vec![HashMap::new(); graph.nodes.len()];
     let ram = Arc::new(Mutex::new(HashMap::new()));
@@ -117,34 +117,39 @@ fn program_step(interpreter_state: &mut InterpreterIterator) {
     let next_nodes = nodes_to_run
         .iter()
         .filter_map(|(node_id, node)| {
-            let mut terminate = false;
-            let it = node.transition_outputs.iter().filter_map(move |(u, n, b)| {
-                let v = calc_node(
-                    n.clone(),
-                    shared,
-                    prev_shared,
-                    &reg_map[*node_id],
-                    &mut next_reg_map[*node_id],
-                    &mut nodes_mem[*node_id],
-                    ram.clone(),
-                    None,
-                );
-                if v[0] && u.is_none() {
-                    terminate = true;
-                    None
-                } else if v[0] && !next_map[u.unwrap()] {
-                    //if it is a reset node, reset all the regs to 0.
-                    if *b {
-                        reg_map[*node_id] = HashMap::new();
-                        next_reg_map[*node_id] = HashMap::new();
+            let terminate = &mut false;
+            let node_id = *node_id;
+            let it = node
+                .transition_outputs
+                .iter()
+                .filter_map(|(u, n, b)| {
+                    let v = calc_node(
+                        n.clone(),
+                        shared,
+                        prev_shared,
+                        &reg_map[node_id],
+                        &mut next_reg_map[node_id],
+                        &mut nodes_mem[node_id],
+                        ram.clone(),
+                        None,
+                    );
+                    if v[0] && u.is_none() {
+                        *terminate = true;
+                        None
+                    } else if v[0] && !next_map[u.unwrap()] {
+                        //if it is a reset node, reset all the regs to 0.
+                        if *b {
+                            reg_map[node_id] = HashMap::new();
+                            next_reg_map[node_id] = HashMap::new();
+                        }
+                        next_map[u.unwrap()] = true;
+                        Some(*u)
+                    } else {
+                        None
                     }
-                    next_map[u.unwrap()] = true;
-                    Some(*u)
-                } else {
-                    None
-                }
-            });
-            if terminate {
+                })
+                .collect::<Vec<Option<usize>>>();
+            if *terminate {
                 None
             } else {
                 Some(it)
@@ -177,8 +182,7 @@ fn calc_node(
             return node_mem[id].clone();
         }
     }
-
-    match &node.op {
+    let ret = match &node.op {
         ExprOperation::Input(i) => shared[*i].clone(),
         ExprOperation::Const(c) => c.clone(),
         ExprOperation::Not(nd) => {
@@ -271,23 +275,19 @@ fn calc_node(
         }
         ExprOperation::Reg(size, nopt) => {
             if let Some(n) = nopt {
-                if let ExprOperation::Input(i) = n.op {
-                    prev_shared[i].clone()
-                } else {
-                    let v = reg_map.get(n).unwrap_or(&vec![false; *size]).clone();
-                    let v_next = calc_node(
-                        n.clone(),
-                        shared,
-                        prev_shared,
-                        reg_map,
-                        next_reg_map,
-                        node_mem,
-                        ram.clone(),
-                        Some(&v),
-                    );
-                    next_reg_map.insert(n.clone(), v_next);
-                    v
-                }
+                let v = reg_map.get(n).unwrap_or(&vec![false; *size]).clone();
+                let v_next = calc_node(
+                    n.clone(),
+                    shared,
+                    prev_shared,
+                    reg_map,
+                    next_reg_map,
+                    node_mem,
+                    ram.clone(),
+                    Some(&v),
+                );
+                next_reg_map.insert(n.clone(), v_next);
+                v
             } else {
                 current_reg
                     .expect("Should not happen: expected a nested reg")
@@ -347,7 +347,11 @@ fn calc_node(
         }
         ExprOperation::Rom(_) => todo!(),
         ExprOperation::Last(i) => prev_shared[*i].clone(),
+    };
+    if let Some(id) = node.id {
+        node_mem[id] = ret.clone()
     }
+    ret
 }
 
 fn apply_op(op: BiOp, v1: &mut Vec<bool>, mut v2: Vec<bool>) {

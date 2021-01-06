@@ -1,6 +1,6 @@
 // auto-generated: "lalrpop 0.19.1"
-// sha256: ce33404c758344291d53e5dc667c69a7d59c1e1b345ada6d6c6c6e5c732f
-use crate::ast::*;
+// sha256: d7159e58c4a99c47139fd56e341c261246b7f7c3ebf87b8c0defaabd0a5905d
+use crate::ast::parse_ast::*;
 use lalrpop_util::ParseError;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -15,7 +15,7 @@ mod __parse__Program {
 
     use std::str::FromStr;
     use lalrpop_util::ParseError;
-    use crate::ast::*;
+    use crate::ast::parse_ast::*;
     use std::path::PathBuf;
     #[allow(unused_extern_crates)]
     extern crate lalrpop_util as __lalrpop_util;
@@ -8758,7 +8758,7 @@ mod __intern_token {
     #![allow(unused_imports)]
     use std::str::FromStr;
     use lalrpop_util::ParseError;
-    use crate::ast::*;
+    use crate::ast::parse_ast::*;
     use std::path::PathBuf;
     #[allow(unused_extern_crates)]
     extern crate lalrpop_util as __lalrpop_util;

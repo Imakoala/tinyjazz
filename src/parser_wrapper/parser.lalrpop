@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use lalrpop_util::ParseError;
-use crate::ast::*;
-    use std::path::PathBuf;
+use crate::ast::parse_ast::*;
+use std::path::PathBuf;
 grammar(file_id: usize);
 NonEmptyComma<T>: Vec<T> = { 
     <v:(<T> ",")+> <e:T?> => match e { 

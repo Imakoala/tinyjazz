@@ -3,29 +3,14 @@ extern crate lalrpop_util;
 extern crate global_counter;
 
 mod ast;
-mod collapse_automata;
-mod compute_consts;
-mod errors;
-mod expand_fn;
-mod flatten;
-mod interpreter;
-mod optimization;
+mod frontend;
+mod interpreters;
 mod parser_wrapper;
-mod typed_ast;
-mod typing;
-mod viz;
-use collapse_automata::collapse_automata;
-use compute_consts::compute_consts;
+mod test;
+mod util;
 use docopt::Docopt;
-use errors::TinyjazzError;
-use expand_fn::expand_functions;
-use flatten::flatten;
-use interpreter::interprete;
-use optimization::{make_graph, ProgramGraph};
-use parser_wrapper::parse;
 use serde::Deserialize;
 use std::{collections::HashMap, path::PathBuf, process::exit};
-use typing::type_prog;
 //Docopt generates a CLI automatically from this usage string. Pretty amazing.
 const USAGE: &'static str = include_str!("USAGE.docopt");
 
@@ -79,23 +64,37 @@ struct Args {
 //     }
 // }
 //println!("{:#?}", expr);
-fn process_file(path: PathBuf) -> Result<ProgramGraph, TinyjazzError> {
-    let (mut prog, files) = parse(path)?;
-    compute_consts(&mut prog).map_err(|e| (e, files.clone()))?;
-    collapse_automata(&mut prog).map_err(|e| (e, files.clone()))?;
-    //print_prog(&prog);
-    flatten(&mut prog).map_err(|e| (e, files.clone()))?;
+fn process_file(
+    path: PathBuf,
+) -> Result<ast::graph_automaton::ProgramGraph, util::errors::TinyjazzError> {
+    let (mut prog, files) = parser_wrapper::parse(path)?;
+    frontend::constants::compute_consts(&mut prog).map_err(|e| (e, files.clone()))?;
+    frontend::hierarchical_automata::collapse_automata(&mut prog)
+        .map_err(|e| (e, files.clone()))?;
+    frontend::nested_expr::flatten(&mut prog).map_err(|e| (e, files.clone()))?;
     let mut type_map = HashMap::new();
-    expand_functions(&mut prog, &mut type_map).map_err(|e| (e, files.clone()))?;
+    frontend::functions::expand_functions(&mut prog, &mut type_map)
+        .map_err(|e| (e, files.clone()))?;
     prog.functions = HashMap::new(); //the functions are no longer useful
                                      //at this point, the ast is ready to be typed.
-    let prog = type_prog(prog, type_map).map_err(|e| (e, files.clone()))?;
-    let graph = make_graph(&prog).map_err(|e| (e, files.clone()))?;
+    let prog = frontend::typing::type_prog(prog, type_map).map_err(|e| (e, files.clone()))?;
+    let graph =
+        frontend::make_graph_automaton::make_graph(&prog).map_err(|e| (e, files.clone()))?;
     Ok(graph)
 }
 
-fn run_interpreter(graph: &ProgramGraph, steps: usize, input_script_path: Option<String>) {
-    for outputs in interprete(graph, input_script_path).take(steps) {
+fn compile_prog(prog: &ast::graph_automaton::ProgramGraph) -> ast::graph::FlatProgramGraph {
+    let graph = frontend::automaton::flatten_automata(&prog);
+    graph
+}
+fn run_interpreter(
+    graph: &ast::graph_automaton::ProgramGraph,
+    steps: usize,
+    input_script_path: Option<String>,
+) {
+    for outputs in
+        interpreters::high_level_interpreter::interprete(graph, input_script_path).take(steps)
+    {
         println!("{:?}", outputs);
     }
 }
@@ -115,11 +114,12 @@ fn main() {
             exit(1)
         }
         Ok(prog) => {
+            let flat_prog = compile_prog(&prog);
             if args.flag_print {
-                println!("{:#?}", prog)
+                println!("{:#?}", flat_prog)
             }
             if args.flag_dot {
-                viz::render(&prog);
+                util::viz::render(&flat_prog);
             }
             if let Some(steps) = args.flag_s {
                 run_interpreter(&prog, steps, args.flag_i)

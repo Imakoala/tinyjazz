@@ -1,6 +1,7 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, fmt::Display};
 
-use crate::{ast::*, expand_fn::WrongNumberType};
+use crate::ast::parse_ast::*;
+
 use global_counter::global_counter;
 /*
 This module collapses external modules.
@@ -10,7 +11,19 @@ Then it renames every shared var and node in the called module, and copies all t
 This repeats until there are no more external modules.
 */
 //TODO: instant transitions
-
+#[derive(Debug)]
+pub enum WrongNumberType {
+    Args,
+    ReturnVars,
+}
+impl Display for WrongNumberType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            WrongNumberType::Args => write!(f, "arguments"),
+            WrongNumberType::ReturnVars => write!(f, "return variables"),
+        }
+    }
+}
 pub enum CollapseAutomataError {
     CyclicModuleCall(String),
     UnknownModule(Pos, String),
@@ -22,7 +35,7 @@ global_counter!(INLINE_MODULE_COUNTER, u32, 0);
 type Result<T> = std::result::Result<T, CollapseAutomataError>;
 
 //makes all transitions shared variables
-pub fn make_transitions_shared(prog: &mut Program) {
+pub fn make_transitions_shared(prog: &mut Program, iter: u32) {
     for (mod_name, module) in prog.modules.iter_mut() {
         let shared_map: HashSet<String> = module
             .shared
@@ -42,7 +55,7 @@ pub fn make_transitions_shared(prog: &mut Program) {
                     }
                     let new_name = Loc::new(
                         transition.condition.loc,
-                        format!("s_r$t{}${}${}", i, node_name, mod_name),
+                        format!("s_r{}$t{}${}${}", iter, i, node_name, mod_name),
                     );
                     module.shared.push(VarAssign {
                         var: new_name.clone(),
@@ -86,7 +99,7 @@ pub fn make_transitions_explicit(prog: &mut Program) {
                 })
                 .unwrap_or(Loc::new(
                     node.name.loc,
-                    Expr::Const(ConstExpr::Known(vec![true])),
+                    Expr::Const(ConstExpr::Known(vec![false])),
                 ));
             let default_condition = Loc::new(
                 all_conditions.loc,
@@ -106,7 +119,7 @@ pub fn make_transitions_explicit(prog: &mut Program) {
 
 //collapse all hierarchical automata, to build one big non deterministic automaton (or multiple parallel deterministic automata)
 pub fn collapse_automata(prog: &mut Program) -> Result<()> {
-    make_transitions_shared(prog);
+    make_transitions_shared(prog, 1);
     make_transitions_explicit(prog);
     let mut changed = true;
     let mut new_nodes = Vec::new();
@@ -285,6 +298,9 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
             main_module.nodes.insert(node.name.to_string(), node);
         }
     }
+    prog.modules = prog.modules.drain().filter(|(s, _)| s == "main").collect();
+    // make_transitions_shared(prog, 2);
+    // println!("{:#?}", prog);
     Ok(())
 }
 

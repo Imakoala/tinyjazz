@@ -1,4 +1,4 @@
-use crate::ast::*;
+use crate::ast::parse_ast::*;
 use global_counter::global_counter;
 
 /*
@@ -178,7 +178,15 @@ fn flatten_expr(name: &String, expr: Loc<Expr>) -> Result<(Vec<Statement>, Expr)
     let mut res = Vec::new();
     let glob_pos = expr.loc;
     let e_ret = match expr.value {
-        Expr::Const(_) | Expr::Var(_) | Expr::Last(_) => expr.value,
+        Expr::Const(_) | Expr::Var(_) => expr.value,
+        Expr::Last(v) => {
+            let name = loc(v.loc, get_name(&v.value));
+            res.push(Statement::Assign(vec![VarAssign {
+                var: name.clone(),
+                expr: Loc::new(glob_pos, Expr::Last(v)),
+            }]));
+            Expr::Var(name)
+        }
         Expr::FnCall(mut fn_call) => {
             let name = loc(glob_pos, get_name(name));
             let fn_name = fn_call.name.value.clone();
