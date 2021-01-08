@@ -52,7 +52,7 @@ pub fn flatten_automata(prog: &ProgramGraph) -> FlatProgramGraph {
         n_input,
     );
     add_init_values(&mut shared_map, &prog.shared, n_node, init_node);
-    //println!("{:#?}", shared_map);
+    // println!("{:#?}", shared_map);
     remove_tmp_value(&mut shared_map, &prog.shared);
     FlatProgramGraph {
         outputs: prog
@@ -335,15 +335,18 @@ fn compute_node(
                 node_id,
             ),
         )),
-        ExprOperation::Rom(e) => RCell::new(Node::Rom(compute_node(
-            e,
-            shared_map,
-            shared_size,
-            node_mem,
-            reset_conditions,
-            n_input,
-            node_id,
-        ))),
+        ExprOperation::Rom(s, e) => RCell::new(Node::Rom(
+            s,
+            compute_node(
+                e,
+                shared_map,
+                shared_size,
+                node_mem,
+                reset_conditions,
+                n_input,
+                node_id,
+            ),
+        )),
         ExprOperation::Last(i) => {
             let inside_node = if let Some(n) = &reset_conditions[node_id] {
                 Node::Mux(
@@ -380,6 +383,8 @@ fn add_init_values(
                 RCell::new(Node::Reg(1, n.clone())),
                 RCell::new(Node::Const(shared_size[*i].clone())),
             ));
+        } else {
+            *n = RCell::new(Node::Reg(1, n.clone()));
         }
     }
 }
@@ -425,7 +430,7 @@ fn fetch_tmp_values(node: RCell<Node>, tmp_values: &mut Vec<RCell<Node>>) {
             fetch_tmp_values(e3.clone(), tmp_values);
             fetch_tmp_values(e4.clone(), tmp_values)
         }
-        Node::Rom(e) => fetch_tmp_values(e.clone(), tmp_values),
+        Node::Rom(_, e) => fetch_tmp_values(e.clone(), tmp_values),
         Node::TmpValueHolder(_) => tmp_values.push(node.clone()),
     }
 }

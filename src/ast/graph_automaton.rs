@@ -16,7 +16,7 @@ pub enum ExprOperation {
     Mux(Arc<ExprNode>, Arc<ExprNode>, Arc<ExprNode>),
     Reg(usize, Option<Arc<ExprNode>>), //size, node. None means a reference to itself.
     Ram(Arc<ExprNode>, Arc<ExprNode>, Arc<ExprNode>, Arc<ExprNode>),
-    Rom(Arc<ExprNode>),
+    Rom(usize, Arc<ExprNode>),
     Last(usize),
 }
 #[derive(Debug, Clone)]

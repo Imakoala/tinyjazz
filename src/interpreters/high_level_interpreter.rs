@@ -345,7 +345,7 @@ fn calc_node(
             }
             ret
         }
-        ExprOperation::Rom(_) => todo!(),
+        ExprOperation::Rom(_, _) => todo!(),
         ExprOperation::Last(i) => prev_shared[*i].clone(),
     };
     if let Some(id) = node.id {

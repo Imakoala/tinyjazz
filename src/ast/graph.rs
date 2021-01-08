@@ -13,6 +13,9 @@ impl<T> RCell<T> {
     pub fn new(value: T) -> Self {
         RCell(Rc::new((RefCell::new(value), get_value())))
     }
+    pub fn id(&self) -> u32 {
+        (self.0).1
+    }
 }
 impl<T> Deref for RCell<T> {
     type Target = RefCell<T>;
@@ -42,7 +45,7 @@ pub enum Node {
     Mux(RCell<Node>, RCell<Node>, RCell<Node>),
     Reg(usize, RCell<Node>), //size, node.
     Ram(RCell<Node>, RCell<Node>, RCell<Node>, RCell<Node>),
-    Rom(RCell<Node>),
+    Rom(usize, RCell<Node>),
     TmpValueHolder(usize),
 }
 impl std::fmt::Debug for Node {
@@ -84,7 +87,7 @@ fn print_node(node: &Node, in_reg: bool) -> String {
             print_node(&*e3.borrow(), in_reg),
             print_node(&*e4.borrow(), in_reg)
         ),
-        Node::Rom(e) => format!("Rom {}", print_node(&*e.borrow(), in_reg)),
+        Node::Rom(_, e) => format!("Rom {}", print_node(&*e.borrow(), in_reg)),
         Node::TmpValueHolder(i) => format!("Temp value {}", i),
     }
 }

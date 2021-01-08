@@ -1,4 +1,3 @@
-use core::panic;
 use std::{collections::HashMap, io::Write};
 
 use crate::ast::graph::{FlatProgramGraph, Node, RCell};
@@ -122,7 +121,7 @@ fn render_rec(
             edges.push((id, mem(nodes.len(), e4.clone(), nodes_mem), String::new()));
             render_rec(e4.clone(), nodes, edges, nodes_mem);
         }
-        Node::Rom(e) => {
+        Node::Rom(_, e) => {
             nodes.push(format!("Rom"));
             edges.push((
                 nodes.len() - 1,
@@ -131,7 +130,16 @@ fn render_rec(
             ));
             render_rec(e.clone(), nodes, edges, nodes_mem)
         }
-        Node::TmpValueHolder(_) => panic!("Should not happen : temp value in viz"),
+        Node::TmpValueHolder(i) => {
+            //panic!("Should not happen : temp value in viz"),
+            nodes.push(format!("Tmp {}", i));
+            edges.push((
+                nodes.len() - 1,
+                mem(nodes.len(), e.clone(), nodes_mem),
+                String::new(),
+            ));
+            render_rec(e.clone(), nodes, edges, nodes_mem)
+        }
     }
 }
 

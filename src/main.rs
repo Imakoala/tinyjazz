@@ -3,8 +3,10 @@ extern crate lalrpop_util;
 extern crate global_counter;
 
 mod ast;
+mod backends;
 mod frontend;
 mod interpreters;
+mod optimization;
 mod parser_wrapper;
 mod test;
 mod util;
@@ -84,7 +86,10 @@ fn process_file(
 }
 
 fn compile_prog(prog: &ast::graph_automaton::ProgramGraph) -> ast::graph::FlatProgramGraph {
-    let graph = frontend::automaton::flatten_automata(&prog);
+    let mut graph = frontend::automaton::flatten_automata(&prog);
+    optimization::basic::optimize(&mut graph);
+    let file = std::fs::File::create("out.net").unwrap();
+    backends::netlist::to_netlist(&graph, file).unwrap();
     graph
 }
 fn run_interpreter(

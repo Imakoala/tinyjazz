@@ -90,11 +90,11 @@ pub fn make_graph(prog: &typ::Program) -> Result<ProgramGraph, scheduler::Schedu
         .map(|v| (v.value.clone(), *shared_rename_map.get(&v.value).unwrap()))
         .collect();
     let inputs = prog.inputs.iter().map(|var| var.size).collect();
-    println!("{:#?}", shared_rename_map);
-    for node in &nodes {
-        println!("--------------------------------------------------\n inputs : {:#?} \n \n outputs : {:#?} "
-        ,node.inputs, node.shared_outputs.iter().map(|(s, _)| *s).collect::<Vec<usize>>())
-    }
+    // println!("{:#?}", shared_rename_map);
+    // for node in &nodes {
+    //     println!("--------------------------------------------------\n inputs : {:#?} \n \n outputs : {:#?} "
+    //     ,node.inputs, node.shared_outputs.iter().map(|(s, _)| *s).collect::<Vec<usize>>())
+    // }
     let schedule = scheduler::schedule(&nodes, shared.len())?;
     Ok(ProgramGraph {
         init_nodes,
@@ -423,7 +423,7 @@ fn expr_to_node(
                     op: ExprOperation::Const(c.clone()),
                 }),
             };
-            ExprOperation::Rom(n)
+            ExprOperation::Rom(e.size, n)
         }
         ExprType::Last(v) => ExprOperation::Last(*shared_rename_map.get(v).unwrap()),
     };
