@@ -51,7 +51,7 @@ pub fn flatten_automata(prog: &ProgramGraph) -> FlatProgramGraph {
         &reset_conditions,
         n_input,
     );
-    add_init_values(&mut shared_map, &prog.shared, n_node, init_node);
+    add_init_values(&mut shared_map, &prog.shared, n_node, n_input, init_node);
     // println!("{:#?}", shared_map);
     remove_tmp_value(&mut shared_map, &prog.shared);
     FlatProgramGraph {
@@ -368,10 +368,11 @@ fn add_init_values(
     shared_map: &mut HashMap<usize, RCell<Node>>,
     shared_size: &Vec<Vec<bool>>,
     n_nodes: usize,
+    n_input: usize,
     init_node: &RCell<Node>,
 ) {
     for (i, n) in shared_map.iter_mut() {
-        if *i >= n_nodes {
+        if *i >= n_nodes || *i < n_input {
             continue;
         }
         if shared_size[*i]

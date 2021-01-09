@@ -1,11 +1,28 @@
-use std::sync::Arc;
-
 pub use crate::ast::BiOp;
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+use std::{cell::RefCell, hash::Hash};
+use std::{hash::Hasher, sync::Arc};
+#[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct ExprNode {
     pub id: Option<usize>,
     pub op: ExprOperation,
+    pub hash: RefCell<Option<u64>>,
 }
+
+impl Hash for ExprNode {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let cloned_h = self.hash.borrow().clone();
+        if let Some(h) = cloned_h {
+            h.hash(state)
+        } else {
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            self.op.hash(&mut hasher);
+            let h = hasher.finish();
+            h.hash(state);
+            *self.hash.borrow_mut() = Some(h)
+        }
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ExprOperation {
     Input(usize),
@@ -18,6 +35,11 @@ pub enum ExprOperation {
     Ram(Arc<ExprNode>, Arc<ExprNode>, Arc<ExprNode>, Arc<ExprNode>),
     Rom(usize, Arc<ExprNode>),
     Last(usize),
+}
+impl Default for ExprOperation {
+    fn default() -> Self {
+        Self::Const(vec![])
+    }
 }
 #[derive(Debug, Clone)]
 pub struct ProgramNode {

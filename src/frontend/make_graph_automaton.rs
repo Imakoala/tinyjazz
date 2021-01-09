@@ -248,8 +248,8 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: None,
                     op: ExprOperation::Const(c.clone()),
+                    ..Default::default()
                 }),
             };
             let n2 = match &e2.value {
@@ -263,8 +263,8 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: None,
                     op: ExprOperation::Const(c.clone()),
+                    ..Default::default()
                 }),
             };
             ExprOperation::BiOp(op.clone(), n1, n2)
@@ -281,8 +281,8 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: None,
                     op: ExprOperation::Const(c.clone()),
+                    ..Default::default()
                 }),
             };
             let n2 = match &e2.value {
@@ -296,8 +296,8 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: None,
                     op: ExprOperation::Const(c.clone()),
+                    ..Default::default()
                 }),
             };
             let n3 = match &e3.value {
@@ -311,8 +311,8 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: None,
                     op: ExprOperation::Const(c.clone()),
+                    ..Default::default()
                 }),
             };
             ExprOperation::Mux(n1, n2, n3)
@@ -356,8 +356,8 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: None,
                     op: ExprOperation::Const(c.clone()),
+                    ..Default::default()
                 }),
             };
             let n2 = match &e2.value {
@@ -371,8 +371,8 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: None,
                     op: ExprOperation::Const(c.clone()),
+                    ..Default::default()
                 }),
             };
             let n3 = match &e3.value {
@@ -386,8 +386,8 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: None,
                     op: ExprOperation::Const(c.clone()),
+                    ..Default::default()
                 }),
             };
             let n4 = match &e4.value {
@@ -401,8 +401,8 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: None,
                     op: ExprOperation::Const(c.clone()),
+                    ..Default::default()
                 }),
             };
             ExprOperation::Ram(n1, n2, n3, n4)
@@ -419,15 +419,19 @@ fn expr_to_node(
                     inputs,
                 ),
                 ExprTermType::Const(c) => Arc::new(ExprNode {
-                    id: None,
                     op: ExprOperation::Const(c.clone()),
+                    ..Default::default()
                 }),
             };
             ExprOperation::Rom(e.size, n)
         }
         ExprType::Last(v) => ExprOperation::Last(*shared_rename_map.get(v).unwrap()),
     };
-    let node = Arc::new(ExprNode { id: var_id, op });
+    let node = Arc::new(ExprNode {
+        id: var_id,
+        op,
+        ..Default::default()
+    });
     if let Some(map) = expr_map {
         if let Some(id) = var_id {
             map.insert(id, node.clone());
@@ -468,7 +472,7 @@ fn var_to_node(
             });
             Arc::new(ExprNode {
                 op: ExprOperation::Input(id),
-                id: None,
+                ..Default::default()
             })
         }
     }
