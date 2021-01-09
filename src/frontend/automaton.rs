@@ -12,7 +12,7 @@ for each node:
     -compute the expressions of its outputs
 -Replace them all, in scheduling order.
 -Last has disseapeared as it is redundant.
--Everything is wrapped in RCell to stat mutable, for optimisations later on
+-Everything is wrapped in RCell to stay mutable, for optimisations later on
 Once this is done, computes the state variables. They should all be simple shared vars,
 and so it should be simple using the previous map.
 */

@@ -24,7 +24,7 @@ impl<T> Deref for RCell<T> {
         &(self.0).0
     }
 }
-//WARNING ! the hash and eq impl comapre pointers !
+
 impl<T: PartialEq> PartialEq for RCell<T> {
     fn eq(&self, other: &Self) -> bool {
         (self.0).1 == (other.0).1

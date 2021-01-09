@@ -3,7 +3,7 @@ name = "tinyjazz"
 version = "0.1.0"
 authors = ["Timothée Le Berre <timothee.le.berre@ens.fr>"]
 edition = "2018"
-
+build = "build.rs" # LALRPOP preprocessing
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 

@@ -1,5 +1,5 @@
 digraph example2 {
-    N0[label="Output o"];
+    N0[label="Output o_o_o_o_o"];
     N1[label="Mux"];
     N2[label="Mux"];
     N3[label="Reg"];

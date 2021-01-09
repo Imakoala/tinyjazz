@@ -1,5 +1,6 @@
 pub(crate) mod automaton;
 pub(crate) mod constants;
+pub(crate) mod from_netlist;
 pub(crate) mod functions;
 pub(crate) mod hierarchical_automata;
 pub(crate) mod make_graph_automaton;

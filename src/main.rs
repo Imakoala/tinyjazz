@@ -24,6 +24,7 @@ struct Args {
     flag_print: bool,
     flag_i: Option<String>,
     flag_s: Option<usize>,
+    flag_netlist: bool,
 }
 
 // fn print_expr(expr: &ast::Expr) -> String {
@@ -86,10 +87,7 @@ fn process_file(
 }
 
 fn compile_prog(prog: &ast::graph_automaton::ProgramGraph) -> ast::graph::FlatProgramGraph {
-    let mut graph = frontend::automaton::flatten_automata(&prog);
-    optimization::basic::optimize(&mut graph);
-    let file = std::fs::File::create("out.net").unwrap();
-    backends::netlist::to_netlist(&graph, file).unwrap();
+    let graph = frontend::automaton::flatten_automata(&prog);
     graph
 }
 fn run_interpreter(
@@ -112,23 +110,32 @@ fn main() {
         println!("tinyjazz version 0.0.1");
         return;
     }
-    let prog_result = process_file(args.arg_file.into());
-    match prog_result {
-        Err(err) => {
+    let mut flat_prog = if args.flag_netlist {
+        frontend::from_netlist::from_netlist(&*args.arg_file)
+    } else {
+        let prog_result = process_file(args.arg_file.into());
+        if let Err(err) = prog_result {
             err.print().unwrap();
             exit(1)
         }
-        Ok(prog) => {
-            let flat_prog = compile_prog(&prog);
-            if args.flag_print {
-                println!("{:#?}", flat_prog)
-            }
-            if args.flag_dot {
-                util::viz::render(&flat_prog);
-            }
-            if let Some(steps) = args.flag_s {
-                run_interpreter(&prog, steps, args.flag_i)
-            }
+        let prog = if let Ok(prog) = prog_result {
+            prog
+        } else {
+            panic!()
+        };
+        let res = compile_prog(&prog);
+        if let Some(steps) = args.flag_s {
+            run_interpreter(&prog, steps, args.flag_i)
         }
+        res
+    };
+    optimization::basic::optimize(&mut flat_prog);
+    let file = std::fs::File::create("out.net").unwrap();
+    backends::netlist::to_netlist(&flat_prog, file).unwrap();
+    if args.flag_print {
+        println!("{:#?}", flat_prog)
+    }
+    if args.flag_dot {
+        util::viz::render(&flat_prog);
     }
 }

@@ -1,0 +1,70 @@
+use std::str::FromStr;
+use crate::frontend::from_netlist::parse_ast::*;
+grammar();
+
+Comma<T>: Vec<T> = { 
+    <v:(<T> ",")*> <e:T?> => match e { 
+        None => v,
+        Some(e) => {
+            let mut v = v;
+            v.push(e);
+            v
+        }
+    }
+};
+Var : &'input str = {
+    r"[a-zA-Z_][a-zA-Z_0-9]*" => <>
+}
+Num: usize = {
+    <s:r"[0-9]+"> => usize::from_str(s).unwrap(),
+    "0" => 0,
+    "1" => 1
+}
+
+pub Program : Netlist<'input> = {
+    "INPUT" <i:Comma<Var>> "OUTPUT" <o:Comma<Var>> "VAR" <v:Comma<SizedVar>> "IN" <instr: Instr*> => {
+        Netlist {
+            inputs: i.into_iter().collect(), 
+            outputs: o.into_iter().collect(),
+            vars: v.into_iter().collect(),
+            instr: instr.into_iter().collect()
+        }
+    }
+};
+
+Instr: (&'input str, Expr<'input>) = {
+    <v:Var> "=" <e: Expr> => (v, e)
+}
+
+SizedVar: (&'input str, usize) = {
+    <v:Var> => (v, 1),
+    <v:Var> ":" <n:Num> => (v, n)
+}
+
+Expr : Expr<'input> = {
+    "NOT" <v:Var> => Expr::Not(v),
+    "ROM" <v:Var> => Expr::Rom(v),
+    "REG" <v:Var> => Expr::Reg(v),
+    <op: BiOp> <v1: Var> <v2: Var> => Expr::BiOp(op, v1, v2),
+    "SLICE" <n1:Num> <n2:Num> <v:Var> => Expr::Slice(v, n1, n2),
+    "SELECT" <n1:Num> <v:Var> => Expr::Slice(v, n1, n1+1),
+    "MUX" <v1:Var> <v2:Var> <v3:Var>=> Expr::Mux(v1, v2, v3),
+    "RAM" <v1:Var> <v2:Var> <v3:Var> <v4:Var>=> Expr::Ram(v1, v2, v3, v4),
+    <Const> => Expr::Const(<>),
+    <Var> => Expr::Var(<>),
+}
+
+BiOp : BiOp = {
+    "AND" => BiOp::And, 
+    "OR" => BiOp::Or, 
+    "XOR" => BiOp::Xor, 
+    "NAND" => BiOp::Nand, 
+    "CONCAT" => BiOp::Concat
+}
+
+Const: Vec<bool> = {
+    <mut v: Const> "0" => {v.push(false); v},
+    <mut v: Const> "1" => {v.push(true); v},
+    "0" => vec![false],
+    "1" => vec![true]
+}
