@@ -24,7 +24,9 @@ struct Args {
     flag_print: bool,
     flag_i: Option<String>,
     flag_s: Option<usize>,
+    flag_hl: bool,
     flag_netlist: bool,
+    flag_o: usize,
 }
 
 // fn print_expr(expr: &ast::Expr) -> String {
@@ -90,17 +92,6 @@ fn compile_prog(prog: &ast::graph_automaton::ProgramGraph) -> ast::graph::FlatPr
     let graph = frontend::automaton::flatten_automata(&prog);
     graph
 }
-fn run_interpreter(
-    graph: &ast::graph_automaton::ProgramGraph,
-    steps: usize,
-    input_script_path: Option<String>,
-) {
-    for outputs in
-        interpreters::high_level_interpreter::interprete(graph, input_script_path).take(steps)
-    {
-        println!("{:?}", outputs);
-    }
-}
 
 fn main() {
     let args: Args = Docopt::new(USAGE)
@@ -123,13 +114,23 @@ fn main() {
         } else {
             panic!()
         };
+
         let res = compile_prog(&prog);
-        if let Some(steps) = args.flag_s {
-            run_interpreter(&prog, steps, args.flag_i)
+        if args.flag_hl {
+            if let Some(steps) = args.flag_s {
+                for outputs in
+                    interpreters::high_level_interpreter::interprete(&prog, args.flag_i.clone())
+                        .take(steps)
+                {
+                    println!("{:?}", outputs);
+                }
+            }
         }
         res
     };
-    optimization::basic::optimize(&mut flat_prog);
+    if args.flag_o >= 1 {
+        optimization::basic::optimize(&mut flat_prog);
+    }
     let file = std::fs::File::create("out.net").unwrap();
     backends::netlist::to_netlist(&flat_prog, file).unwrap();
     if args.flag_print {
@@ -137,5 +138,14 @@ fn main() {
     }
     if args.flag_dot {
         util::viz::render(&flat_prog);
+    }
+    if !args.flag_hl {
+        if let Some(steps) = args.flag_s {
+            for outputs in
+                interpreters::low_level_interpreter::interprete(&flat_prog, args.flag_i).take(steps)
+            {
+                println!("{:?}", outputs);
+            }
+        }
     }
 }

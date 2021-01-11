@@ -50,44 +50,65 @@ pub enum Node {
 }
 impl std::fmt::Debug for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", print_node(self, false))
+        write!(f, "{}", print_node(self, false, "".into()))
     }
 }
-fn print_node(node: &Node, in_reg: bool) -> String {
+fn print_node(node: &Node, in_reg: bool, indent: String) -> String {
     match node {
         Node::Input(i) => format!("Input {}", i),
         Node::Const(v) => format!("Const {:?}", v),
-        Node::Not(e) => format!("Not {}", print_node(&*e.borrow(), in_reg)),
+        Node::Not(e) => format!(
+            "Not {}",
+            print_node(&*e.borrow(), in_reg, indent.clone() + " ")
+        ),
         Node::Slice(e, c1, c2) => {
-            format!("Slice {} {} {}", c1, c2, print_node(&*e.borrow(), in_reg))
+            format!(
+                "Slice {} {} {}",
+                c1,
+                c2,
+                print_node(&*e.borrow(), in_reg, indent.clone() + " ")
+            )
         }
         Node::BiOp(op, e1, e2) => format!(
-            "{:?} {} \n {}",
+            "{:?} {} \n{}{}",
             op,
-            print_node(&*e1.borrow(), in_reg),
-            print_node(&*e2.borrow(), in_reg)
+            print_node(&*e1.borrow(), in_reg, indent.clone() + " "),
+            indent,
+            print_node(&*e2.borrow(), in_reg, indent.clone() + " ")
         ),
         Node::Mux(e1, e2, e3) => format!(
-            "Mux {} \n {} \n {}",
-            print_node(&*e1.borrow(), in_reg),
-            print_node(&*e2.borrow(), in_reg),
-            print_node(&*e3.borrow(), in_reg)
+            "Mux {} \n{}{} \n{}{}",
+            print_node(&*e1.borrow(), in_reg, indent.clone() + " "),
+            indent,
+            print_node(&*e2.borrow(), in_reg, indent.clone() + " "),
+            indent,
+            print_node(&*e3.borrow(), in_reg, indent.clone() + " ")
         ),
         Node::Reg(_, e) => {
             if in_reg {
                 "Reg loop".to_string()
             } else {
-                format!("Reg {}", print_node(&*e.borrow(), true))
+                format!(
+                    "Reg {}",
+                    print_node(&*e.borrow(), true, indent.clone() + " ")
+                )
             }
         }
         Node::Ram(e1, e2, e3, e4) => format!(
-            "Ram {} \n {} \n {} \n {}",
-            print_node(&*e1.borrow(), in_reg),
-            print_node(&*e2.borrow(), in_reg),
-            print_node(&*e3.borrow(), in_reg),
-            print_node(&*e4.borrow(), in_reg)
+            "Ram \n{}{} \n{}{} \n{}{} \n{}{}",
+            indent,
+            print_node(&*e1.borrow(), in_reg, indent.clone() + " "),
+            indent,
+            print_node(&*e2.borrow(), in_reg, indent.clone() + " "),
+            indent,
+            print_node(&*e3.borrow(), in_reg, indent.clone() + " "),
+            indent,
+            print_node(&*e4.borrow(), in_reg, indent.clone() + " ")
         ),
-        Node::Rom(_, e) => format!("Rom {}", print_node(&*e.borrow(), in_reg)),
+        Node::Rom(_, e) => format!(
+            "Rom {}",
+            print_node(&*e.borrow(), in_reg, indent.clone() + " ")
+        ),
         Node::TmpValueHolder(i) => format!("Temp value {}", i),
     }
 }

@@ -2,7 +2,7 @@ Tinyjazz.
 A compiler for a language close to minijazz, extended with a more permissive syntaxe and state automata
 
 Usage:
-  tinyjazz <file> [-i <file>] [-p | --print] [--dot] [[-n | --netlist] | -s <steps>]
+  tinyjazz <file> [-i <file>] [-p | --print] [-d | --dot] [-n | --netlist] [-s <steps> [--hl]] [-o<optlvl>]
   tinyjazz (-h | --help)
   tinyjazz --version
 
@@ -10,7 +10,9 @@ Options:
   -h --help     Show this screen.
   --version     Show version.
   -i <file>     Specify a Rhai scripting file giving the inputs of the main module.
-  -s <steps>    Simulate the file using a high-level interpreter, for a number of steps. 
-  --dot         Generates .dot files to visualize the program.
+  -s <steps>    Simulate the file using a low-level interpreter, for a number of steps. 
+  --hl          Switch the interpreter to the high-level one
+  -d --dot      Generates .dot files to visualize the program.
   -p --print    Pretty-prints the output
   -n --netlist  Takes a netlist instead of a tinyjazz file as the input.
+  -o <optlvl>    Set the optimisation level [default: 1]

@@ -20,10 +20,15 @@ pub fn to_netlist(source: &FlatProgramGraph, mut dest: impl Write) -> Result<(),
             .format_with(", ", |elt, f| f(&format_args!("o_{}", elt.0)))
     )?;
     write!(dest, "VAR ")?;
-    let mut first = true;
-    for (_, n) in source.outputs.iter() {
-        write_vars(n, &mut dest, first, &mut HashMap::new(), &source.inputs)?;
-        first = false;
+    for (i, s) in source.inputs.iter().enumerate() {
+        write!(dest, "i_{} : {},", i, s)?;
+    }
+    for (i, (name, n)) in source.outputs.iter().enumerate() {
+        let s = write_vars(n, &mut dest, &mut HashMap::new(), &source.inputs)?;
+        write!(dest, "o_{} : {}", name, s)?;
+        if i != source.outputs.len() - 1 {
+            write!(dest, ",")?;
+        }
     }
     write!(dest, "\nIN\n")?;
     for (s, n) in &source.outputs {
@@ -38,7 +43,6 @@ pub fn to_netlist(source: &FlatProgramGraph, mut dest: impl Write) -> Result<(),
 fn write_vars(
     node: &RCell<Node>,
     dest: &mut impl Write,
-    first: bool,
     mem: &mut HashMap<u32, usize>,
     input_sizes: &Vec<usize>,
 ) -> Result<usize, std::io::Error> {
@@ -49,33 +53,33 @@ fn write_vars(
     let size = match node.borrow().clone() {
         Node::Input(i) => input_sizes[i],
         Node::Const(c) => c.len(),
-        Node::Not(e) => write_vars(&e, dest, false, mem, input_sizes)?,
+        Node::Not(e) => write_vars(&e, dest, mem, input_sizes)?,
         Node::Slice(e, c1, c2) => {
-            write_vars(&e, dest, false, mem, input_sizes)?;
+            write_vars(&e, dest, mem, input_sizes)?;
             c2 - c1
         }
         Node::BiOp(_, e1, e2) => {
-            write_vars(&e1, dest, false, mem, input_sizes)?;
-            write_vars(&e2, dest, false, mem, input_sizes)?
+            write_vars(&e1, dest, mem, input_sizes)?;
+            write_vars(&e2, dest, mem, input_sizes)?
         }
         Node::Mux(e1, e2, e3) => {
-            write_vars(&e1, dest, false, mem, input_sizes)?;
-            write_vars(&e2, dest, false, mem, input_sizes)?;
-            write_vars(&e3, dest, false, mem, input_sizes)?
+            write_vars(&e1, dest, mem, input_sizes)?;
+            write_vars(&e2, dest, mem, input_sizes)?;
+            write_vars(&e3, dest, mem, input_sizes)?
         }
         Node::Reg(s, e) => {
             mem.insert(node.id(), s);
-            write_vars(&e, dest, false, mem, input_sizes)?;
+            write_vars(&e, dest, mem, input_sizes)?;
             s
         }
         Node::Ram(e1, e2, e3, e4) => {
-            write_vars(&e1, dest, false, mem, input_sizes)?;
-            write_vars(&e2, dest, false, mem, input_sizes)?;
-            write_vars(&e3, dest, false, mem, input_sizes)?;
-            write_vars(&e4, dest, false, mem, input_sizes)?
+            write_vars(&e1, dest, mem, input_sizes)?;
+            write_vars(&e2, dest, mem, input_sizes)?;
+            write_vars(&e3, dest, mem, input_sizes)?;
+            write_vars(&e4, dest, mem, input_sizes)?
         }
         Node::Rom(s, e) => {
-            write_vars(&e, dest, false, mem, input_sizes)?;
+            write_vars(&e, dest, mem, input_sizes)?;
             s
         }
         Node::TmpValueHolder(_) => 0,
@@ -84,9 +88,7 @@ fn write_vars(
     if size != 1 {
         write!(dest, " : {}", size)?;
     }
-    if !first {
-        write!(dest, ", ")?;
-    }
+    write!(dest, ", ")?;
     mem.insert(node.id(), size);
     Ok(size)
 }
