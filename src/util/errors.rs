@@ -3,16 +3,14 @@ use codespan_reporting::files::SimpleFiles;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use std::rc::Rc;
 
-use crate::{
-    frontend::{
-        constants::ComputeConstError,
-        functions::{ExpandFnError, REC_DEPTH},
-        hierarchical_automata::CollapseAutomataError,
-        nested_expr::FlattenError,
-        scheduler::ScheduleError,
-        typing::TypingError,
-    },
+use crate::frontend::{
+    constants::ComputeConstError,
+    functions::{ExpandFnError, REC_DEPTH},
+    hierarchical_automata::CollapseAutomataError,
+    nested_expr::FlattenError,
     parser_wrapper::{ParseErrorType, ParserError},
+    scheduler::ScheduleError,
+    typing::TypingError,
 };
 
 /*

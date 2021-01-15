@@ -356,16 +356,3 @@ fn get_dependancies(c: &Const, deps: &mut Vec<String>, locs: &mut AHashMap<Strin
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use crate::parser_wrapper::parse;
-
-    use super::compute_consts;
-    #[test]
-    fn test_consts() {
-        let (mut prog, _) = parse("src/tests/compute_consts/pass/test_consts.tj".into()).unwrap();
-        compute_consts(&mut prog).unwrap();
-        println!("{:#?}", prog)
-    }
-}

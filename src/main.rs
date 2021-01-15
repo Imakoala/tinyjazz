@@ -7,7 +7,6 @@ mod backends;
 mod frontend;
 mod interpreters;
 mod optimization;
-mod parser_wrapper;
 mod test;
 mod util;
 use ahash::AHashMap;
@@ -73,7 +72,7 @@ struct Args {
 fn process_file(
     path: PathBuf,
 ) -> Result<ast::graph_automaton::ProgramGraph, util::errors::TinyjazzError> {
-    let (mut prog, files) = parser_wrapper::parse(path)?;
+    let (mut prog, files) = frontend::parser_wrapper::parse(path)?;
     frontend::constants::compute_consts(&mut prog).map_err(|e| (e, files.clone()))?;
     frontend::hierarchical_automata::collapse_automata(&mut prog)
         .map_err(|e| (e, files.clone()))?;
