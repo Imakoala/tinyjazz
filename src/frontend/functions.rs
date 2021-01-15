@@ -2,8 +2,8 @@ use std::fmt::Display;
 
 use crate::ast::parse_ast::*;
 use crate::frontend::constants::{compute_const, compute_consts_in_statement, ComputeConstError};
+use ahash::AHashMap;
 use global_counter::global_counter;
-
 /*
 This file recusively inlines functions.
 It simply alternates between inlining all functions, then computing all constants.
@@ -47,7 +47,7 @@ impl From<ComputeConstError> for ExpandFnError {
 
 pub fn expand_functions(
     prog: &mut Program,
-    type_map: &mut HashMap<String, (i32, Pos)>,
+    type_map: &mut AHashMap<String, (i32, Pos)>,
 ) -> Result<(), ExpandFnError> {
     let mut changed = Some(Loc {
         loc: (0, 0, 0),
@@ -66,7 +66,7 @@ pub fn expand_functions(
 
 fn replace_fn_calls(
     prog: &mut Program,
-    type_map: &mut HashMap<String, (i32, Pos)>,
+    type_map: &mut AHashMap<String, (i32, Pos)>,
 ) -> Result<Option<Loc<String>>, ExpandFnError> {
     let mut changed = None;
     for (_mod_name, module) in prog.modules.iter_mut() {
@@ -85,8 +85,8 @@ fn replace_fn_calls(
 //it returns the name of a function which was inlined, to report infinite recursion errors.
 fn replace_fn_calls_in_statements(
     statements: &mut Vec<Statement>,
-    functions: &mut HashMap<String, Function>,
-    type_map: &mut HashMap<String, (i32, Pos)>,
+    functions: &mut AHashMap<String, Function>,
+    type_map: &mut AHashMap<String, (i32, Pos)>,
 ) -> Result<Option<Loc<String>>, ExpandFnError> {
     let mut new_vec: Vec<Statement> = Vec::new();
     let mut changed = None;
@@ -160,6 +160,9 @@ fn replace_fn_calls_in_statements(
                 inline_function(func, &mut fn_assign.f, outputs, &mut new_vec, type_map)?;
                 changed = Some(fn_assign.f.name.clone());
             }
+            Statement::ExtModule(_) => {
+                panic!("SHould not happen: nested automaton in function inlining")
+            }
         }
     }
     *statements = new_vec;
@@ -174,7 +177,7 @@ fn inline_function(
     fncall: &mut FnCall,
     outputs: Loc<Vec<Loc<Var>>>,
     out_statements: &mut Vec<Statement>,
-    type_map: &mut HashMap<String, (i32, Pos)>,
+    type_map: &mut AHashMap<String, (i32, Pos)>,
 ) -> Result<(), ExpandFnError> {
     //check the number of arguments
     if fncall.static_args.len() != func.static_args.len() {
@@ -206,8 +209,8 @@ fn inline_function(
     }
 
     //simplify the constants, only values should be left.
-    let empty_map = HashMap::new();
-    let mut static_args_map = HashMap::new();
+    let empty_map = AHashMap::new();
+    let mut static_args_map = AHashMap::new();
     for (i, c) in fncall.static_args.iter_mut().enumerate() {
         compute_const(c, &empty_map)?;
         static_args_map.insert(func.static_args[i].clone(), c.clone());
@@ -226,7 +229,7 @@ fn inline_function(
 
     //Link the inpute paramters
     //remember the names given to the input parameters.
-    let mut vars_map = HashMap::new();
+    let mut vars_map = AHashMap::new();
     let counter = FN_CALL_VARIABLE.get_cloned();
     FN_CALL_VARIABLE.inc();
 
@@ -315,7 +318,7 @@ fn inline_function(
 //replace constants in functions using the provided static parameters
 fn replace_consts(
     statements: &mut Vec<Statement>,
-    consts: &HashMap<String, Const>,
+    consts: &AHashMap<String, Const>,
 ) -> Result<(), ComputeConstError> {
     for statement in statements {
         compute_consts_in_statement(statement, consts)?;
@@ -326,7 +329,7 @@ fn replace_consts(
 //replace the variables in functions using the input variables (which might be generated if an expr was passed as the argument)
 fn replace_vars(
     statements: &mut Vec<Statement>,
-    vars: &mut HashMap<String, String>,
+    vars: &mut AHashMap<String, String>,
     fn_name: &String,
     static_params: &String,
     counter: u32,
@@ -425,6 +428,9 @@ where
             for v in vars {
                 f(&mut v.value)
             }
+        }
+        Statement::ExtModule(_) => {
+            panic!("SHould not happen: nested automaton in function inlining")
         }
     }
 }

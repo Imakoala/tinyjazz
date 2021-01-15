@@ -1,5 +1,5 @@
 pub use crate::ast::BiOp;
-pub use std::collections::HashMap;
+use ahash::AHashMap;
 use std::ops::{Deref, DerefMut};
 /*
 A simpler, typed ast
@@ -28,8 +28,8 @@ impl<T> DerefMut for Sized<T> {
 pub struct Program {
     pub inputs: Vec<Arg>,
     pub outputs: Vec<Arg>,
-    pub shared: HashMap<SharedVar, Value>,
-    pub nodes: HashMap<Name, Node>,
+    pub shared: AHashMap<SharedVar, Value>,
+    pub nodes: AHashMap<Name, Node>,
     pub init_nodes: Vec<Name>,
 }
 
@@ -50,7 +50,7 @@ pub type Value = Vec<bool>;
 #[derive(Debug, Clone)]
 pub struct Node {
     pub name: String,
-    pub statements: HashMap<Var, Expr>,
+    pub statements: AHashMap<Var, Expr>,
     pub transitions: Vec<(Var, Option<Name>, bool)>,
     pub weak: bool,
 }

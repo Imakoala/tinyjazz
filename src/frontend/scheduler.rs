@@ -21,7 +21,7 @@ impl From<solvent::SolventError> for ScheduleError {
         }
     }
 }
-
+#[allow(dead_code)]
 pub fn schedule(prog: &Vec<ProgramNode>, n_shared: usize) -> Result<Vec<usize>, ScheduleError> {
     let mut source_map = vec![Vec::new(); n_shared]; //what node compute each shared var.
     for (id, pnode) in prog.iter().enumerate() {

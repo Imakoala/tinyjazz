@@ -17,7 +17,9 @@ pub struct InterpreterIterator<'a> {
 impl<'a> Iterator for InterpreterIterator<'a> {
     type Item = Vec<(&'a String, Vec<bool>)>;
     fn next(self: &mut Self) -> Option<Vec<(&'a String, Vec<bool>)>> {
-        self.reg_map = self.next_reg_map.clone();
+        for (k, v) in self.next_reg_map.drain() {
+            self.reg_map.insert(k, v);
+        }
         let inputs = (self.inputs)();
         self.mem.clear();
         Some(

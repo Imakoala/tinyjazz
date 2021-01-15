@@ -1,4 +1,5 @@
 use crate::ast::parse_ast::*;
+use ahash::AHashMap;
 use solvent::DepGraph;
 /*
 In this file, we try to simplify all the constants as much as possible, to prepare for
@@ -74,7 +75,7 @@ pub fn compute_consts(prog: &mut Program) -> Result<(), ComputeConstError> {
 //for use in functions only.
 fn simplify_const(
     c: &mut Const,
-    consts: &HashMap<String, Const>,
+    consts: &AHashMap<String, Const>,
     static_args: &Vec<String>,
 ) -> Result<(), ComputeConstError> {
     let res = match c {
@@ -121,7 +122,7 @@ fn simplify_const(
 
 fn simplify_consts_in_statement(
     statement: &mut Statement,
-    consts: &HashMap<String, Const>,
+    consts: &AHashMap<String, Const>,
     static_args: &Vec<String>,
 ) -> Result<(), ComputeConstError> {
     let mut closure = |c: &mut Const| simplify_const(c, consts, static_args);
@@ -130,7 +131,7 @@ fn simplify_consts_in_statement(
 
 pub fn compute_consts_in_statement(
     statement: &mut Statement,
-    consts: &HashMap<String, Const>,
+    consts: &AHashMap<String, Const>,
 ) -> Result<(), ComputeConstError> {
     let mut closure = |c: &mut Const| {
         *c = Const::Value(compute_const(c, consts)?);
@@ -178,6 +179,12 @@ where
             }
             Ok(())
         }
+        Statement::ExtModule(e) => {
+            for input_e in e.inputs.iter_mut() {
+                map_consts_in_expr(input_e, f)?;
+            }
+            Ok(())
+        }
     }
 }
 
@@ -206,7 +213,7 @@ fn compute_op(op: &ConstBiOp, v1: i32, v2: i32, loc: Pos) -> Result<i32, Compute
 
 fn compute_consts_in_expr(
     expr: &mut Expr,
-    consts: &HashMap<String, Const>,
+    consts: &AHashMap<String, Const>,
 ) -> Result<(), ComputeConstError> {
     let mut closure = |c: &mut Const| {
         *c = Const::Value(compute_const(c, consts)?);
@@ -223,8 +230,12 @@ where
         Expr::Const(ConstExpr::Unknown(_, c)) => f(c),
         Expr::Not(e) => map_consts_in_expr(e, f),
         Expr::Slice(e, c1, c2) => {
-            f(c1)?;
-            f(c2)?;
+            if let Some(c1) = c1 {
+                f(c1)?;
+            }
+            if let Some(c2) = c2 {
+                f(c2)?;
+            }
             map_consts_in_expr(e, f)
         }
         Expr::BiOp(_, e1, e2) => {
@@ -277,13 +288,13 @@ where
 //replace the constants with simple Value(i32).
 //This uses a dpeendancy solver, as the constant definition can be unordered
 //(this allows for deterministically using constants from other files)
-fn compute_global_consts(consts: &mut HashMap<String, Const>) -> Result<(), ComputeConstError> {
+fn compute_global_consts(consts: &mut AHashMap<String, Const>) -> Result<(), ComputeConstError> {
     if consts.is_empty() {
         return Ok(());
     }
     let mut depgraph = DepGraph::<String>::new();
     let start = "0".to_string(); //a const can't be named "0"
-    let mut locs = HashMap::new();
+    let mut locs = AHashMap::new();
     for (s, c) in consts.iter() {
         depgraph.register_dependency(start.clone(), s.to_string());
         let mut deps = Vec::new();
@@ -309,7 +320,10 @@ fn compute_global_consts(consts: &mut HashMap<String, Const>) -> Result<(), Comp
 }
 
 //Replace a constant with a single value, fails if it can't
-pub fn compute_const(c: &Const, consts: &HashMap<String, Const>) -> Result<i32, ComputeConstError> {
+pub fn compute_const(
+    c: &Const,
+    consts: &AHashMap<String, Const>,
+) -> Result<i32, ComputeConstError> {
     match c {
         Const::Value(i) => Ok(*i),
         Const::Var(v) => {
@@ -329,7 +343,7 @@ pub fn compute_const(c: &Const, consts: &HashMap<String, Const>) -> Result<i32, 
         }
     }
 }
-fn get_dependancies(c: &Const, deps: &mut Vec<String>, locs: &mut HashMap<String, Pos>) {
+fn get_dependancies(c: &Const, deps: &mut Vec<String>, locs: &mut AHashMap<String, Pos>) {
     match c {
         Const::Value(_) => (),
         Const::Var(s) => {

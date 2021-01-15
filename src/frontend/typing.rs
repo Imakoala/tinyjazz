@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use ahash::AHashMap;
 
 use crate::ast::parse_ast as untyp;
 use crate::ast::typed_ast as typ;
@@ -38,12 +38,12 @@ pub struct Token {
 type Result<T> = std::result::Result<T, TypingError>;
 pub fn type_prog(
     mut prog: untyp::Program,
-    mut type_constraints: HashMap<String, (i32, Pos)>,
+    mut type_constraints: AHashMap<String, (i32, Pos)>,
 ) -> Result<typ::Program> {
-    let mut shared_types: HashMap<String, (usize, Pos)> = HashMap::new();
+    let mut shared_types: AHashMap<String, (usize, Pos)> = AHashMap::new();
     //build the map from shared variables, and type them as well.
     let main_module = prog.modules.get_mut("main").unwrap();
-    let shared_map = main_module
+    let mut shared_map = main_module
         .shared
         .drain(..)
         .map(|untyp::VarAssign { var, expr }| {
@@ -75,7 +75,7 @@ pub fn type_prog(
                 panic!("Should not happen : non-value constant encountered while typing")
             }
         })
-        .collect::<Result<HashMap<String, Vec<bool>>>>()?;
+        .collect::<Result<AHashMap<String, Vec<bool>>>>()?;
     //Nodes name are shared variable which indicated the state of the node (running or not)
     for (name, node) in main_module.nodes.iter() {
         if shared_map.contains_key(name) {
@@ -113,7 +113,7 @@ pub fn type_prog(
         })
         .collect::<Result<Vec<typ::Sized<String>>>>()?;
 
-    //outputs must be shared variables or inputs.
+    //outputs can be shared variables or inputs.
     //the types are also added in a vector for use in external module typing.
     let mut out_types = Vec::new();
     let outputs = main_module
@@ -123,8 +123,8 @@ pub fn type_prog(
             let loc = arg.size.loc;
             if let untyp::Const::Value(i) = arg.size.value {
                 let j = usize::try_from(i).map_err(|_| TypingError::NegativeSizeBus(loc, i))?;
+                out_types.push((j, loc));
                 if let Some((i_decl, loc_decl)) = shared_types.get(&arg.name) {
-                    out_types.push((j, loc));
                     if *i_decl != j {
                         let token1 = Token {
                             loc: *loc_decl,
@@ -144,7 +144,12 @@ pub fn type_prog(
                         })
                     }
                 } else {
-                    Err(TypingError::UnknownVar(arg.name, loc))
+                    shared_map.insert(arg.name.clone(), vec![false; j]);
+                    shared_types.insert(arg.name.clone(), (j, loc));
+                    Ok(typ::Sized {
+                        value: arg.name,
+                        size: j,
+                    })
                 }
             } else {
                 panic!("Should not happen : unknown const in typing");
@@ -155,7 +160,7 @@ pub fn type_prog(
         .nodes
         .iter()
         .map(|(_, node)| (node.name.to_string(), node.name.loc))
-        .collect::<HashMap<String, Pos>>();
+        .collect::<AHashMap<String, Pos>>();
     //If init nodes were specified, use them. Else, use the first node.
     let init_nodes = main_module
         .init_nodes
@@ -177,7 +182,7 @@ pub fn type_prog(
                 type_node(node, &nodes_map, &shared_types, &mut type_constraints)?,
             ))
         })
-        .collect::<Result<HashMap<typ::Name, typ::Node>>>()?;
+        .collect::<Result<AHashMap<typ::Name, typ::Node>>>()?;
     Ok(typ::Program {
         inputs,
         outputs,
@@ -190,11 +195,11 @@ pub fn type_prog(
 //type a node. It has to type all the statements and transitions
 fn type_node(
     mut node: untyp::Node,
-    nodes_map: &HashMap<String, Pos>,
-    shared_types: &HashMap<String, (usize, Pos)>,
-    type_constraints: &mut HashMap<String, (i32, Pos)>,
+    nodes_map: &AHashMap<String, Pos>,
+    shared_types: &AHashMap<String, (usize, Pos)>,
+    type_constraints: &mut AHashMap<String, (i32, Pos)>,
 ) -> Result<typ::Node> {
-    let mut var_types: HashMap<String, (usize, Pos)> = HashMap::new();
+    let mut var_types: AHashMap<String, (usize, Pos)> = AHashMap::new();
     let statements = node
         .statements
         .drain(..)
@@ -206,7 +211,7 @@ fn type_node(
                 type_constraints,
             )?)
         })
-        .collect::<Result<HashMap<typ::Var, typ::Expr>>>()?;
+        .collect::<Result<AHashMap<typ::Var, typ::Expr>>>()?;
     let weak = node.weak;
     let transitions = node
         .transitions
@@ -263,9 +268,9 @@ fn type_node(
 //type a statement, not much to say here.
 fn type_statement(
     statement: untyp::Statement,
-    var_types: &mut HashMap<String, (usize, Pos)>,
-    shared_types: &HashMap<String, (usize, Pos)>,
-    type_constraints: &mut HashMap<String, (i32, Pos)>,
+    var_types: &mut AHashMap<String, (usize, Pos)>,
+    shared_types: &AHashMap<String, (usize, Pos)>,
+    type_constraints: &mut AHashMap<String, (i32, Pos)>,
 ) -> Result<(typ::Var, typ::Expr)> {
     match statement {
         untyp::Statement::Assign(mut var_assigns) => {
@@ -327,9 +332,9 @@ fn type_statement(
 
 fn type_expr(
     expr: untyp::Expr,
-    var_types: &HashMap<String, (usize, Pos)>,
-    shared_types: &HashMap<String, (usize, Pos)>,
-    type_constraints: &mut HashMap<String, (i32, Pos)>,
+    var_types: &AHashMap<String, (usize, Pos)>,
+    shared_types: &AHashMap<String, (usize, Pos)>,
+    type_constraints: &mut AHashMap<String, (i32, Pos)>,
 ) -> Result<typ::Expr> {
     match expr {
         untyp::Expr::Const(_) | untyp::Expr::Var(_) => {
@@ -357,10 +362,13 @@ fn type_expr(
             })
         }
         untyp::Expr::Slice(expr_term, c1, c2) => {
+            let sized_expr =
+                type_expr_term(expr_term.value, var_types, shared_types, type_constraints)?;
+            let c1 = c1.unwrap_or(untyp::Const::Value(0));
+            let c2 = c2.unwrap_or(untyp::Const::Value(sized_expr.size as i32));
             if let (untyp::Const::Value(i1), untyp::Const::Value(i2)) = (c1, c2) {
                 let loc = expr_term.loc;
-                let sized_expr =
-                    type_expr_term(expr_term.value, var_types, shared_types, type_constraints)?;
+
                 let j1 = usize::try_from(i1)
                     .map_err(|_| TypingError::IndexOutOfRange(loc, i1, sized_expr.size))?;
                 let j2 = usize::try_from(i2)
@@ -539,9 +547,9 @@ fn type_expr(
 
 fn type_expr_term(
     expr: untyp::Expr,
-    var_types: &HashMap<String, (usize, Pos)>,
-    shared_types: &HashMap<String, (usize, Pos)>,
-    type_constraints: &mut HashMap<String, (i32, Pos)>,
+    var_types: &AHashMap<String, (usize, Pos)>,
+    shared_types: &AHashMap<String, (usize, Pos)>,
+    type_constraints: &mut AHashMap<String, (i32, Pos)>,
 ) -> Result<typ::ExprTerm> {
     match expr {
         untyp::Expr::Const(c) => match c {
@@ -593,9 +601,9 @@ fn type_expr_term(
 
 fn type_expr_term_reg(
     expr: untyp::Expr,
-    var_types: &HashMap<String, (usize, Pos)>,
-    shared_types: &HashMap<String, (usize, Pos)>,
-    type_constraints: &mut HashMap<String, (i32, Pos)>,
+    var_types: &AHashMap<String, (usize, Pos)>,
+    shared_types: &AHashMap<String, (usize, Pos)>,
+    type_constraints: &mut AHashMap<String, (i32, Pos)>,
 ) -> Result<(Option<usize>, typ::ExprTermType)> {
     match expr {
         untyp::Expr::Const(c) => match c {

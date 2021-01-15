@@ -30,7 +30,7 @@ node2:
 
 
 Internal node graphs cannot have cycles (because they are ordered), and are immutable, and so I will use a custom representation with each node pointing to the next
-with Arc. (a node point to its parents only)
+with Rc. (a node point to its parents only)
 With this representation, we keep only the outputs, which keeps a reference to all the nodes necessary to compute them
 and everything else will be dropped by the compiler, hence the free optimisation.
 
@@ -41,10 +41,10 @@ With this representation, simulation can be done with a threadpool : each node i
 
 */
 
-use std::sync::Arc;
-
 use crate::ast::{graph_automaton::*, typed_ast as typ};
 use crate::frontend::scheduler;
+use ahash::AHashMap;
+use std::rc::Rc;
 use typ::*;
 
 pub fn make_graph(prog: &typ::Program) -> Result<ProgramGraph, scheduler::ScheduleError> {
@@ -53,7 +53,7 @@ pub fn make_graph(prog: &typ::Program) -> Result<ProgramGraph, scheduler::Schedu
         .iter()
         .enumerate()
         .map(|(i, (name, _))| (name.clone(), i))
-        .collect::<HashMap<String, usize>>();
+        .collect::<AHashMap<String, usize>>();
     let shared_rename_map = prog
         .inputs
         .iter()
@@ -62,7 +62,7 @@ pub fn make_graph(prog: &typ::Program) -> Result<ProgramGraph, scheduler::Schedu
         .chain(prog.shared.iter().map(|(s, _)| s))
         .enumerate()
         .map(|(i, s)| (s.clone(), i))
-        .collect::<HashMap<String, usize>>();
+        .collect::<AHashMap<String, usize>>();
     let shared = prog
         .inputs
         .iter()
@@ -90,12 +90,13 @@ pub fn make_graph(prog: &typ::Program) -> Result<ProgramGraph, scheduler::Schedu
         .map(|v| (v.value.clone(), *shared_rename_map.get(&v.value).unwrap()))
         .collect();
     let inputs = prog.inputs.iter().map(|var| var.size).collect();
+    // println!("{:#?}", nodes);
     // println!("{:#?}", shared_rename_map);
     // for node in &nodes {
     //     println!("--------------------------------------------------\n inputs : {:#?} \n \n outputs : {:#?} "
     //     ,node.inputs, node.shared_outputs.iter().map(|(s, _)| *s).collect::<Vec<usize>>())
     // }
-    let schedule = scheduler::schedule(&nodes, shared.len())?;
+    let schedule = Vec::new(); // scheduler::schedule(&nodes, shared.len())?;
     Ok(ProgramGraph {
         init_nodes,
         shared,
@@ -108,10 +109,10 @@ pub fn make_graph(prog: &typ::Program) -> Result<ProgramGraph, scheduler::Schedu
 
 fn make_node(
     node: &Node,
-    node_rename_map: &HashMap<String, usize>,
-    shared_rename_map: &HashMap<String, usize>,
+    node_rename_map: &AHashMap<String, usize>,
+    shared_rename_map: &AHashMap<String, usize>,
 ) -> ProgramNode {
-    let mut expr_map = Some(HashMap::new());
+    let mut expr_map = Some(AHashMap::new());
     let mut inputs = Vec::new();
     let local_rename_map = node
         .statements
@@ -179,15 +180,16 @@ fn make_node(
     }
 }
 //inputs = None means that we are inside a register.
+//FIXME : this is a very bad idea and doent work with nested registers, which are perfectly legal.
 fn expr_to_node(
     var_id: Option<usize>,
     node: &Node,
     expr: &Expr,
-    shared_rename_map: &HashMap<String, usize>,
-    local_rename_map: &HashMap<String, usize>,
-    expr_map: &mut Option<HashMap<usize, Arc<ExprNode>>>,
+    shared_rename_map: &AHashMap<String, usize>,
+    local_rename_map: &AHashMap<String, usize>,
+    expr_map: &mut Option<AHashMap<usize, Rc<ExprNode>>>,
     inputs: &mut Option<&mut Vec<usize>>,
-) -> Arc<ExprNode> {
+) -> Rc<ExprNode> {
     if let Some(id) = var_id {
         if let Some(node) = expr_map.as_mut().map(|map| map.get(&id)).flatten() {
             return node.clone();
@@ -247,7 +249,7 @@ fn expr_to_node(
                     expr_map,
                     inputs,
                 ),
-                ExprTermType::Const(c) => Arc::new(ExprNode {
+                ExprTermType::Const(c) => Rc::new(ExprNode {
                     op: ExprOperation::Const(c.clone()),
                     ..Default::default()
                 }),
@@ -262,7 +264,7 @@ fn expr_to_node(
                     expr_map,
                     inputs,
                 ),
-                ExprTermType::Const(c) => Arc::new(ExprNode {
+                ExprTermType::Const(c) => Rc::new(ExprNode {
                     op: ExprOperation::Const(c.clone()),
                     ..Default::default()
                 }),
@@ -280,7 +282,7 @@ fn expr_to_node(
                     expr_map,
                     inputs,
                 ),
-                ExprTermType::Const(c) => Arc::new(ExprNode {
+                ExprTermType::Const(c) => Rc::new(ExprNode {
                     op: ExprOperation::Const(c.clone()),
                     ..Default::default()
                 }),
@@ -295,7 +297,7 @@ fn expr_to_node(
                     expr_map,
                     inputs,
                 ),
-                ExprTermType::Const(c) => Arc::new(ExprNode {
+                ExprTermType::Const(c) => Rc::new(ExprNode {
                     op: ExprOperation::Const(c.clone()),
                     ..Default::default()
                 }),
@@ -310,7 +312,7 @@ fn expr_to_node(
                     expr_map,
                     inputs,
                 ),
-                ExprTermType::Const(c) => Arc::new(ExprNode {
+                ExprTermType::Const(c) => Rc::new(ExprNode {
                     op: ExprOperation::Const(c.clone()),
                     ..Default::default()
                 }),
@@ -355,7 +357,7 @@ fn expr_to_node(
                     expr_map,
                     inputs,
                 ),
-                ExprTermType::Const(c) => Arc::new(ExprNode {
+                ExprTermType::Const(c) => Rc::new(ExprNode {
                     op: ExprOperation::Const(c.clone()),
                     ..Default::default()
                 }),
@@ -370,7 +372,7 @@ fn expr_to_node(
                     expr_map,
                     inputs,
                 ),
-                ExprTermType::Const(c) => Arc::new(ExprNode {
+                ExprTermType::Const(c) => Rc::new(ExprNode {
                     op: ExprOperation::Const(c.clone()),
                     ..Default::default()
                 }),
@@ -385,7 +387,7 @@ fn expr_to_node(
                     expr_map,
                     inputs,
                 ),
-                ExprTermType::Const(c) => Arc::new(ExprNode {
+                ExprTermType::Const(c) => Rc::new(ExprNode {
                     op: ExprOperation::Const(c.clone()),
                     ..Default::default()
                 }),
@@ -400,7 +402,7 @@ fn expr_to_node(
                     expr_map,
                     inputs,
                 ),
-                ExprTermType::Const(c) => Arc::new(ExprNode {
+                ExprTermType::Const(c) => Rc::new(ExprNode {
                     op: ExprOperation::Const(c.clone()),
                     ..Default::default()
                 }),
@@ -418,7 +420,7 @@ fn expr_to_node(
                     expr_map,
                     inputs,
                 ),
-                ExprTermType::Const(c) => Arc::new(ExprNode {
+                ExprTermType::Const(c) => Rc::new(ExprNode {
                     op: ExprOperation::Const(c.clone()),
                     ..Default::default()
                 }),
@@ -427,7 +429,7 @@ fn expr_to_node(
         }
         ExprType::Last(v) => ExprOperation::Last(*shared_rename_map.get(v).unwrap()),
     };
-    let node = Arc::new(ExprNode {
+    let node = Rc::new(ExprNode {
         id: var_id,
         op,
         ..Default::default()
@@ -444,14 +446,14 @@ fn var_to_node(
     var_id: Option<usize>,
     node: &Node,
     var: &Var,
-    shared_rename_map: &HashMap<String, usize>,
-    local_rename_map: &HashMap<String, usize>,
-    expr_map: &mut Option<HashMap<usize, Arc<ExprNode>>>,
+    shared_rename_map: &AHashMap<String, usize>,
+    local_rename_map: &AHashMap<String, usize>,
+    expr_map: &mut Option<AHashMap<usize, Rc<ExprNode>>>,
     inputs: &mut Option<&mut Vec<usize>>,
-) -> Arc<ExprNode> {
+) -> Rc<ExprNode> {
     match var {
         Var::Local(s) => {
-            let id = *local_rename_map.get(s).unwrap();
+            let id = *local_rename_map.get(s).expect(&*format!("{}", s));
             let expr = node.statements.get(var).unwrap();
             expr_to_node(
                 var_id.or(Some(id)),
@@ -470,7 +472,7 @@ fn var_to_node(
                     ins.push(id)
                 }
             });
-            Arc::new(ExprNode {
+            Rc::new(ExprNode {
                 op: ExprOperation::Input(id),
                 ..Default::default()
             })

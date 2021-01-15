@@ -2,6 +2,7 @@ use std::str::FromStr;
 use lalrpop_util::ParseError;
 use crate::ast::parse_ast::*;
 use std::path::PathBuf;
+use ahash::AHashMap;
 grammar(file_id: usize);
 NonEmptyComma<T>: Vec<T> = { 
     <v:(<T> ",")+> <e:T?> => match e { 
@@ -49,9 +50,9 @@ Loc<T> : Loc<T> = {
 pub Program : Program = {
     <imports:Import*> => Program {
         imports, 
-        modules: HashMap::new(),
-        functions: HashMap::new(),
-        global_consts: HashMap::new(),
+        modules: AHashMap::new(),
+        functions: AHashMap::new(),
+        global_consts: AHashMap::new(),
     },
     <mut p:Program> <func:Function> => {
         p.functions.insert((*func.name).clone(), func);
@@ -77,246 +78,40 @@ Module: Module = {
     <mut init: Init>
     <s:SharedVar*>
     <mut nodes:Node*> 
+    <mut a_n:AndModules>
     => {
         if init.is_empty() && !nodes.is_empty() {
             init.push(nodes[0].name.clone())
         }
+        init.append(&mut a_n.0);
+        nodes.append(&mut a_n.1);
         Module {
             name : name.strip_suffix("(").unwrap().to_string(),
             inputs: ins, 
             outputs: out,
             shared: s.into_iter().flatten().collect(),
-            nodes : nodes.drain(..).map(|node| (node.name.value.clone(), node)).collect::<HashMap<String, Node>>(),
+            nodes : nodes.drain(..).map(|node| (node.name.value.clone(), node)).collect::<AHashMap<String, Node>>(),
             init_nodes: init
         }
     }
 }
 
-If : IfStruct = {
-    "if" <c:Const> "then" <v1:Statement*> "end if" => IfStruct {
-        condition : c,
-        if_block : v1,
-        else_block: Vec::new()
-    },
-    "if" <c:Const> "then" <v1:Statement*> "else" <v2:Statement*> "end if" => IfStruct {
-        condition : c,
-        if_block : v1,
-        else_block: v2
-    }
-}
-
-Ram : RamStruct = {
-    "ram(" <e1:Loc<Expr>> "," <e2:Loc<Expr>> "," <e3:Loc<Expr>> "," <e4:Loc<Expr>> ")" =>
-    RamStruct {
-        read_addr: Box::new(e1),
-        write_enable: Box::new(e2),
-        write_addr: Box::new(e3),
-        write_data: Box::new(e4),
-    }
-}
-
-Rom : RomStruct = {
-    "rom<" <c1:Const> ">(" <e:Loc<Expr>> ")" =>
-    RomStruct {
-        word_size: c1,
-        read_addr: Box::new(e),
-    }
-}
-
-Var : String = {
-    r"[a-zA-Z_][a-zA-Z_0-9]*" => <>.to_string()
-}
-
-FnCall : FnCall = {
-    <name_lloc:@L> <name:r"[a-zA-Z_][a-zA-Z_0-9]*<"> <name_rloc:@R> <v1:Loc<Comma<Const>>> ">(" <v2:Loc<Comma<Loc<Expr>>>> ")" => FnCall {
-        name: Loc {
-            loc: (file_id, name_lloc, name_rloc),
-            value: name.strip_suffix("<").unwrap().to_string()
-        },
-        args: v2, 
-        static_args: v1,
-    },
-    <name_lloc:@L> <name:r"[a-zA-Z_][a-zA-Z_0-9]*\("> <name_rloc:@R> <v:Loc<Comma<Loc<Expr>>>> ")" => FnCall {
-        name: Loc {
-            loc: (file_id, name_lloc, name_rloc),
-            value: name.strip_suffix("(").unwrap().to_string()
-        },
-        args: v, 
-        static_args: Loc {
-            loc: (file_id, name_rloc, name_rloc),
-            value: Vec::new(),
+AndModules: (Vec<Loc<String>>, Vec<Node>) = {
+    "and automaton" 
+    <mut init: Init>
+    <mut nodes:Node*> 
+    <a_n:AndModules> 
+    => {
+        let (mut prev_i, mut prev_n) = a_n;
+        if init.is_empty() && !nodes.is_empty() {
+            init.push(nodes[0].name.clone())
         }
+        prev_i.append(&mut init);
+        prev_n.append(&mut nodes);
+        (prev_i, prev_n)
+
     },
-}
-
-Bool : bool = {
-    "1" => true,
-    "true"=> true,
-    "0" => false,
-    "false"=> false,
-}
-
-ConstExpr: ConstExpr = {
-    Bool => ConstExpr::Known(vec![<>]),
-    "[" <Comma<Bool>> "]" => ConstExpr::Known(<>),
-    "[" <b:Bool> ";" <c:Loc<Const>> "]" => ConstExpr::Unknown(b, c)
-}
-
-Num: i32 = {
-    <s:r"[0-9]+"> => i32::from_str(s).unwrap(),
-    "0" => 0,
-    "1" => 1
-}
-
-Unit: Expr = {
-    <ConstExpr> => Expr::Const(<>),
-    <e:Loc<Unit>> "[" <c1:Const> ".." <c2:Const> "]" => Expr::Slice(Box::new(e), c1, c2),
-    <e:Loc<Unit>> "[" <c:Loc<Const>> "]" => 
-    Expr::Slice(
-        Box::new(e), 
-        c.value.clone(), 
-        Const::BiOp(
-            ConstBiOp::Plus, 
-            Box::new(c.value), 
-            Box::new(Loc {
-                value: Const::Value(1),
-                loc: c.loc
-            })
-        )
-    ),
-    "(" <Expr> ")",
-    "mux(" <e1:Loc<Expr>> "," <e2:Loc<Expr>> "," <e3:Loc<Expr>> ")" => Expr::Mux(Box::new(e1), Box::new(e2), Box::new(e3)),
-    "last(" <v:Loc<Var>> ")" => Expr::Last(v),
-    "reg(" <e:Loc<Expr>> ")" => Expr::Reg(
-        Loc {
-            value: Const::Value(1),
-            loc: e.loc
-        }, 
-        Box::new(e)),
-    "reg<" <c:Loc<Const>> ">(" <e:Loc<Expr>> ")" => Expr::Reg(c, Box::new(e)),
-    <Ram> => Expr::Ram(<>),
-    <Rom> => Expr::Rom(<>),
-    <FnCall> => Expr::FnCall(<>),
-    <Loc<Var>> => Expr::Var(<>),
-};
-
-Xor : () = {
-    "xor" => (),
-    "^" => ()
-}
-
-XorExpr: Expr = {
-    <e1:Loc<XorExpr>> Xor <e2:Loc<Unit>> => Expr::BiOp(BiOp::Xor, Box::new(e1), Box::new(e2)),
-    Unit
-}
-
-And : () = {
-    "and" => (),
-    "*" => ()
-}
-
-AndExpr: Expr = {
-    <e1:Loc<AndExpr>> And <e2:Loc<XorExpr>> => Expr::BiOp(BiOp::And, Box::new(e1), Box::new(e2)),
-    XorExpr
-}
-
-NandExpr: Expr = {
-    <e1:Loc<NandExpr>> "nand" <e2:Loc<AndExpr>> => Expr::BiOp(BiOp::Nand, Box::new(e1), Box::new(e2)),
-    AndExpr
-}
-
-Or : () = {
-    "or" => (),
-    "+" => ()
-}
-
-OrExpr: Expr = {
-    <e1:Loc<OrExpr>> Or <e2:Loc<NandExpr>> => Expr::BiOp(BiOp::Or, Box::new(e1), Box::new(e2)),
-    NandExpr
-}
-
-Expr : Expr = {
-    "not" <Unit> => Expr::Not(Box::new(<>)),
-    <e1:Loc<Expr>> "." <e2:Loc<OrExpr>> => Expr::BiOp(BiOp::Concat, Box::new(e1), Box::new(e2)),
-    OrExpr
-}
-
-AddOp: ConstBiOp = {
-    "+" => ConstBiOp::Plus,
-    "-" => ConstBiOp::Minus,
-}
-
-MulOp: ConstBiOp = {
-    "*" => ConstBiOp::Times,
-    "/" => ConstBiOp::Div,
-}
-
-CompOp: ConstBiOp = {
-    "<" => ConstBiOp::Lt,
-    ">" => ConstBiOp::Gt,
-    "<=" => ConstBiOp::Le,
-    ">=" => ConstBiOp::Ge,
-    "==" => ConstBiOp::Eq,
-    "!=" => ConstBiOp::Neq,
-}
-
-BoolOp: ConstBiOp = {
-    "&&" => ConstBiOp::And, 
-    "||" => ConstBiOp::Or,
-}
-
-
-ConstCmp: Const = {
-    <l:Const> <op:AddOp> <r:Loc<ConstFactor>> => Const::BiOp(op, Box::new(l),  Box::new(r)),
-    ConstFactor,
-};
-
-ConstFactor: Const = {
-    <l:ConstFactor> <op:MulOp> <r:Loc<ConstTerm>> => Const::BiOp(op, Box::new(l),  Box::new(r)),
-    ConstTerm,
-};
-
-ConstTerm: Const = {
-    <Loc<Var>> => Const::Var(<>),
-    <Num> => Const::Value(<>),
-    "(" <Const> ")",
-};
-
-Const: Const = {
-    "(" <l:Const> <op: BoolOp> <r:Loc<Const>> ")" => Const::BiOp(op, Box::new(l),  Box::new(r)),
-    "(" <l:Const> <op: CompOp> <r:Loc<Const>> ")" => Const::BiOp(op, Box::new(l),  Box::new(r)),
-    ConstCmp,
-
-}
-
-Statement: Statement = {
-    <v:Loc<Var>> "=" <e:Loc<Expr>> => Statement::Assign(vec![VarAssign {
-        var : v, 
-        expr : e,
-    }]),
-    "(" <mut v:NonEmptyComma<Loc<Var>>> ")" "=" "(" <mut e:NonEmptyComma<Loc<Expr>>> ")" =>? 
-    {
-        if v.len() != e.len() {
-            Err(ParseError::User {
-                    error : "The variable tuple and the expression tuple must have the same length"
-                })
-            }
-        else {
-            Ok(Statement::Assign(v.drain(..).zip(e.drain(..))
-            .map(|(var, expr)| VarAssign {
-                var, 
-                expr
-            })
-            .collect()))
-        }
-    },
-    <If> => Statement::If(<>),
-    "(" <v:NonEmptyComma<Loc<Var>>> ")" "=" <f:FnCall> => Statement::FnAssign(FnAssign {
-        vars: v,
-        f,
-    })
-
-
+    => (Vec::new(), Vec::new())
 }
 
 NodeName : Loc<Option<Var>> = {
@@ -337,22 +132,43 @@ Transition : Transition = {
     }
 }
 
+NodeBody : (Vec<ExtModule>, Vec<Statement>) = {
+    <e: ExtModule> <mut n:NodeBody> => {
+        n.0.push(e);
+        n
+    },
+    <s: Statement> <mut n:NodeBody> => {
+        n.1.push(s);
+        n
+    },
+    => (Vec::new(), Vec::new())
+}
+
 Node : Node = {
-    <name:Loc<Var>> ":" <e:ExtModule*> <s:Statement*> "until" <t:Transition*> => 
+    <name:Loc<r"[a-zA-Z_][a-zA-Z_0-9]*:">> <s:Statement*> "until" <t:Transition*> => 
     Node {
-        name,
-        extern_modules: e, 
+        name: Loc::new(name.loc, name.strip_suffix(":").unwrap().to_string()),
         statements: s,
         transitions : t,
         weak: true
     },
-    <name:Loc<Var>> ":" <e:ExtModule*> <s:Statement*> "unless" <t:Transition*> =>  
+    <name:Loc<r"[a-zA-Z_][a-zA-Z_0-9]*:">> <s:Statement*> "unless" <t:Transition*> =>  
     Node {
-        name,
-        extern_modules: e, 
+        name: Loc::new(name.loc, name.strip_suffix(":").unwrap().to_string()), 
         statements: s, 
         transitions : t,
         weak: false
+    },
+    <name:Loc<r"[a-zA-Z_][a-zA-Z_0-9]*:">> <s:Statement*> =>  
+    Node {
+        name: Loc::new(name.loc, name.strip_suffix(":").unwrap().to_string()),
+        statements: s, 
+        transitions : vec![Transition {
+            condition: Loc::new(name.loc, TrCond::Default), 
+            node: Loc::new(name.loc, Some(name.strip_suffix(":").unwrap().to_string())),
+            reset: false,
+        }],
+        weak: true
     },
 }
 
@@ -439,7 +255,7 @@ SharedVar : Vec<VarAssign> = {
 }
 
 ExtModule: ExtModule = {
-    "use" <out:Loc<ParCommaOrSingle<Loc<Var>>>> "=" <name_loc_l:@L> <name:r"[a-zA-Z_][a-zA-Z_0-9]*\("> <name_loc_r:@R> <ins:Loc<Comma<Loc<Var>>>> ")" => 
+    "use" <out:Loc<ParCommaOrSingle<Loc<Var>>>> "=" <name_loc_l:@L> <name:r"[a-zA-Z_][a-zA-Z_0-9]*\("> <name_loc_r:@R> <ins:Loc<Comma<Loc<Expr>>>> ")" => 
     ExtModule {
         inputs: ins,
         outputs: out,
@@ -473,6 +289,234 @@ GlobalConst : ConstVarAssign = {
         var : name, 
         cons : c
     }
+}
+
+Statement: Statement = {
+    <v:Loc<Var>> "=" <e:Loc<Expr>> => Statement::Assign(vec![VarAssign {
+        var : v, 
+        expr : e,
+    }]),
+    "(" <mut v:NonEmptyComma<Loc<Var>>> ")" "=" "(" <mut e:NonEmptyComma<Loc<Expr>>> ")" =>? 
+    {
+        if v.len() != e.len() {
+            Err(ParseError::User {
+                    error : "The variable tuple and the expression tuple must have the same length"
+                })
+            }
+        else {
+            Ok(Statement::Assign(v.drain(..).zip(e.drain(..))
+            .map(|(var, expr)| VarAssign {
+                var, 
+                expr
+            })
+            .collect()))
+        }
+    },
+    <If> => Statement::If(<>),
+    "(" <v:NonEmptyComma<Loc<Var>>> ")" "=" <f:FnCall> => Statement::FnAssign(FnAssign {
+        vars: v,
+        f,
+    }),
+    <ExtModule> => Statement::ExtModule(<>),
+
+
+}
+
+If : IfStruct = {
+    "if" <c:Const> "then" <v1:Statement*> "end if" => IfStruct {
+        condition : c,
+        if_block : v1,
+        else_block: Vec::new()
+    },
+    "if" <c:Const> "then" <v1:Statement*> "else" <v2:Statement*> "end if" => IfStruct {
+        condition : c,
+        if_block : v1,
+        else_block: v2
+    }
+}
+
+Ram : RamStruct = {
+    "ram(" <e1:Loc<Expr>> "," <e2:Loc<Expr>> "," <e3:Loc<Expr>> "," <e4:Loc<Expr>> ")" =>
+    RamStruct {
+        read_addr: Box::new(e1),
+        write_enable: Box::new(e2),
+        write_addr: Box::new(e3),
+        write_data: Box::new(e4),
+    }
+}
+
+Rom : RomStruct = {
+    "rom<" <c1:Const> ">(" <e:Loc<Expr>> ")" =>
+    RomStruct {
+        word_size: c1,
+        read_addr: Box::new(e),
+    }
+}
+
+Var : String = {
+    r"[a-zA-Z_][a-zA-Z_0-9]*" => <>.to_string()
+}
+
+FnCall : FnCall = {
+    <name_lloc:@L> <name:r"[a-zA-Z_][a-zA-Z_0-9]*<"> <name_rloc:@R> <v1:Loc<Comma<Const>>> ">(" <v2:Loc<Comma<Loc<Expr>>>> ")" => FnCall {
+        name: Loc {
+            loc: (file_id, name_lloc, name_rloc),
+            value: name.strip_suffix("<").unwrap().to_string()
+        },
+        args: v2, 
+        static_args: v1,
+    },
+    <name_lloc:@L> <name:r"[a-zA-Z_][a-zA-Z_0-9]*\("> <name_rloc:@R> <v:Loc<Comma<Loc<Expr>>>> ")" => FnCall {
+        name: Loc {
+            loc: (file_id, name_lloc, name_rloc),
+            value: name.strip_suffix("(").unwrap().to_string()
+        },
+        args: v, 
+        static_args: Loc {
+            loc: (file_id, name_rloc, name_rloc),
+            value: Vec::new(),
+        }
+    },
+}
+
+Bool : bool = {
+    "1" => true,
+    "true"=> true,
+    "0" => false,
+    "false"=> false,
+}
+
+ConstExpr: ConstExpr = {
+    Bool => ConstExpr::Known(vec![<>]),
+    "[" <Comma<Bool>> "]" => ConstExpr::Known(<>),
+    "[" <b:Bool> ";" <c:Loc<Const>> "]" => ConstExpr::Unknown(b, c)
+}
+
+Num: i32 = {
+    <s:r"[0-9]+"> => i32::from_str(s).unwrap(),
+    "0" => 0,
+    "1" => 1
+}
+
+Unit: Expr = {
+    <ConstExpr> => Expr::Const(<>),
+    <e:Loc<Unit>> "[" <c1:Const?> ".." <c2:Const?> "]" => Expr::Slice(Box::new(e), c1, c2),
+    <e:Loc<Unit>> "[" <c:Loc<Const>> "]" => 
+    Expr::Slice(
+        Box::new(e), 
+        Some(c.value.clone()), 
+        Some(Const::BiOp(
+            ConstBiOp::Plus, 
+            Box::new(c.value), 
+            Box::new(Loc {
+                value: Const::Value(1),
+                loc: c.loc
+            })
+        ))
+    ),
+    "(" <Expr> ")",
+    "mux(" <e1:Loc<Expr>> "," <e2:Loc<Expr>> "," <e3:Loc<Expr>> ")" => Expr::Mux(Box::new(e1), Box::new(e2), Box::new(e3)),
+    "last(" <v:Loc<Var>> ")" => Expr::Last(v),
+    "reg(" <e:Loc<Expr>> ")" => Expr::Reg(
+        Loc {
+            value: Const::Value(1),
+            loc: e.loc
+        }, 
+        Box::new(e)),
+    "reg<" <c:Loc<Const>> ">(" <e:Loc<Expr>> ")" => Expr::Reg(c, Box::new(e)),
+    <Ram> => Expr::Ram(<>),
+    <Rom> => Expr::Rom(<>),
+    <FnCall> => Expr::FnCall(<>),
+    <Loc<Var>> => Expr::Var(<>),
+};
+
+Xor : () = {
+    "xor" => (),
+    "^" => ()
+}
+
+XorExpr: Expr = {
+    <e1:Loc<XorExpr>> Xor <e2:Loc<Unit>> => Expr::BiOp(BiOp::Xor, Box::new(e1), Box::new(e2)),
+    Unit
+}
+
+And : () = {
+    "and" => (),
+    "*" => ()
+}
+
+AndExpr: Expr = {
+    <e1:Loc<AndExpr>> And <e2:Loc<XorExpr>> => Expr::BiOp(BiOp::And, Box::new(e1), Box::new(e2)),
+    XorExpr
+}
+
+NandExpr: Expr = {
+    <e1:Loc<NandExpr>> "nand" <e2:Loc<AndExpr>> => Expr::BiOp(BiOp::Nand, Box::new(e1), Box::new(e2)),
+    AndExpr
+}
+
+Or : () = {
+    "or" => (),
+    "+" => ()
+}
+
+OrExpr: Expr = {
+    <e1:Loc<OrExpr>> Or <e2:Loc<NandExpr>> => Expr::BiOp(BiOp::Or, Box::new(e1), Box::new(e2)),
+    NandExpr
+}
+
+Expr : Expr = {
+    "not" <e:Unit> => Expr::Not(Box::new(e)),
+    <e1:Loc<Expr>> "." <e2:Loc<OrExpr>> => Expr::BiOp(BiOp::Concat, Box::new(e1), Box::new(e2)),
+    OrExpr
+}
+
+AddOp: ConstBiOp = {
+    "+" => ConstBiOp::Plus,
+    "-" => ConstBiOp::Minus,
+}
+
+MulOp: ConstBiOp = {
+    "*" => ConstBiOp::Times,
+    "/" => ConstBiOp::Div,
+}
+
+CompOp: ConstBiOp = {
+    "<" => ConstBiOp::Lt,
+    ">" => ConstBiOp::Gt,
+    "<=" => ConstBiOp::Le,
+    ">=" => ConstBiOp::Ge,
+    "==" => ConstBiOp::Eq,
+    "!=" => ConstBiOp::Neq,
+}
+
+BoolOp: ConstBiOp = {
+    "&&" => ConstBiOp::And, 
+    "||" => ConstBiOp::Or,
+}
+
+
+ConstCmp: Const = {
+    <l:Const> <op:AddOp> <r:Loc<ConstFactor>> => Const::BiOp(op, Box::new(l),  Box::new(r)),
+    ConstFactor,
+};
+
+ConstFactor: Const = {
+    <l:ConstFactor> <op:MulOp> <r:Loc<ConstTerm>> => Const::BiOp(op, Box::new(l),  Box::new(r)),
+    ConstTerm,
+};
+
+ConstTerm: Const = {
+    <Loc<Var>> => Const::Var(<>),
+    <Num> => Const::Value(<>),
+    "(" <Const> ")",
+};
+
+Const: Const = {
+    "(" <l:Const> <op: BoolOp> <r:Loc<Const>> ")" => Const::BiOp(op, Box::new(l),  Box::new(r)),
+    "(" <l:Const> <op: CompOp> <r:Loc<Const>> ")" => Const::BiOp(op, Box::new(l),  Box::new(r)),
+    ConstCmp,
+
 }
 
 match {

@@ -1,4 +1,0 @@
-module main() = ()
-    n:
-        b = rec<20>()
-    until

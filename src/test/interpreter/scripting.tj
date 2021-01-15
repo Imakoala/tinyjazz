@@ -1,6 +1,0 @@
-module main(i[16]) = o[16]
-    shared o = [0; 16]
-    n:
-        o = i
-    until
-        |1 -> n

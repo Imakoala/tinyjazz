@@ -56,14 +56,19 @@ fn try_compute(
                 try_compute(e2.clone(), mem, changed),
             );
             match op {
-                BiOp::Concat => {
-                    if let (Some(mut v1), Some(mut v2)) = (v1, v2) {
-                        v1.append(&mut v2);
-                        Some(v1)
-                    } else {
+                BiOp::Concat => match (v1.clone(), v2.clone()) {
+                    (None, None) => None,
+                    (None, Some(v)) | (Some(v), None) => {
+                        if v.len() == 0 {
+                            to_change = Some(if v1.is_none() { e1 } else { e2 });
+                        }
                         None
                     }
-                }
+                    (Some(mut v1), Some(mut v2)) => {
+                        v1.append(&mut v2);
+                        Some(v1)
+                    }
+                },
                 BiOp::And => match (v1.clone(), v2.clone()) {
                     (None, None) => None,
                     (None, Some(v)) | (Some(v), None) => {

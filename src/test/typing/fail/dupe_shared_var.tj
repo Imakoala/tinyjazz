@@ -1,5 +1,0 @@
-module main(b) = (b)
-    shared b = ()
-    n:
-        b = 0
-    until

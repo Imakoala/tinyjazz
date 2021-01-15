@@ -1,10 +1,11 @@
 use core::panic;
-pub use std::collections::HashMap;
 use std::{
     hash::Hash,
     ops::{Deref, DerefMut},
     path::PathBuf,
 };
+
+use ahash::AHashMap;
 
 pub use crate::ast::BiOp;
 
@@ -52,10 +53,10 @@ impl<T> DerefMut for Loc<T> {
 //the main program
 #[derive(Debug, Clone)]
 pub struct Program {
-    pub imports: Vec<Import>,                  //all imported files
-    pub modules: HashMap<String, Module>,      //all the modules ordered by name
-    pub functions: HashMap<String, Function>,  //all the functions ordered by name
-    pub global_consts: HashMap<String, Const>, //the global constants
+    pub imports: Vec<Import>,                   //all imported files
+    pub modules: AHashMap<String, Module>,      //all the modules ordered by name
+    pub functions: AHashMap<String, Function>,  //all the functions ordered by name
+    pub global_consts: AHashMap<String, Const>, //the global constants
 }
 pub type Import = PathBuf; //an import is just a Path
 
@@ -66,7 +67,7 @@ pub struct Module {
     pub inputs: Vec<Arg>,
     pub outputs: Vec<Arg>,
     pub shared: Vec<VarAssign>, //Variables shared across nodes and automata must be declared
-    pub nodes: HashMap<String, Node>,
+    pub nodes: AHashMap<String, Node>,
     pub init_nodes: Vec<Loc<Var>>,
 }
 
@@ -90,7 +91,7 @@ pub struct Value(Vec<bool>);
 //A call to an extenrla module
 #[derive(Debug, Clone)]
 pub struct ExtModule {
-    pub inputs: Loc<Vec<Loc<Var>>>,
+    pub inputs: Loc<Vec<Loc<Expr>>>,
     pub outputs: Loc<Vec<Loc<Var>>>,
     pub name: Loc<Var>,
 }
@@ -98,7 +99,6 @@ pub struct ExtModule {
 #[derive(Debug, Clone)]
 pub struct Node {
     pub name: Loc<String>,
-    pub extern_modules: Vec<ExtModule>,
     pub statements: Vec<Statement>,
     pub transitions: Vec<Transition>,
     pub weak: bool,
@@ -144,6 +144,7 @@ pub enum Statement {
     Assign(Vec<VarAssign>),
     If(IfStruct),
     FnAssign(FnAssign),
+    ExtModule(ExtModule),
 }
 
 #[derive(Debug, Clone)]
@@ -162,7 +163,7 @@ pub enum ConstExpr {
 pub enum Expr {
     Const(ConstExpr),
     Not(Box<Expr>),
-    Slice(Box<Loc<Expr>>, Const, Const),
+    Slice(Box<Loc<Expr>>, Option<Const>, Option<Const>),
     BiOp(BiOp, Box<Loc<Expr>>, Box<Loc<Expr>>),
     Mux(Box<Loc<Expr>>, Box<Loc<Expr>>, Box<Loc<Expr>>),
     Var(Loc<Var>),

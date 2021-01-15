@@ -1,5 +1,6 @@
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::rc::Rc;
+
+use ahash::{AHashMap, AHashSet};
 
 use crate::ast::{graph::*, graph_automaton::*};
 /*
@@ -20,8 +21,8 @@ and so it should be simple using the previous map.
 pub fn flatten_automata(prog: &ProgramGraph) -> FlatProgramGraph {
     let n_input = prog.inputs.len();
     let n_node = n_input + prog.nodes.len();
-    let mut shared_map = HashMap::new();
-    let mut nodes_mem = vec![HashMap::new(); prog.nodes.len()];
+    let mut shared_map = AHashMap::new();
+    let mut nodes_mem = vec![AHashMap::new(); prog.nodes.len()];
     let reset_conditions = compute_reset_conditions(
         &prog,
         &mut shared_map,
@@ -31,15 +32,16 @@ pub fn flatten_automata(prog: &ProgramGraph) -> FlatProgramGraph {
     );
     let init_node = &RCell::new(Node::Reg(1, RCell::new(Node::Const(vec![true]))));
     //Link all the inputs and outputs of shared vars.
-    for node_id in &prog.schedule {
+    for node_id in 0..prog.nodes.len() {
         compute_nodes(
-            &prog.nodes[*node_id],
+            &prog.nodes[node_id],
             &mut shared_map,
             &prog.shared,
-            &mut nodes_mem[*node_id],
+            &mut nodes_mem[node_id],
             &reset_conditions,
             n_input,
-            *node_id,
+            node_id,
+            init_node,
         );
     }
     //compute all the transitions. (which are node shared variables) order doesn't matter.
@@ -73,12 +75,13 @@ pub fn flatten_automata(prog: &ProgramGraph) -> FlatProgramGraph {
 
 fn compute_nodes(
     node: &ProgramNode,
-    shared_map: &mut HashMap<usize, RCell<Node>>,
+    shared_map: &mut AHashMap<usize, RCell<Node>>,
     shared_sizes: &Vec<Vec<bool>>,
-    node_mem: &mut HashMap<Arc<ExprNode>, RCell<Node>>,
+    node_mem: &mut AHashMap<Rc<ExprNode>, RCell<Node>>,
     reset_conditions: &Vec<Option<Node>>,
     n_input: usize,
     node_id: usize,
+    init_node: &RCell<Node>,
 ) {
     for (id, expr_node) in &node.shared_outputs {
         let node = compute_node(
@@ -98,10 +101,26 @@ fn compute_nodes(
                 prev_node,
             )
         } else {
+            //If the shared var is not compyted anywhere, take the previous value, or the init value
+            //if there is no previous value.
+            let loop_reg = RCell::new(Node::Reg(
+                shared_sizes[*id].len(),
+                RCell::new(Node::TmpValueHolder(*id)),
+            ));
+            //Add the mux only if the init value is not all zeros
+            let init_value = if shared_sizes[*id].iter().any(|b| *b) {
+                RCell::new(Node::Mux(
+                    init_node.clone(),
+                    loop_reg,
+                    RCell::new(Node::Const(shared_sizes[*id].clone())),
+                ))
+            } else {
+                loop_reg
+            };
             Node::Mux(
                 RCell::new(Node::TmpValueHolder(n_input + node_id)),
                 node,
-                RCell::new(Node::Const(shared_sizes[*id].clone())),
+                init_value,
             )
         };
         shared_map.insert(*id, RCell::new(new_node));
@@ -109,9 +128,9 @@ fn compute_nodes(
 }
 fn compute_reset_conditions(
     prog: &ProgramGraph,
-    shared_map: &mut HashMap<usize, RCell<Node>>,
+    shared_map: &mut AHashMap<usize, RCell<Node>>,
     shared_sizes: &Vec<Vec<bool>>,
-    node_mem: &mut Vec<HashMap<Arc<ExprNode>, RCell<Node>>>,
+    node_mem: &mut Vec<AHashMap<Rc<ExprNode>, RCell<Node>>>,
     n_input: usize,
 ) -> Vec<Option<Node>> {
     let mut reset_conditions = vec![None; prog.nodes.len()];
@@ -151,9 +170,9 @@ fn compute_reset_conditions(
 
 fn compute_transitions(
     prog: &ProgramGraph,
-    shared_map: &mut HashMap<usize, RCell<Node>>,
+    shared_map: &mut AHashMap<usize, RCell<Node>>,
     shared_sizes: &Vec<Vec<bool>>,
-    node_mem: &mut Vec<HashMap<Arc<ExprNode>, RCell<Node>>>,
+    node_mem: &mut Vec<AHashMap<Rc<ExprNode>, RCell<Node>>>,
     reset_conditions: &Vec<Option<Node>>,
     n_input: usize,
 ) {
@@ -189,10 +208,10 @@ fn compute_transitions(
 }
 
 fn compute_node(
-    expr_node: Arc<ExprNode>,
-    shared_map: &mut HashMap<usize, RCell<Node>>,
+    expr_node: Rc<ExprNode>,
+    shared_map: &mut AHashMap<usize, RCell<Node>>,
     shared_size: &Vec<Vec<bool>>,
-    node_mem: &mut HashMap<Arc<ExprNode>, RCell<Node>>,
+    node_mem: &mut AHashMap<Rc<ExprNode>, RCell<Node>>,
     reset_conditions: &Vec<Option<Node>>,
     n_input: usize,
     node_id: usize,
@@ -293,9 +312,21 @@ fn compute_node(
                     node_id,
                 )
             } else {
-                RCell::new(Node::TmpValueHolder(usize::MAX))
+                //FIXME: this is due to the other fixme in make_automaton_graph, and currently is not handles
+                todo!()
             };
-            RCell::new(Node::Reg(s, new_expr))
+            //make the reg loop instead of computing its value when not in the right node
+            let tmp_value = RCell::new(Node::TmpValueHolder(0));
+            let node = RCell::new(Node::Reg(
+                s,
+                RCell::new(Node::Mux(
+                    RCell::new(Node::TmpValueHolder(node_id + n_input)),
+                    new_expr,
+                    RCell::new(Node::Reg(s, tmp_value.clone())),
+                )),
+            ));
+            *tmp_value.borrow_mut() = node.borrow().clone();
+            node
         }
         ExprOperation::Ram(e1, e2, e3, e4) => RCell::new(Node::Ram(
             compute_node(
@@ -365,7 +396,7 @@ fn compute_node(
 }
 
 fn add_init_values(
-    shared_map: &mut HashMap<usize, RCell<Node>>,
+    shared_map: &mut AHashMap<usize, RCell<Node>>,
     shared_size: &Vec<Vec<bool>>,
     n_nodes: usize,
     n_input: usize,
@@ -390,10 +421,10 @@ fn add_init_values(
     }
 }
 
-fn remove_tmp_value(shared_map: &mut HashMap<usize, RCell<Node>>, shared_size: &Vec<Vec<bool>>) {
+fn remove_tmp_value(shared_map: &mut AHashMap<usize, RCell<Node>>, shared_size: &Vec<Vec<bool>>) {
     let mut tmp_values = Vec::new();
     for (_, node) in shared_map.iter() {
-        fetch_tmp_values(node.clone(), &mut tmp_values)
+        fetch_tmp_values(node.clone(), &mut tmp_values, &mut AHashSet::new())
     }
     for val in tmp_values.drain(..) {
         let i = if let Node::TmpValueHolder(i) = &*val.borrow() {
@@ -410,28 +441,36 @@ fn remove_tmp_value(shared_map: &mut HashMap<usize, RCell<Node>>, shared_size: &
     }
 }
 
-fn fetch_tmp_values(node: RCell<Node>, tmp_values: &mut Vec<RCell<Node>>) {
+fn fetch_tmp_values(
+    node: RCell<Node>,
+    tmp_values: &mut Vec<RCell<Node>>,
+    mem: &mut AHashSet<RCell<Node>>,
+) {
+    if mem.contains(&node) {
+        return;
+    }
+    mem.insert(node.clone());
     match &*node.borrow() {
         Node::Input(_) | Node::Const(_) => {}
-        Node::Not(e) => fetch_tmp_values(e.clone(), tmp_values),
-        Node::Slice(e, _, _) => fetch_tmp_values(e.clone(), tmp_values),
+        Node::Not(e) => fetch_tmp_values(e.clone(), tmp_values, mem),
+        Node::Slice(e, _, _) => fetch_tmp_values(e.clone(), tmp_values, mem),
         Node::BiOp(_, e1, e2) => {
-            fetch_tmp_values(e1.clone(), tmp_values);
-            fetch_tmp_values(e2.clone(), tmp_values)
+            fetch_tmp_values(e1.clone(), tmp_values, mem);
+            fetch_tmp_values(e2.clone(), tmp_values, mem)
         }
         Node::Mux(e1, e2, e3) => {
-            fetch_tmp_values(e1.clone(), tmp_values);
-            fetch_tmp_values(e2.clone(), tmp_values);
-            fetch_tmp_values(e3.clone(), tmp_values)
+            fetch_tmp_values(e1.clone(), tmp_values, mem);
+            fetch_tmp_values(e2.clone(), tmp_values, mem);
+            fetch_tmp_values(e3.clone(), tmp_values, mem)
         }
-        Node::Reg(_, e) => fetch_tmp_values(e.clone(), tmp_values),
+        Node::Reg(_, e) => fetch_tmp_values(e.clone(), tmp_values, mem),
         Node::Ram(e1, e2, e3, e4) => {
-            fetch_tmp_values(e1.clone(), tmp_values);
-            fetch_tmp_values(e2.clone(), tmp_values);
-            fetch_tmp_values(e3.clone(), tmp_values);
-            fetch_tmp_values(e4.clone(), tmp_values)
+            fetch_tmp_values(e1.clone(), tmp_values, mem);
+            fetch_tmp_values(e2.clone(), tmp_values, mem);
+            fetch_tmp_values(e3.clone(), tmp_values, mem);
+            fetch_tmp_values(e4.clone(), tmp_values, mem)
         }
-        Node::Rom(_, e) => fetch_tmp_values(e.clone(), tmp_values),
+        Node::Rom(_, e) => fetch_tmp_values(e.clone(), tmp_values, mem),
         Node::TmpValueHolder(_) => tmp_values.push(node.clone()),
     }
 }

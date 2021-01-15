@@ -2,9 +2,9 @@ pub mod parser;
 use std::path::PathBuf;
 use std::{fs::read_to_string, rc::Rc};
 
-use lalrpop_util::lexer::Token;
-
 use crate::ast::parse_ast::*;
+use ahash::AHashMap;
+use lalrpop_util::lexer::Token;
 
 use self::parser::ProgramParser;
 use codespan_reporting::files::SimpleFiles;
@@ -141,7 +141,7 @@ pub fn parse(
     (ParserError, Rc<SimpleFiles<String, String>>),
 > {
     let mut files = SimpleFiles::new();
-    let mut prog_map = HashMap::<PathBuf, Program>::new();
+    let mut prog_map = AHashMap::<PathBuf, Program>::new();
     let mut queue = Vec::<PathBuf>::new();
     queue.push(main_path.clone());
     while !queue.is_empty() {

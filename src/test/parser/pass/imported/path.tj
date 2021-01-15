@@ -1,8 +1,0 @@
-import ../importedsimple.tj
-
-const jesuisunenouvelleconstante = 5*9*98*98*2+9*2-9*98
-fn fonction_test2(a, b, c[5]) = (e, f, g[8*9/5])
-    e = a 
-    b = mux(1, 0, 1)    
-    c = appel_test(a, b, c)
-    (a, b, c) = (1, 0, 1)

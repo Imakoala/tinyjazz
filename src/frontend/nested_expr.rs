@@ -50,7 +50,6 @@ pub fn flatten(prog: &mut Program) -> Result<()> {
             let Node {
                 name,
                 weak: _,
-                extern_modules: _,
                 statements,
                 transitions,
             } = node;
@@ -144,6 +143,9 @@ fn flatten_statement(statement: Statement) -> Result<Vec<Statement>> {
             );
             res.push(Statement::FnAssign(fn_assign));
             Ok(res)
+        }
+        Statement::ExtModule(_) => {
+            panic!("Should not happen: nested automaton after they are collapsed")
         }
     }
 }

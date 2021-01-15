@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::ast::graph_automaton::*;
 
@@ -9,10 +6,10 @@ pub struct InterpreterIterator<'a> {
     graph: &'a ProgramGraph,
     shared: Vec<Vec<bool>>,
     prev_shared: Vec<Vec<bool>>,
-    reg_map: Vec<HashMap<Arc<ExprNode>, Vec<bool>>>,
-    next_reg_map: Vec<HashMap<Arc<ExprNode>, Vec<bool>>>,
+    reg_map: Vec<HashMap<Rc<ExprNode>, Vec<bool>>>,
+    next_reg_map: Vec<HashMap<Rc<ExprNode>, Vec<bool>>>,
     to_run: Vec<usize>,
-    ram: Arc<Mutex<HashMap<Vec<bool>, Vec<bool>>>>,
+    ram: Rc<RefCell<HashMap<Vec<bool>, Vec<bool>>>>,
     nodes_mem: Vec<Vec<Vec<bool>>>,
     inputs: Box<dyn FnMut() -> Vec<Vec<bool>>>,
 }
@@ -44,7 +41,7 @@ pub fn interprete<'a>(
         crate::util::scripting::get_inputs_closure(inputs_script_path, graph.inputs.clone());
     let reg_map = vec![HashMap::new(); graph.nodes.len()];
     let next_reg_map = vec![HashMap::new(); graph.nodes.len()];
-    let ram = Arc::new(Mutex::new(HashMap::new()));
+    let ram = Rc::new(RefCell::new(HashMap::new()));
     let nodes_mem = graph
         .nodes
         .iter()
@@ -112,7 +109,6 @@ fn program_step(interpreter_state: &mut InterpreterIterator) {
         shared[*u] = value
     }
     //then computes all the transitions.
-    //TODO : add default loop
     let mut next_map = vec![false; graph.nodes.len()];
     let next_nodes = nodes_to_run
         .iter()
@@ -168,13 +164,13 @@ fn program_step(interpreter_state: &mut InterpreterIterator) {
 }
 
 fn calc_node(
-    node: Arc<ExprNode>,
+    node: Rc<ExprNode>,
     shared: &Vec<Vec<bool>>,
     prev_shared: &Vec<Vec<bool>>,
-    reg_map: &HashMap<Arc<ExprNode>, Vec<bool>>,
-    next_reg_map: &mut HashMap<Arc<ExprNode>, Vec<bool>>,
+    reg_map: &HashMap<Rc<ExprNode>, Vec<bool>>,
+    next_reg_map: &mut HashMap<Rc<ExprNode>, Vec<bool>>,
     node_mem: &mut Vec<Vec<bool>>,
-    ram: Arc<Mutex<HashMap<Vec<bool>, Vec<bool>>>>,
+    ram: Rc<RefCell<HashMap<Vec<bool>, Vec<bool>>>>,
     current_reg: Option<&Vec<bool>>,
 ) -> Vec<bool> {
     if let Some(id) = node.id {
@@ -325,7 +321,7 @@ fn calc_node(
                 ram.clone(),
                 current_reg,
             );
-            let ret = if let Some(value) = ram.lock().unwrap().get(&v1) {
+            let ret = if let Some(value) = ram.borrow().get(&v1) {
                 value.clone()
             } else {
                 vec![false; v4.len()]
@@ -341,7 +337,7 @@ fn calc_node(
                     ram.clone(),
                     current_reg,
                 );
-                ram.lock().unwrap().insert(v3, v4);
+                ram.borrow_mut().insert(v3, v4);
             }
             ret
         }

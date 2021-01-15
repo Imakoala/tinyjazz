@@ -1,8 +1,0 @@
-const size = 16
-
-module main(a[size], b[size]) = (o[size])
-    shared o = [0; size]
-    n:
-        c = o + [0; 16]
-        o = reg<size>(a + b + c + o + [1; size])
-    unless

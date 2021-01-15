@@ -1,7 +1,7 @@
-use std::{collections::HashSet, fmt::Display};
+use std::fmt::Display;
 
 use crate::ast::parse_ast::*;
-
+use ahash::{AHashMap, AHashSet};
 use global_counter::global_counter;
 /*
 This module collapses external modules.
@@ -32,12 +32,18 @@ pub enum CollapseAutomataError {
     WrongNumber(WrongNumberType, Pos, usize, usize),
 }
 global_counter!(INLINE_MODULE_COUNTER, u32, 0);
+global_counter!(MODULE_INPUT_COUNTER, u32, 0);
 type Result<T> = std::result::Result<T, CollapseAutomataError>;
 
+fn get_input_name(name: &String) -> String {
+    let counter = MODULE_INPUT_COUNTER.get_cloned();
+    MODULE_INPUT_COUNTER.inc();
+    format!("{}#mod_input#{}", name, counter)
+}
 //makes all transitions shared variables
 pub fn make_transitions_shared(prog: &mut Program, iter: u32) {
     for (mod_name, module) in prog.modules.iter_mut() {
-        let shared_map: HashSet<String> = module
+        let shared_map: AHashSet<String> = module
             .shared
             .iter()
             .map(|v_a| v_a.var.value.clone())
@@ -77,6 +83,19 @@ pub fn make_transitions_shared(prog: &mut Program, iter: u32) {
 pub fn make_transitions_explicit(prog: &mut Program) {
     for (_mod_name, module) in prog.modules.iter_mut() {
         for (_node_name, node) in module.nodes.iter_mut() {
+            if !node.transitions.iter().any(|t| {
+                if let TrCond::Default = t.condition.value {
+                    true
+                } else {
+                    false
+                }
+            }) {
+                node.transitions.push(Transition {
+                    condition: Loc::new(node.name.loc, TrCond::Default),
+                    node: Loc::new(node.name.loc, Some(node.name.value.clone())),
+                    reset: false,
+                })
+            }
             let all_conditions = node
                 .transitions
                 .iter()
@@ -136,11 +155,21 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
         //It need to be able to "predict" if a node will be entered, and so the parents of each node are needed.
         let node_parents = compute_nodes_parents(main_module);
         //iterates on nodes with external module calls
-        for (_, node) in main_module
-            .nodes
-            .iter()
-            .filter(|(_, n)| !n.extern_modules.is_empty())
-        {
+        for (_, node) in main_module.nodes.iter() {
+            let extern_modules = node
+                .statements
+                .iter()
+                .filter_map(|s| {
+                    if let Statement::ExtModule(e) = s {
+                        Some(e)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<&ExtModule>>();
+            if extern_modules.is_empty() {
+                continue;
+            }
             changed = true;
             let exit_condition = get_exit_condition(node);
             //get the global conditions for "entering the node through a [reset/resume] transition"
@@ -222,8 +251,17 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
             //This is the node which reads the value of the automaton and write them to shared variables.
             let mut link_node = Node {
                 name: node.name.clone(),
-                extern_modules: Vec::new(),
-                statements: node.statements.clone(),
+                statements: node
+                    .statements
+                    .iter()
+                    .filter_map(|s| {
+                        if let Statement::ExtModule(_) = s {
+                            None
+                        } else {
+                            Some(s.clone())
+                        }
+                    })
+                    .collect(),
                 transitions: node.transitions.clone(),
                 weak: node.weak,
             };
@@ -231,13 +269,12 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
                 inputs,
                 outputs,
                 name,
-            } in &node.extern_modules
+            } in extern_modules
             {
                 if name.value == main_module.name {
                     return Err(CollapseAutomataError::CyclicModuleCall(name.value.clone()));
                 }
                 let pos = name.loc;
-                let inputs: Vec<String> = inputs.value.iter().map(|s| s.to_string()).collect();
                 let module =
                     prog.modules
                         .get(&name.value)
@@ -261,11 +298,28 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
                         inputs.len(),
                     ));
                 }
+
+                let mut in_names = Vec::new();
+                for (expr, arg) in inputs.value.iter().zip(module.inputs.iter()) {
+                    let name = get_input_name(&name.value);
+                    in_names.push(name.clone());
+                    new_shared.push(VarAssign {
+                        var: Loc::new(expr.loc, name.clone()),
+                        expr: Loc::new(
+                            expr.loc,
+                            Expr::Const(ConstExpr::Unknown(false, arg.size.clone())),
+                        ),
+                    });
+                    link_node.statements.push(Statement::Assign(vec![VarAssign {
+                        var: Loc::new(expr.loc, name.clone()),
+                        expr: expr.clone(),
+                    }]));
+                }
                 let (mut nodes, mut init_nodes, mut shared, automaton_outputs) = make_automaton(
                     &resume_condition,
                     &reset_condition,
                     exit_condition.clone(),
-                    inputs,
+                    in_names,
                     module,
                     main_module.init_nodes.contains(&node.name),
                 )?;
@@ -290,7 +344,15 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
         main_module.nodes = main_module
             .nodes
             .drain()
-            .filter(|(_, n)| n.extern_modules.is_empty())
+            .filter(|(_, n)| {
+                !n.statements.iter().any(|s| {
+                    if let Statement::ExtModule(_) = s {
+                        true
+                    } else {
+                        false
+                    }
+                })
+            })
             .collect();
         main_module.shared.append(&mut new_shared);
         main_module.init_nodes.append(&mut new_init_nodes);
@@ -323,8 +385,8 @@ fn get_exit_condition(node: &Node) -> Loc<Expr> {
     expr
 }
 
-fn compute_nodes_parents(module: &Module) -> HashMap<&str, Vec<&str>> {
-    let mut node_parents = HashMap::new();
+fn compute_nodes_parents(module: &Module) -> AHashMap<&str, Vec<&str>> {
+    let mut node_parents = AHashMap::new();
     for (_, node) in module.nodes.iter() {
         if !node_parents.contains_key(&*node.name.value) {
             node_parents.insert(&*node.name.value, Vec::new());
@@ -364,11 +426,25 @@ pub fn make_automaton(
     //new_nodes, init nodes, new shared, outputs
     let counter = INLINE_MODULE_COUNTER.get_cloned();
     INLINE_MODULE_COUNTER.inc();
-    let mut shared_rename_map = HashMap::new();
+    let mut shared_rename_map = AHashMap::new();
     let mut shared = Vec::new();
     let mut nodes = Vec::new();
     for (s, rename) in module.inputs.iter().zip(inputs.drain(..)) {
         shared_rename_map.insert(s.name.clone(), rename);
+    }
+    for arg in module.outputs.iter() {
+        let var = VarAssign {
+            var: Loc::new(arg.size.loc, arg.name.clone()),
+            expr: Loc::new(
+                arg.size.loc,
+                Expr::Const(ConstExpr::Unknown(false, arg.size.clone())),
+            ),
+        };
+        let mut new_var = var.clone();
+        let name = get_rename(counter, &new_var.var.value, &module.name);
+        new_var.var.value = name.clone();
+        shared.push(new_var.clone());
+        shared_rename_map.insert(var.var.value.clone(), name);
     }
     for var in module.shared.iter() {
         let mut new_var = var.clone();
@@ -440,7 +516,7 @@ pub fn make_node(
     resume_condition: &Loc<TrCond>,
     reset_transitions: &Vec<Transition>,
     exit_condition: &Loc<Expr>,
-    shared_rename_map: &HashMap<String, String>,
+    shared_rename_map: &AHashMap<String, String>,
     node: &Node,
 ) -> (Node, Node) {
     let new_name = get_rename(counter, &node.name, namespace);
@@ -560,14 +636,12 @@ pub fn make_node(
     });
     let pause_node = Node {
         name: Loc::new(pos, get_pause_name(counter, &node.name, namespace)),
-        extern_modules: Vec::new(),
         statements: Vec::new(),
         weak: true,
         transitions: pause_transitions,
     };
     let stay_node = Node {
         name: Loc::new(pos, get_rename(counter, &node.name, namespace)),
-        extern_modules: node.extern_modules.clone(),
         statements,
         weak: node.weak,
         transitions,
@@ -578,7 +652,7 @@ pub fn make_node(
 //rename vars in a statement
 fn replace_var_in_statement(
     statement: &Statement,
-    replace_map: &HashMap<String, String>,
+    replace_map: &AHashMap<String, String>,
     counter: u32,
     module_name: &str,
 ) -> Statement {
@@ -654,18 +728,57 @@ fn replace_var_in_statement(
                 static_args: static_args.clone(),
             },
         }),
+        Statement::ExtModule(e) => Statement::ExtModule(ExtModule {
+            inputs: Loc::new(
+                e.inputs.loc,
+                e.inputs
+                    .iter()
+                    .map(|e| {
+                        Loc::new(
+                            e.loc,
+                            replace_var_in_expr(e, replace_map, counter, module_name),
+                        )
+                    })
+                    .collect(),
+            ),
+            outputs: Loc::new(
+                e.outputs.loc,
+                e.outputs
+                    .iter()
+                    .map(|v| {
+                        Loc::new(
+                            v.loc,
+                            replace_map.get(&v.value).cloned().unwrap_or(get_rename(
+                                counter,
+                                &v.value,
+                                module_name,
+                            )),
+                        )
+                    })
+                    .collect(),
+            ),
+            name: e.name.clone(),
+        }),
     }
 }
 
 //rename vars in an expression.
 fn replace_var_in_expr(
     expr: &Expr,
-    replace_map: &HashMap<String, String>,
+    replace_map: &AHashMap<String, String>,
     counter: u32,
     module_name: &str,
 ) -> Expr {
     match expr {
-        Expr::Var(v) | Expr::Last(v) => Expr::Var(Loc::new(
+        Expr::Var(v) => Expr::Var(Loc::new(
+            v.loc,
+            replace_map.get(&v.value).cloned().unwrap_or(get_rename(
+                counter,
+                &v.value,
+                module_name,
+            )),
+        )),
+        Expr::Last(v) => Expr::Last(Loc::new(
             v.loc,
             replace_map.get(&v.value).cloned().unwrap_or(get_rename(
                 counter,

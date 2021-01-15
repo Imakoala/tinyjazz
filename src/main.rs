@@ -10,9 +10,10 @@ mod optimization;
 mod parser_wrapper;
 mod test;
 mod util;
+use ahash::AHashMap;
 use docopt::Docopt;
 use serde::Deserialize;
-use std::{collections::HashMap, path::PathBuf, process::exit};
+use std::{path::PathBuf, process::exit};
 //Docopt generates a CLI automatically from this usage string. Pretty amazing.
 const USAGE: &'static str = include_str!("USAGE.docopt");
 
@@ -77,14 +78,15 @@ fn process_file(
     frontend::hierarchical_automata::collapse_automata(&mut prog)
         .map_err(|e| (e, files.clone()))?;
     frontend::nested_expr::flatten(&mut prog).map_err(|e| (e, files.clone()))?;
-    let mut type_map = HashMap::new();
+    let mut type_map = AHashMap::new();
     frontend::functions::expand_functions(&mut prog, &mut type_map)
         .map_err(|e| (e, files.clone()))?;
-    prog.functions = HashMap::new(); //the functions are no longer useful
-                                     //at this point, the ast is ready to be typed.
+    prog.functions = AHashMap::new(); //the functions are no longer useful
+                                      //at this point, the ast is ready to be typed.
     let prog = frontend::typing::type_prog(prog, type_map).map_err(|e| (e, files.clone()))?;
     let graph =
         frontend::make_graph_automaton::make_graph(&prog).map_err(|e| (e, files.clone()))?;
+
     Ok(graph)
 }
 

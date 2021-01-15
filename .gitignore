@@ -1,4 +1,6 @@
-/target
-/demo
+target/
+demo/
 viz.dot
 out.net
+.cargo/
+.vscode/
