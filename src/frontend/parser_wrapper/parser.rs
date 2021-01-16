@@ -1,10 +1,10 @@
 // auto-generated: "lalrpop 0.19.1"
-// sha256: 80f9fd665d4e7292efeefb285b36184e3e7a40c77a877df47424d85e8476
-use crate::ast::parse_ast::*;
-use ahash::AHashMap;
-use lalrpop_util::ParseError;
-use std::path::PathBuf;
+// sha256: 568b7f5d6f159a3c4ba49fb070c5f49c22751fdfdeda4e579ec7ec15f9d17d9
 use std::str::FromStr;
+use lalrpop_util::ParseError;
+use crate::ast::parse_ast::*;
+use std::path::PathBuf;
+use ahash::AHashMap;
 #[allow(unused_extern_crates)]
 extern crate lalrpop_util as __lalrpop_util;
 #[allow(unused_imports)]
@@ -78,7 +78,7 @@ mod __parse__Program {
         Variant48(Loc<TrCond>),
         Variant49(::std::option::Option<Loc<String>>),
         Variant50(Loc<&'input str>),
-        Variant51(i32), 
+        Variant51(i32),
         Variant52(Vec<Loc<Arg>>),
         Variant53(Vec<Loc<ConstExpr>>),
         Variant54(Program),
@@ -8758,22 +8758,28 @@ mod __intern_token {
 pub use self::__lalrpop_util::lexer::Token;
 
 #[allow(unused_variables)]
-fn __action0<'input>(
+fn __action0<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Program, usize),
-) -> Program {
+) -> Program
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action1<'input>(
+fn __action1<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, imports, _): (usize, ::std::vec::Vec<Import>, usize),
-) -> Program {
+) -> Program
+{
     Program {
-        imports,
+        imports, 
         automata: AHashMap::new(),
         functions: AHashMap::new(),
         global_consts: AHashMap::new(),
@@ -8781,12 +8787,15 @@ fn __action1<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action2<'input>(
+fn __action2<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, mut p, _): (usize, Program, usize),
     (_, func, _): (usize, Function, usize),
-) -> Program {
+) -> Program
+{
     {
         p.functions.insert((*func.name).clone(), func);
         p
@@ -8794,12 +8803,15 @@ fn __action2<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action3<'input>(
+fn __action3<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, mut p, _): (usize, Program, usize),
     (_, automaton, _): (usize, Automaton, usize),
-) -> Program {
+) -> Program
+{
     {
         p.automata.insert(automaton.name.clone(), automaton);
         p
@@ -8807,12 +8819,15 @@ fn __action3<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action4<'input>(
+fn __action4<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, mut p, _): (usize, Program, usize),
     (_, c, _): (usize, ConstVarAssign, usize),
-) -> Program {
+) -> Program
+{
     {
         p.global_consts.insert(c.var.clone(), c.cons);
         p
@@ -8820,27 +8835,35 @@ fn __action4<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action5<'input>(
+fn __action5<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, __0, _): (usize, Vec<Loc<String>>, usize),
-) -> Vec<Loc<String>> {
+) -> Vec<Loc<String>>
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action6<'input>(
+fn __action6<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> Vec<Loc<String>> {
+) -> Vec<Loc<String>>
+{
     Vec::new()
 }
 
 #[allow(unused_variables)]
-fn __action7<'input>(
+fn __action7<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
@@ -8853,7 +8876,8 @@ fn __action7<'input>(
     (_, s, _): (usize, ::std::vec::Vec<Vec<VarAssign>>, usize),
     (_, mut states, _): (usize, ::std::vec::Vec<State>, usize),
     (_, mut a_n, _): (usize, (Vec<Loc<String>>, Vec<State>), usize),
-) -> Automaton {
+) -> Automaton
+{
     {
         if init.is_empty() && !states.is_empty() {
             init.push(states[0].name.clone())
@@ -8861,28 +8885,28 @@ fn __action7<'input>(
         init.append(&mut a_n.0);
         states.append(&mut a_n.1);
         Automaton {
-            name: name.strip_suffix("(").unwrap().to_string(),
-            inputs: ins,
+            name : name.strip_suffix("(").unwrap().to_string(),
+            inputs: ins, 
             outputs: out,
             shared: s.into_iter().flatten().collect(),
-            states: states
-                .drain(..)
-                .map(|state| (state.name.value.clone(), state))
-                .collect::<AHashMap<String, State>>(),
-            init_states: init,
+            states : states.drain(..).map(|state| (state.name.value.clone(), state)).collect::<AHashMap<String, State>>(),
+            init_states: init
         }
     }
 }
 
 #[allow(unused_variables)]
-fn __action8<'input>(
+fn __action8<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, mut init, _): (usize, Vec<Loc<String>>, usize),
     (_, mut states, _): (usize, ::std::vec::Vec<State>, usize),
     (_, a_n, _): (usize, (Vec<Loc<String>>, Vec<State>), usize),
-) -> (Vec<Loc<String>>, Vec<State>) {
+) -> (Vec<Loc<String>>, Vec<State>)
+{
     {
         let (mut prev_i, mut prev_n) = a_n;
         if init.is_empty() && !states.is_empty() {
@@ -8891,59 +8915,77 @@ fn __action8<'input>(
         prev_i.append(&mut init);
         prev_n.append(&mut states);
         (prev_i, prev_n)
+
     }
 }
 
 #[allow(unused_variables)]
-fn __action9<'input>(
+fn __action9<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> (Vec<Loc<String>>, Vec<State>) {
+) -> (Vec<Loc<String>>, Vec<State>)
+{
     (Vec::new(), Vec::new())
 }
 
 #[allow(unused_variables)]
-fn __action10<'input>(
+fn __action10<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, _, _): (usize, &'input str, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<Option<Var>> {
+) -> Loc<Option<Var>>
+{
     Loc::new((file_id, l, r), None)
 }
 
 #[allow(unused_variables)]
-fn __action11<'input>(
+fn __action11<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, Loc<String>, usize),
-) -> Loc<Option<Var>> {
+) -> Loc<Option<Var>>
+{
     Loc::new(v.loc, Some(v.value))
 }
 
 #[allow(unused_variables)]
-fn __action12<'input>(
+fn __action12<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> TrCond {
+) -> TrCond
+{
     TrCond::Default
 }
 
 #[allow(unused_variables)]
-fn __action13<'input>(
+fn __action13<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Expr, usize),
-) -> TrCond {
+) -> TrCond
+{
     TrCond::Expr(__0)
 }
 
 #[allow(unused_variables)]
-fn __action14<'input>(
+fn __action14<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
@@ -8951,21 +8993,25 @@ fn __action14<'input>(
     (_, _, _): (usize, &'input str, usize),
     (_, reset, _): (usize, ::std::option::Option<&'input str>, usize),
     (_, v, _): (usize, Loc<Option<Var>>, usize),
-) -> Transition {
+) -> Transition
+{
     Transition {
-        condition: c,
-        state: v,
-        reset: reset.is_some(),
+        condition: c, 
+        state: v, 
+        reset: reset.is_some()
     }
 }
 
 #[allow(unused_variables)]
-fn __action15<'input>(
+fn __action15<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, e, _): (usize, ExtAutomaton, usize),
     (_, mut n, _): (usize, (Vec<ExtAutomaton>, Vec<Statement>), usize),
-) -> (Vec<ExtAutomaton>, Vec<Statement>) {
+) -> (Vec<ExtAutomaton>, Vec<Statement>)
+{
     {
         n.0.push(e);
         n
@@ -8973,12 +9019,15 @@ fn __action15<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action16<'input>(
+fn __action16<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, s, _): (usize, Statement, usize),
     (_, mut n, _): (usize, (Vec<ExtAutomaton>, Vec<Statement>), usize),
-) -> (Vec<ExtAutomaton>, Vec<Statement>) {
+) -> (Vec<ExtAutomaton>, Vec<Statement>)
+{
     {
         n.1.push(s);
         n
@@ -8986,98 +9035,121 @@ fn __action16<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action17<'input>(
+fn __action17<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> (Vec<ExtAutomaton>, Vec<Statement>) {
+) -> (Vec<ExtAutomaton>, Vec<Statement>)
+{
     (Vec::new(), Vec::new())
 }
 
 #[allow(unused_variables)]
-fn __action18<'input>(
+fn __action18<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, name, _): (usize, Loc<&'input str>, usize),
     (_, s, _): (usize, ::std::vec::Vec<Statement>, usize),
     (_, _, _): (usize, &'input str, usize),
     (_, t, _): (usize, ::std::vec::Vec<Transition>, usize),
-) -> State {
+) -> State
+{
     State {
         name: Loc::new(name.loc, name.strip_suffix(":").unwrap().to_string()),
         statements: s,
-        transitions: t,
-        weak: true,
+        transitions : t,
+        weak: true
     }
 }
 
 #[allow(unused_variables)]
-fn __action19<'input>(
+fn __action19<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, name, _): (usize, Loc<&'input str>, usize),
     (_, s, _): (usize, ::std::vec::Vec<Statement>, usize),
     (_, _, _): (usize, &'input str, usize),
     (_, t, _): (usize, ::std::vec::Vec<Transition>, usize),
-) -> State {
+) -> State
+{
     State {
-        name: Loc::new(name.loc, name.strip_suffix(":").unwrap().to_string()),
-        statements: s,
-        transitions: t,
-        weak: false,
+        name: Loc::new(name.loc, name.strip_suffix(":").unwrap().to_string()), 
+        statements: s, 
+        transitions : t,
+        weak: false
     }
 }
 
 #[allow(unused_variables)]
-fn __action20<'input>(
+fn __action20<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, name, _): (usize, Loc<&'input str>, usize),
     (_, s, _): (usize, ::std::vec::Vec<Statement>, usize),
-) -> State {
+) -> State
+{
     State {
         name: Loc::new(name.loc, name.strip_suffix(":").unwrap().to_string()),
-        statements: s,
-        transitions: vec![Transition {
-            condition: Loc::new(name.loc, TrCond::Default),
+        statements: s, 
+        transitions : vec![Transition {
+            condition: Loc::new(name.loc, TrCond::Default), 
             state: Loc::new(name.loc, Some(name.strip_suffix(":").unwrap().to_string())),
             reset: false,
         }],
-        weak: true,
+        weak: true
     }
 }
 
 #[allow(unused_variables)]
-fn __action21<'input>(
+fn __action21<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, String, usize),
     (_, l, _): (usize, usize, usize),
-) -> Arg {
+) -> Arg
+{
     Arg {
-        name: v,
-        size: Loc {
+        name : v, 
+        size : Loc {
             value: Const::Value(1),
-            loc: (file_id, l, l),
-        },
+            loc: (file_id, l, l)
+        }
     }
 }
 
 #[allow(unused_variables)]
-fn __action22<'input>(
+fn __action22<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, String, usize),
     (_, _, _): (usize, &'input str, usize),
     (_, c, _): (usize, Loc<Const>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Arg {
-    Arg { name: v, size: c }
+) -> Arg
+{
+    Arg {
+        name : v, 
+        size : c
+    }
 }
 
 #[allow(unused_variables)]
-fn __action23<'input>(
+fn __action23<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
@@ -9089,21 +9161,24 @@ fn __action23<'input>(
     (_, _, _): (usize, &'input str, usize),
     (_, ret, _): (usize, Vec<Arg>, usize),
     (_, s, _): (usize, ::std::vec::Vec<Statement>, usize),
-) -> Function {
+) -> Function
+{
     Function {
         name: Loc {
-            loc: (file_id, name_loc_l, name_loc_r),
-            value: name.strip_suffix("(").unwrap().to_string(),
+            loc : (file_id, name_loc_l, name_loc_r),
+            value: name.strip_suffix("(").unwrap().to_string(), 
         },
-        static_args: Vec::new(),
+        static_args : Vec::new(), 
         args,
-        return_vars: ret,
+        return_vars: ret, 
         statements: s,
     }
 }
 
 #[allow(unused_variables)]
-fn __action24<'input>(
+fn __action24<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
@@ -9117,90 +9192,85 @@ fn __action24<'input>(
     (_, _, _): (usize, &'input str, usize),
     (_, ret, _): (usize, Vec<Arg>, usize),
     (_, s, _): (usize, ::std::vec::Vec<Statement>, usize),
-) -> Function {
+) -> Function
+{
     Function {
         name: Loc {
-            loc: (file_id, name_loc_l, name_loc_r),
-            value: name.strip_suffix("<").unwrap().to_string(),
+            loc : (file_id, name_loc_l, name_loc_r),
+            value: name.strip_suffix("<").unwrap().to_string(), 
         },
-        static_args,
+        static_args, 
         args,
-        return_vars: ret,
+        return_vars: ret, 
         statements: s,
     }
 }
 
 #[allow(unused_variables)]
-fn __action25<'input>(
+fn __action25<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, mut v, _): (usize, Vec<Loc<Arg>>, usize),
     (_, _, _): (usize, &'input str, usize),
     (_, mut e, _): (usize, Vec<Loc<ConstExpr>>, usize),
-) -> Result<Vec<VarAssign>, __lalrpop_util::ParseError<usize, Token<'input>, &'static str>> {
+) -> Result<Vec<VarAssign>,__lalrpop_util::ParseError<usize,Token<'input>,&'static str>>
+{
     {
         if e.len() == 0 {
             Ok(v.drain(..)
-                .map(|arg| VarAssign {
-                    var: Loc::new(arg.loc, arg.name.clone()),
-                    expr: Loc {
-                        value: Expr::Const(ConstExpr::Unknown(false, arg.size.clone())),
-                        loc: arg.loc,
-                    },
-                })
-                .collect())
-        } else if e.len() == 1 {
+            .map(|arg| VarAssign {
+                var: Loc::new(arg.loc, arg.name.clone()),
+                expr : Loc {value: Expr::Const(ConstExpr::Unknown(false, arg.size.clone())), loc: arg.loc}
+            }).collect())
+        }
+        else if e.len() == 1 {
             Ok(v.drain(..)
-                .map(|arg| VarAssign {
-                    var: Loc::new(arg.loc, arg.name.clone()),
-                    expr: Loc {
-                        value: Expr::Const((*e[0]).clone()),
-                        loc: e[0].loc,
-                    },
-                })
-                .collect())
-        } else if v.len() != e.len() {
+            .map(|arg| VarAssign {
+                var: Loc::new(arg.loc, arg.name.clone()),
+                expr : Loc {value: Expr::Const((*e[0]).clone()), loc: e[0].loc}
+            }).collect())
+        }
+        else if v.len() != e.len() {
             Err(ParseError::User {
-                error: "The variable tuple and the expression tuple must have the same length",
+                error : "The variable tuple and the expression tuple must have the same length"
             })
-        } else {
+        }
+        else {
             Ok(v.drain(..)
-                .zip(e.drain(..))
-                .map(|(arg, expr)| VarAssign {
-                    var: Loc::new(arg.loc, arg.name.clone()),
-                    expr: Loc {
-                        value: Expr::Const((*expr).clone()),
-                        loc: expr.loc,
-                    },
-                })
-                .collect())
+            .zip(e.drain(..))
+            .map(|(arg, expr)| VarAssign {
+                var: Loc::new(arg.loc, arg.name.clone()),
+                expr : Loc {value: Expr::Const((*expr).clone()), loc: expr.loc}
+            }).collect())
         }
     }
 }
 
 #[allow(unused_variables)]
-fn __action26<'input>(
+fn __action26<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, mut v, _): (usize, Vec<Loc<Arg>>, usize),
-) -> Vec<VarAssign> {
+) -> Vec<VarAssign>
+{
     {
-        v.drain(..)
-            .map(|arg| VarAssign {
-                var: Loc::new(arg.loc, arg.name.clone()),
-                expr: Loc::new(
-                    arg.loc,
-                    Expr::Const(ConstExpr::Unknown(false, arg.size.clone())),
-                ),
-            })
-            .collect()
+        v.drain(..).map(|arg| {VarAssign {
+            var: Loc::new(arg.loc, arg.name.clone()),
+            expr: Loc::new(arg.loc, Expr::Const(ConstExpr::Unknown(false, arg.size.clone())))
+        }}).collect()
     }
 }
 
 #[allow(unused_variables)]
-fn __action27<'input>(
+fn __action27<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
@@ -9211,74 +9281,92 @@ fn __action27<'input>(
     (_, name_loc_r, _): (usize, usize, usize),
     (_, ins, _): (usize, Loc<Vec<Loc<Expr>>>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> ExtAutomaton {
+) -> ExtAutomaton
+{
     ExtAutomaton {
         inputs: ins,
         outputs: out,
-        name: Loc {
-            value: name.strip_suffix("(").unwrap().to_string(),
-            loc: (file_id, name_loc_l, name_loc_r),
-        },
+        name: Loc {value: name.strip_suffix("(").unwrap().to_string(), loc: (file_id, name_loc_l, name_loc_r)},
     }
 }
 
 #[allow(unused_variables)]
-fn __action28<'input>(
+fn __action28<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, s, _): (usize, &'input str, usize),
-) -> Import {
+) -> Import
+{
     PathBuf::from(
         s.strip_prefix("import")
-            .unwrap()
-            .split_whitespace()
-            .collect::<String>(),
+        .unwrap()
+        .split_whitespace()
+        .collect::<String>()
     )
 }
 
 #[allow(unused_variables)]
-fn __action29<'input>(
+fn __action29<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, s, _): (usize, &'input str, usize),
-) -> Import {
+) -> Import
+{
     PathBuf::from(
         s.strip_prefix("import")
-            .unwrap()
-            .split_whitespace()
-            .collect::<String>()
-            .strip_prefix("\"")
-            .unwrap()
-            .strip_suffix("\"")
-            .unwrap(),
+        .unwrap()
+        .split_whitespace()
+        .collect::<String>()
+        .strip_prefix("\"")
+        .unwrap()
+        .strip_suffix("\"")
+        .unwrap()
     )
 }
 
 #[allow(unused_variables)]
-fn __action30<'input>(
+fn __action30<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, name, _): (usize, String, usize),
     (_, _, _): (usize, &'input str, usize),
     (_, c, _): (usize, Const, usize),
-) -> ConstVarAssign {
-    ConstVarAssign { var: name, cons: c }
+) -> ConstVarAssign
+{
+    ConstVarAssign {
+        var : name, 
+        cons : c
+    }
 }
 
 #[allow(unused_variables)]
-fn __action31<'input>(
+fn __action31<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, Loc<String>, usize),
     (_, _, _): (usize, &'input str, usize),
     (_, e, _): (usize, Loc<Expr>, usize),
-) -> Statement {
-    Statement::Assign(vec![VarAssign { var: v, expr: e }])
+) -> Statement
+{
+    Statement::Assign(vec![VarAssign {
+        var : v, 
+        expr : e,
+    }])
 }
 
 #[allow(unused_variables)]
-fn __action32<'input>(
+fn __action32<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
@@ -9288,34 +9376,41 @@ fn __action32<'input>(
     (_, _, _): (usize, &'input str, usize),
     (_, mut e, _): (usize, Vec<Loc<Expr>>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Result<Statement, __lalrpop_util::ParseError<usize, Token<'input>, &'static str>> {
+) -> Result<Statement,__lalrpop_util::ParseError<usize,Token<'input>,&'static str>>
+{
     {
         if v.len() != e.len() {
             Err(ParseError::User {
-                error: "The variable tuple and the expression tuple must have the same length",
+                    error : "The variable tuple and the expression tuple must have the same length"
+                })
+            }
+        else {
+            Ok(Statement::Assign(v.drain(..).zip(e.drain(..))
+            .map(|(var, expr)| VarAssign {
+                var, 
+                expr
             })
-        } else {
-            Ok(Statement::Assign(
-                v.drain(..)
-                    .zip(e.drain(..))
-                    .map(|(var, expr)| VarAssign { var, expr })
-                    .collect(),
-            ))
+            .collect()))
         }
     }
 }
 
 #[allow(unused_variables)]
-fn __action33<'input>(
+fn __action33<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, IfStruct, usize),
-) -> Statement {
+) -> Statement
+{
     Statement::If(__0)
 }
 
 #[allow(unused_variables)]
-fn __action34<'input>(
+fn __action34<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
@@ -9323,21 +9418,30 @@ fn __action34<'input>(
     (_, _, _): (usize, &'input str, usize),
     (_, _, _): (usize, &'input str, usize),
     (_, f, _): (usize, FnCall, usize),
-) -> Statement {
-    Statement::FnAssign(FnAssign { vars: v, f })
+) -> Statement
+{
+    Statement::FnAssign(FnAssign {
+        vars: v,
+        f,
+    })
 }
 
 #[allow(unused_variables)]
-fn __action35<'input>(
+fn __action35<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, ExtAutomaton, usize),
-) -> Statement {
+) -> Statement
+{
     Statement::ExtAutomaton(__0)
 }
 
 #[allow(unused_variables)]
-fn __action36<'input>(
+fn __action36<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
@@ -9345,16 +9449,19 @@ fn __action36<'input>(
     (_, _, _): (usize, &'input str, usize),
     (_, v1, _): (usize, ::std::vec::Vec<Statement>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> IfStruct {
+) -> IfStruct
+{
     IfStruct {
-        condition: c,
-        if_block: v1,
-        else_block: Vec::new(),
+        condition : c,
+        if_block : v1,
+        else_block: Vec::new()
     }
 }
 
 #[allow(unused_variables)]
-fn __action37<'input>(
+fn __action37<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
@@ -9364,16 +9471,19 @@ fn __action37<'input>(
     (_, _, _): (usize, &'input str, usize),
     (_, v2, _): (usize, ::std::vec::Vec<Statement>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> IfStruct {
+) -> IfStruct
+{
     IfStruct {
-        condition: c,
-        if_block: v1,
-        else_block: v2,
+        condition : c,
+        if_block : v1,
+        else_block: v2
     }
 }
 
 #[allow(unused_variables)]
-fn __action38<'input>(
+fn __action38<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
@@ -9385,7 +9495,8 @@ fn __action38<'input>(
     (_, _, _): (usize, &'input str, usize),
     (_, e4, _): (usize, Loc<Expr>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> RamStruct {
+) -> RamStruct
+{
     RamStruct {
         read_addr: Box::new(e1),
         write_enable: Box::new(e2),
@@ -9395,7 +9506,9 @@ fn __action38<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action39<'input>(
+fn __action39<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
@@ -9403,7 +9516,8 @@ fn __action39<'input>(
     (_, _, _): (usize, &'input str, usize),
     (_, e, _): (usize, Loc<Expr>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> RomStruct {
+) -> RomStruct
+{
     RomStruct {
         word_size: c1,
         read_addr: Box::new(e),
@@ -9411,16 +9525,21 @@ fn __action39<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action40<'input>(
+fn __action40<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> String {
+) -> String
+{
     __0.to_string()
 }
 
 #[allow(unused_variables)]
-fn __action41<'input>(
+fn __action41<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, name_lloc, _): (usize, usize, usize),
@@ -9430,19 +9549,22 @@ fn __action41<'input>(
     (_, _, _): (usize, &'input str, usize),
     (_, v2, _): (usize, Loc<Vec<Loc<Expr>>>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> FnCall {
+) -> FnCall
+{
     FnCall {
         name: Loc {
             loc: (file_id, name_lloc, name_rloc),
-            value: name.strip_suffix("<").unwrap().to_string(),
+            value: name.strip_suffix("<").unwrap().to_string()
         },
-        args: v2,
+        args: v2, 
         static_args: v1,
     }
 }
 
 #[allow(unused_variables)]
-fn __action42<'input>(
+fn __action42<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, name_lloc, _): (usize, usize, usize),
@@ -9450,78 +9572,99 @@ fn __action42<'input>(
     (_, name_rloc, _): (usize, usize, usize),
     (_, v, _): (usize, Loc<Vec<Loc<Expr>>>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> FnCall {
+) -> FnCall
+{
     FnCall {
         name: Loc {
             loc: (file_id, name_lloc, name_rloc),
-            value: name.strip_suffix("(").unwrap().to_string(),
+            value: name.strip_suffix("(").unwrap().to_string()
         },
-        args: v,
+        args: v, 
         static_args: Loc {
             loc: (file_id, name_rloc, name_rloc),
             value: Vec::new(),
-        },
+        }
     }
 }
 
 #[allow(unused_variables)]
-fn __action43<'input>(
+fn __action43<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> bool {
+) -> bool
+{
     true
 }
 
 #[allow(unused_variables)]
-fn __action44<'input>(
+fn __action44<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> bool {
+) -> bool
+{
     true
 }
 
 #[allow(unused_variables)]
-fn __action45<'input>(
+fn __action45<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> bool {
+) -> bool
+{
     false
 }
 
 #[allow(unused_variables)]
-fn __action46<'input>(
+fn __action46<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> bool {
+) -> bool
+{
     false
 }
 
 #[allow(unused_variables)]
-fn __action47<'input>(
+fn __action47<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, bool, usize),
-) -> ConstExpr {
+) -> ConstExpr
+{
     ConstExpr::Known(vec![__0])
 }
 
 #[allow(unused_variables)]
-fn __action48<'input>(
+fn __action48<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, __0, _): (usize, Vec<bool>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> ConstExpr {
+) -> ConstExpr
+{
     ConstExpr::Known(__0)
 }
 
 #[allow(unused_variables)]
-fn __action49<'input>(
+fn __action49<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
@@ -9529,48 +9672,63 @@ fn __action49<'input>(
     (_, _, _): (usize, &'input str, usize),
     (_, c, _): (usize, Loc<Const>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> ConstExpr {
+) -> ConstExpr
+{
     ConstExpr::Unknown(b, c)
 }
 
 #[allow(unused_variables)]
-fn __action50<'input>(
+fn __action50<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, s, _): (usize, &'input str, usize),
-) -> i32 {
+) -> i32
+{
     i32::from_str(s).unwrap()
 }
 
 #[allow(unused_variables)]
-fn __action51<'input>(
+fn __action51<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> i32 {
+) -> i32
+{
     0
 }
 
 #[allow(unused_variables)]
-fn __action52<'input>(
+fn __action52<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> i32 {
+) -> i32
+{
     1
 }
 
 #[allow(unused_variables)]
-fn __action53<'input>(
+fn __action53<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, ConstExpr, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::Const(__0)
 }
 
 #[allow(unused_variables)]
-fn __action54<'input>(
+fn __action54<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, e, _): (usize, Loc<Expr>, usize),
@@ -9579,46 +9737,55 @@ fn __action54<'input>(
     (_, _, _): (usize, &'input str, usize),
     (_, c2, _): (usize, ::std::option::Option<Const>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::Slice(Box::new(e), c1, c2)
 }
 
 #[allow(unused_variables)]
-fn __action55<'input>(
+fn __action55<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, e, _): (usize, Loc<Expr>, usize),
     (_, _, _): (usize, &'input str, usize),
     (_, c, _): (usize, Loc<Const>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::Slice(
-        Box::new(e),
-        Some(c.value.clone()),
+        Box::new(e), 
+        Some(c.value.clone()), 
         Some(Const::BiOp(
-            ConstBiOp::Plus,
-            Box::new(c.value),
+            ConstBiOp::Plus, 
+            Box::new(c.value), 
             Box::new(Loc {
                 value: Const::Value(1),
-                loc: c.loc,
-            }),
-        )),
+                loc: c.loc
+            })
+        ))
     )
 }
 
 #[allow(unused_variables)]
-fn __action56<'input>(
+fn __action56<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, __0, _): (usize, Expr, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action57<'input>(
+fn __action57<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
@@ -9628,40 +9795,48 @@ fn __action57<'input>(
     (_, _, _): (usize, &'input str, usize),
     (_, e3, _): (usize, Loc<Expr>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::Mux(Box::new(e1), Box::new(e2), Box::new(e3))
 }
 
 #[allow(unused_variables)]
-fn __action58<'input>(
+fn __action58<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, v, _): (usize, Loc<String>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::Last(v)
 }
 
 #[allow(unused_variables)]
-fn __action59<'input>(
+fn __action59<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, e, _): (usize, Loc<Expr>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::Reg(
         Loc {
             value: Const::Value(1),
-            loc: e.loc,
-        },
-        Box::new(e),
-    )
+            loc: e.loc
+        }, 
+        Box::new(e))
 }
 
 #[allow(unused_variables)]
-fn __action60<'input>(
+fn __action60<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
@@ -9669,389 +9844,512 @@ fn __action60<'input>(
     (_, _, _): (usize, &'input str, usize),
     (_, e, _): (usize, Loc<Expr>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::Reg(c, Box::new(e))
 }
 
 #[allow(unused_variables)]
-fn __action61<'input>(
+fn __action61<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, RamStruct, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::Ram(__0)
 }
 
 #[allow(unused_variables)]
-fn __action62<'input>(
+fn __action62<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, RomStruct, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::Rom(__0)
 }
 
 #[allow(unused_variables)]
-fn __action63<'input>(
+fn __action63<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, FnCall, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::FnCall(__0)
 }
 
 #[allow(unused_variables)]
-fn __action64<'input>(
+fn __action64<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<String>, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::Var(__0)
 }
 
 #[allow(unused_variables)]
-fn __action65<'input>(
+fn __action65<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> () {
+) -> ()
+{
     ()
 }
 
 #[allow(unused_variables)]
-fn __action66<'input>(
+fn __action66<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> () {
+) -> ()
+{
     ()
 }
 
 #[allow(unused_variables)]
-fn __action67<'input>(
+fn __action67<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, e1, _): (usize, Loc<Expr>, usize),
     (_, _, _): (usize, (), usize),
     (_, e2, _): (usize, Loc<Expr>, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::BiOp(BiOp::Xor, Box::new(e1), Box::new(e2))
 }
 
 #[allow(unused_variables)]
-fn __action68<'input>(
+fn __action68<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Expr, usize),
-) -> Expr {
+) -> Expr
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action69<'input>(
+fn __action69<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> () {
+) -> ()
+{
     ()
 }
 
 #[allow(unused_variables)]
-fn __action70<'input>(
+fn __action70<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> () {
+) -> ()
+{
     ()
 }
 
 #[allow(unused_variables)]
-fn __action71<'input>(
+fn __action71<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, e1, _): (usize, Loc<Expr>, usize),
     (_, _, _): (usize, (), usize),
     (_, e2, _): (usize, Loc<Expr>, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::BiOp(BiOp::And, Box::new(e1), Box::new(e2))
 }
 
 #[allow(unused_variables)]
-fn __action72<'input>(
+fn __action72<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Expr, usize),
-) -> Expr {
+) -> Expr
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action73<'input>(
+fn __action73<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, e1, _): (usize, Loc<Expr>, usize),
     (_, _, _): (usize, &'input str, usize),
     (_, e2, _): (usize, Loc<Expr>, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::BiOp(BiOp::Nand, Box::new(e1), Box::new(e2))
 }
 
 #[allow(unused_variables)]
-fn __action74<'input>(
+fn __action74<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Expr, usize),
-) -> Expr {
+) -> Expr
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action75<'input>(
+fn __action75<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> () {
+) -> ()
+{
     ()
 }
 
 #[allow(unused_variables)]
-fn __action76<'input>(
+fn __action76<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> () {
+) -> ()
+{
     ()
 }
 
 #[allow(unused_variables)]
-fn __action77<'input>(
+fn __action77<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, e1, _): (usize, Loc<Expr>, usize),
     (_, _, _): (usize, (), usize),
     (_, e2, _): (usize, Loc<Expr>, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::BiOp(BiOp::Or, Box::new(e1), Box::new(e2))
 }
 
 #[allow(unused_variables)]
-fn __action78<'input>(
+fn __action78<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Expr, usize),
-) -> Expr {
+) -> Expr
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action79<'input>(
+fn __action79<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, e, _): (usize, Expr, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::Not(Box::new(e))
 }
 
 #[allow(unused_variables)]
-fn __action80<'input>(
+fn __action80<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, e1, _): (usize, Loc<Expr>, usize),
     (_, _, _): (usize, &'input str, usize),
     (_, e2, _): (usize, Loc<Expr>, usize),
-) -> Expr {
+) -> Expr
+{
     Expr::BiOp(BiOp::Concat, Box::new(e1), Box::new(e2))
 }
 
 #[allow(unused_variables)]
-fn __action81<'input>(
+fn __action81<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Expr, usize),
-) -> Expr {
+) -> Expr
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action82<'input>(
+fn __action82<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> ConstBiOp {
+) -> ConstBiOp
+{
     ConstBiOp::Plus
 }
 
 #[allow(unused_variables)]
-fn __action83<'input>(
+fn __action83<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> ConstBiOp {
+) -> ConstBiOp
+{
     ConstBiOp::Minus
 }
 
 #[allow(unused_variables)]
-fn __action84<'input>(
+fn __action84<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> ConstBiOp {
+) -> ConstBiOp
+{
     ConstBiOp::Times
 }
 
 #[allow(unused_variables)]
-fn __action85<'input>(
+fn __action85<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> ConstBiOp {
+) -> ConstBiOp
+{
     ConstBiOp::Div
 }
 
 #[allow(unused_variables)]
-fn __action86<'input>(
+fn __action86<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> ConstBiOp {
+) -> ConstBiOp
+{
     ConstBiOp::Lt
 }
 
 #[allow(unused_variables)]
-fn __action87<'input>(
+fn __action87<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> ConstBiOp {
+) -> ConstBiOp
+{
     ConstBiOp::Gt
 }
 
 #[allow(unused_variables)]
-fn __action88<'input>(
+fn __action88<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> ConstBiOp {
+) -> ConstBiOp
+{
     ConstBiOp::Le
 }
 
 #[allow(unused_variables)]
-fn __action89<'input>(
+fn __action89<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> ConstBiOp {
+) -> ConstBiOp
+{
     ConstBiOp::Ge
 }
 
 #[allow(unused_variables)]
-fn __action90<'input>(
+fn __action90<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> ConstBiOp {
+) -> ConstBiOp
+{
     ConstBiOp::Eq
 }
 
 #[allow(unused_variables)]
-fn __action91<'input>(
+fn __action91<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> ConstBiOp {
+) -> ConstBiOp
+{
     ConstBiOp::Neq
 }
 
 #[allow(unused_variables)]
-fn __action92<'input>(
+fn __action92<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> ConstBiOp {
+) -> ConstBiOp
+{
     ConstBiOp::And
 }
 
 #[allow(unused_variables)]
-fn __action93<'input>(
+fn __action93<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> ConstBiOp {
+) -> ConstBiOp
+{
     ConstBiOp::Or
 }
 
 #[allow(unused_variables)]
-fn __action94<'input>(
+fn __action94<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, Const, usize),
     (_, op, _): (usize, ConstBiOp, usize),
     (_, r, _): (usize, Loc<Const>, usize),
-) -> Const {
-    Const::BiOp(op, Box::new(l), Box::new(r))
+) -> Const
+{
+    Const::BiOp(op, Box::new(l),  Box::new(r))
 }
 
 #[allow(unused_variables)]
-fn __action95<'input>(
+fn __action95<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Const, usize),
-) -> Const {
+) -> Const
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action96<'input>(
+fn __action96<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, Const, usize),
     (_, op, _): (usize, ConstBiOp, usize),
     (_, r, _): (usize, Loc<Const>, usize),
-) -> Const {
-    Const::BiOp(op, Box::new(l), Box::new(r))
+) -> Const
+{
+    Const::BiOp(op, Box::new(l),  Box::new(r))
 }
 
 #[allow(unused_variables)]
-fn __action97<'input>(
+fn __action97<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Const, usize),
-) -> Const {
+) -> Const
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action98<'input>(
+fn __action98<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<String>, usize),
-) -> Const {
+) -> Const
+{
     Const::Var(__0)
 }
 
 #[allow(unused_variables)]
-fn __action99<'input>(
+fn __action99<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, i32, usize),
-) -> Const {
+) -> Const
+{
     Const::Value(__0)
 }
 
 #[allow(unused_variables)]
-fn __action100<'input>(
+fn __action100<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, __0, _): (usize, Const, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Const {
+) -> Const
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action101<'input>(
+fn __action101<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
@@ -10059,12 +10357,15 @@ fn __action101<'input>(
     (_, op, _): (usize, ConstBiOp, usize),
     (_, r, _): (usize, Loc<Const>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Const {
-    Const::BiOp(op, Box::new(l), Box::new(r))
+) -> Const
+{
+    Const::BiOp(op, Box::new(l),  Box::new(r))
 }
 
 #[allow(unused_variables)]
-fn __action102<'input>(
+fn __action102<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
@@ -10072,27 +10373,34 @@ fn __action102<'input>(
     (_, op, _): (usize, ConstBiOp, usize),
     (_, r, _): (usize, Loc<Const>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Const {
-    Const::BiOp(op, Box::new(l), Box::new(r))
+) -> Const
+{
+    Const::BiOp(op, Box::new(l),  Box::new(r))
 }
 
 #[allow(unused_variables)]
-fn __action103<'input>(
+fn __action103<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Const, usize),
-) -> Const {
+) -> Const
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action104<'input>(
+fn __action104<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, Const, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<Const> {
+) -> Loc<Const>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10102,13 +10410,16 @@ fn __action104<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action105<'input>(
+fn __action105<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, Const, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<Const> {
+) -> Loc<Const>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10118,13 +10429,16 @@ fn __action105<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action106<'input>(
+fn __action106<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, Expr, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<Expr> {
+) -> Loc<Expr>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10134,13 +10448,16 @@ fn __action106<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action107<'input>(
+fn __action107<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, Expr, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<Expr> {
+) -> Loc<Expr>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10150,13 +10467,16 @@ fn __action107<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action108<'input>(
+fn __action108<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, Expr, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<Expr> {
+) -> Loc<Expr>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10166,13 +10486,16 @@ fn __action108<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action109<'input>(
+fn __action109<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, Expr, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<Expr> {
+) -> Loc<Expr>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10182,32 +10505,41 @@ fn __action109<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action110<'input>(
+fn __action110<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Const, usize),
-) -> ::std::option::Option<Const> {
+) -> ::std::option::Option<Const>
+{
     Some(__0)
 }
 
 #[allow(unused_variables)]
-fn __action111<'input>(
+fn __action111<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::option::Option<Const> {
+) -> ::std::option::Option<Const>
+{
     None
 }
 
 #[allow(unused_variables)]
-fn __action112<'input>(
+fn __action112<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, Expr, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<Expr> {
+) -> Loc<Expr>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10217,13 +10549,16 @@ fn __action112<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action113<'input>(
+fn __action113<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<bool>, usize),
     (_, e, _): (usize, ::std::option::Option<bool>, usize),
-) -> Vec<bool> {
-    match e {
+) -> Vec<bool>
+{
+    match e { 
         None => v,
         Some(e) => {
             let mut v = v;
@@ -10234,13 +10569,16 @@ fn __action113<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action114<'input>(
+fn __action114<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, Vec<Const>, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<Vec<Const>> {
+) -> Loc<Vec<Const>>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10250,13 +10588,16 @@ fn __action114<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action115<'input>(
+fn __action115<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Const>, usize),
     (_, e, _): (usize, ::std::option::Option<Const>, usize),
-) -> Vec<Const> {
-    match e {
+) -> Vec<Const>
+{
+    match e { 
         None => v,
         Some(e) => {
             let mut v = v;
@@ -10267,13 +10608,16 @@ fn __action115<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action116<'input>(
+fn __action116<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Loc<Expr>>, usize),
     (_, e, _): (usize, ::std::option::Option<Loc<Expr>>, usize),
-) -> Vec<Loc<Expr>> {
-    match e {
+) -> Vec<Loc<Expr>>
+{
+    match e { 
         None => v,
         Some(e) => {
             let mut v = v;
@@ -10284,13 +10628,16 @@ fn __action116<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action117<'input>(
+fn __action117<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Loc<String>>, usize),
     (_, e, _): (usize, ::std::option::Option<Loc<String>>, usize),
-) -> Vec<Loc<String>> {
-    match e {
+) -> Vec<Loc<String>>
+{
+    match e { 
         None => v,
         Some(e) => {
             let mut v = v;
@@ -10301,13 +10648,16 @@ fn __action117<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action118<'input>(
+fn __action118<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, Vec<Loc<Expr>>, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<Vec<Loc<Expr>>> {
+) -> Loc<Vec<Loc<Expr>>>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10317,13 +10667,16 @@ fn __action118<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action119<'input>(
+fn __action119<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Loc<Expr>>, usize),
     (_, e, _): (usize, ::std::option::Option<Loc<Expr>>, usize),
-) -> Vec<Loc<Expr>> {
-    match e {
+) -> Vec<Loc<Expr>>
+{
+    match e { 
         None => v,
         Some(e) => {
             let mut v = v;
@@ -10334,13 +10687,16 @@ fn __action119<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action120<'input>(
+fn __action120<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, Expr, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<Expr> {
+) -> Loc<Expr>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10350,13 +10706,16 @@ fn __action120<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action121<'input>(
+fn __action121<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, Vec<Loc<String>>, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<Vec<Loc<String>>> {
+) -> Loc<Vec<Loc<String>>>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10366,15 +10725,18 @@ fn __action121<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action122<'input>(
+fn __action122<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, v, _): (usize, ::std::vec::Vec<Loc<ConstExpr>>, usize),
     (_, e, _): (usize, ::std::option::Option<Loc<ConstExpr>>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Vec<Loc<ConstExpr>> {
-    match e {
+) -> Vec<Loc<ConstExpr>>
+{
+    match e { 
         None => v,
         Some(e) => {
             let mut v = v;
@@ -10385,22 +10747,28 @@ fn __action122<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action123<'input>(
+fn __action123<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<ConstExpr>, usize),
-) -> Vec<Loc<ConstExpr>> {
+) -> Vec<Loc<ConstExpr>>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action124<'input>(
+fn __action124<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, ConstExpr, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<ConstExpr> {
+) -> Loc<ConstExpr>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10410,15 +10778,18 @@ fn __action124<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action125<'input>(
+fn __action125<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, v, _): (usize, ::std::vec::Vec<Loc<Arg>>, usize),
     (_, e, _): (usize, ::std::option::Option<Loc<Arg>>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Vec<Loc<Arg>> {
-    match e {
+) -> Vec<Loc<Arg>>
+{
+    match e { 
         None => v,
         Some(e) => {
             let mut v = v;
@@ -10429,22 +10800,28 @@ fn __action125<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action126<'input>(
+fn __action126<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<Arg>, usize),
-) -> Vec<Loc<Arg>> {
+) -> Vec<Loc<Arg>>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action127<'input>(
+fn __action127<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, Arg, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<Arg> {
+) -> Loc<Arg>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10454,13 +10831,16 @@ fn __action127<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action128<'input>(
+fn __action128<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<String>, usize),
     (_, e, _): (usize, ::std::option::Option<String>, usize),
-) -> Vec<String> {
-    match e {
+) -> Vec<String>
+{
+    match e { 
         None => v,
         Some(e) => {
             let mut v = v;
@@ -10471,13 +10851,16 @@ fn __action128<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action129<'input>(
+fn __action129<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, Const, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<Const> {
+) -> Loc<Const>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10487,51 +10870,66 @@ fn __action129<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action130<'input>(
+fn __action130<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::vec::Vec<Transition> {
+) -> ::std::vec::Vec<Transition>
+{
     vec![]
 }
 
 #[allow(unused_variables)]
-fn __action131<'input>(
+fn __action131<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Transition>, usize),
-) -> ::std::vec::Vec<Transition> {
+) -> ::std::vec::Vec<Transition>
+{
     v
 }
 
 #[allow(unused_variables)]
-fn __action132<'input>(
+fn __action132<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::vec::Vec<Statement> {
+) -> ::std::vec::Vec<Statement>
+{
     vec![]
 }
 
 #[allow(unused_variables)]
-fn __action133<'input>(
+fn __action133<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Statement>, usize),
-) -> ::std::vec::Vec<Statement> {
+) -> ::std::vec::Vec<Statement>
+{
     v
 }
 
 #[allow(unused_variables)]
-fn __action134<'input>(
+fn __action134<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, &'input str, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<&'input str> {
+) -> Loc<&'input str>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10541,32 +10939,41 @@ fn __action134<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action135<'input>(
+fn __action135<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, &'input str, usize),
-) -> ::std::option::Option<&'input str> {
+) -> ::std::option::Option<&'input str>
+{
     Some(__0)
 }
 
 #[allow(unused_variables)]
-fn __action136<'input>(
+fn __action136<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::option::Option<&'input str> {
+) -> ::std::option::Option<&'input str>
+{
     None
 }
 
 #[allow(unused_variables)]
-fn __action137<'input>(
+fn __action137<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, TrCond, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<TrCond> {
+) -> Loc<TrCond>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10576,73 +10983,94 @@ fn __action137<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action138<'input>(
+fn __action138<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> usize {
+) -> usize
+{
     __lookbehind.clone()
 }
 
 #[allow(unused_variables)]
-fn __action139<'input>(
+fn __action139<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> usize {
+) -> usize
+{
     __lookahead.clone()
 }
 
 #[allow(unused_variables)]
-fn __action140<'input>(
+fn __action140<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::vec::Vec<State> {
+) -> ::std::vec::Vec<State>
+{
     vec![]
 }
 
 #[allow(unused_variables)]
-fn __action141<'input>(
+fn __action141<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<State>, usize),
-) -> ::std::vec::Vec<State> {
+) -> ::std::vec::Vec<State>
+{
     v
 }
 
 #[allow(unused_variables)]
-fn __action142<'input>(
+fn __action142<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::vec::Vec<Vec<VarAssign>> {
+) -> ::std::vec::Vec<Vec<VarAssign>>
+{
     vec![]
 }
 
 #[allow(unused_variables)]
-fn __action143<'input>(
+fn __action143<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Vec<VarAssign>>, usize),
-) -> ::std::vec::Vec<Vec<VarAssign>> {
+) -> ::std::vec::Vec<Vec<VarAssign>>
+{
     v
 }
 
 #[allow(unused_variables)]
-fn __action144<'input>(
+fn __action144<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, v, _): (usize, ::std::vec::Vec<Arg>, usize),
     (_, e, _): (usize, ::std::option::Option<Arg>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Vec<Arg> {
-    match e {
+) -> Vec<Arg>
+{
+    match e { 
         None => v,
         Some(e) => {
             let mut v = v;
@@ -10653,22 +11081,28 @@ fn __action144<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action145<'input>(
+fn __action145<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Arg, usize),
-) -> Vec<Arg> {
+) -> Vec<Arg>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action146<'input>(
+fn __action146<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Arg>, usize),
     (_, e, _): (usize, ::std::option::Option<Arg>, usize),
-) -> Vec<Arg> {
-    match e {
+) -> Vec<Arg>
+{
+    match e { 
         None => v,
         Some(e) => {
             let mut v = v;
@@ -10679,15 +11113,18 @@ fn __action146<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action147<'input>(
+fn __action147<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, _, _): (usize, &'input str, usize),
     (_, v, _): (usize, ::std::vec::Vec<Loc<String>>, usize),
     (_, e, _): (usize, ::std::option::Option<Loc<String>>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Vec<Loc<String>> {
-    match e {
+) -> Vec<Loc<String>>
+{
+    match e { 
         None => v,
         Some(e) => {
             let mut v = v;
@@ -10698,22 +11135,28 @@ fn __action147<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action148<'input>(
+fn __action148<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<String>, usize),
-) -> Vec<Loc<String>> {
+) -> Vec<Loc<String>>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action149<'input>(
+fn __action149<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, l, _): (usize, usize, usize),
     (_, val, _): (usize, String, usize),
     (_, r, _): (usize, usize, usize),
-) -> Loc<String> {
+) -> Loc<String>
+{
     {
         Loc {
             loc: (file_id, l, r),
@@ -10723,690 +11166,838 @@ fn __action149<'input>(
 }
 
 #[allow(unused_variables)]
-fn __action150<'input>(
+fn __action150<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::vec::Vec<Import> {
+) -> ::std::vec::Vec<Import>
+{
     vec![]
 }
 
 #[allow(unused_variables)]
-fn __action151<'input>(
+fn __action151<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Import>, usize),
-) -> ::std::vec::Vec<Import> {
+) -> ::std::vec::Vec<Import>
+{
     v
 }
 
 #[allow(unused_variables)]
-fn __action152<'input>(
+fn __action152<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Import, usize),
-) -> ::std::vec::Vec<Import> {
+) -> ::std::vec::Vec<Import>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action153<'input>(
+fn __action153<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Import>, usize),
     (_, e, _): (usize, Import, usize),
-) -> ::std::vec::Vec<Import> {
-    {
-        let mut v = v;
-        v.push(e);
-        v
-    }
+) -> ::std::vec::Vec<Import>
+{
+    { let mut v = v; v.push(e); v }
 }
 
 #[allow(unused_variables)]
-fn __action154<'input>(
+fn __action154<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::vec::Vec<Loc<String>> {
+) -> ::std::vec::Vec<Loc<String>>
+{
     vec![]
 }
 
 #[allow(unused_variables)]
-fn __action155<'input>(
+fn __action155<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Loc<String>>, usize),
-) -> ::std::vec::Vec<Loc<String>> {
+) -> ::std::vec::Vec<Loc<String>>
+{
     v
 }
 
 #[allow(unused_variables)]
-fn __action156<'input>(
+fn __action156<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Arg, usize),
-) -> ::std::option::Option<Arg> {
+) -> ::std::option::Option<Arg>
+{
     Some(__0)
 }
 
 #[allow(unused_variables)]
-fn __action157<'input>(
+fn __action157<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::option::Option<Arg> {
+) -> ::std::option::Option<Arg>
+{
     None
 }
 
 #[allow(unused_variables)]
-fn __action158<'input>(
+fn __action158<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::vec::Vec<Arg> {
+) -> ::std::vec::Vec<Arg>
+{
     vec![]
 }
 
 #[allow(unused_variables)]
-fn __action159<'input>(
+fn __action159<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Arg>, usize),
-) -> ::std::vec::Vec<Arg> {
+) -> ::std::vec::Vec<Arg>
+{
     v
 }
 
 #[allow(unused_variables)]
-fn __action160<'input>(
+fn __action160<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Arg, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Arg {
+) -> Arg
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action161<'input>(
+fn __action161<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Vec<VarAssign>, usize),
-) -> ::std::vec::Vec<Vec<VarAssign>> {
+) -> ::std::vec::Vec<Vec<VarAssign>>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action162<'input>(
+fn __action162<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Vec<VarAssign>>, usize),
     (_, e, _): (usize, Vec<VarAssign>, usize),
-) -> ::std::vec::Vec<Vec<VarAssign>> {
-    {
-        let mut v = v;
-        v.push(e);
-        v
-    }
+) -> ::std::vec::Vec<Vec<VarAssign>>
+{
+    { let mut v = v; v.push(e); v }
 }
 
 #[allow(unused_variables)]
-fn __action163<'input>(
+fn __action163<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, State, usize),
-) -> ::std::vec::Vec<State> {
+) -> ::std::vec::Vec<State>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action164<'input>(
+fn __action164<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<State>, usize),
     (_, e, _): (usize, State, usize),
-) -> ::std::vec::Vec<State> {
-    {
-        let mut v = v;
-        v.push(e);
-        v
-    }
+) -> ::std::vec::Vec<State>
+{
+    { let mut v = v; v.push(e); v }
 }
 
 #[allow(unused_variables)]
-fn __action165<'input>(
+fn __action165<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Statement, usize),
-) -> ::std::vec::Vec<Statement> {
+) -> ::std::vec::Vec<Statement>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action166<'input>(
+fn __action166<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Statement>, usize),
     (_, e, _): (usize, Statement, usize),
-) -> ::std::vec::Vec<Statement> {
-    {
-        let mut v = v;
-        v.push(e);
-        v
-    }
+) -> ::std::vec::Vec<Statement>
+{
+    { let mut v = v; v.push(e); v }
 }
 
 #[allow(unused_variables)]
-fn __action167<'input>(
+fn __action167<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Transition, usize),
-) -> ::std::vec::Vec<Transition> {
+) -> ::std::vec::Vec<Transition>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action168<'input>(
+fn __action168<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Transition>, usize),
     (_, e, _): (usize, Transition, usize),
-) -> ::std::vec::Vec<Transition> {
-    {
-        let mut v = v;
-        v.push(e);
-        v
-    }
+) -> ::std::vec::Vec<Transition>
+{
+    { let mut v = v; v.push(e); v }
 }
 
 #[allow(unused_variables)]
-fn __action169<'input>(
+fn __action169<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, String, usize),
-) -> ::std::option::Option<String> {
+) -> ::std::option::Option<String>
+{
     Some(__0)
 }
 
 #[allow(unused_variables)]
-fn __action170<'input>(
+fn __action170<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::option::Option<String> {
+) -> ::std::option::Option<String>
+{
     None
 }
 
 #[allow(unused_variables)]
-fn __action171<'input>(
+fn __action171<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::vec::Vec<String> {
+) -> ::std::vec::Vec<String>
+{
     vec![]
 }
 
 #[allow(unused_variables)]
-fn __action172<'input>(
+fn __action172<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<String>, usize),
-) -> ::std::vec::Vec<String> {
+) -> ::std::vec::Vec<String>
+{
     v
 }
 
 #[allow(unused_variables)]
-fn __action173<'input>(
+fn __action173<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, String, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> String {
+) -> String
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action174<'input>(
+fn __action174<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<Arg>, usize),
-) -> ::std::option::Option<Loc<Arg>> {
+) -> ::std::option::Option<Loc<Arg>>
+{
     Some(__0)
 }
 
 #[allow(unused_variables)]
-fn __action175<'input>(
+fn __action175<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::option::Option<Loc<Arg>> {
+) -> ::std::option::Option<Loc<Arg>>
+{
     None
 }
 
 #[allow(unused_variables)]
-fn __action176<'input>(
+fn __action176<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::vec::Vec<Loc<Arg>> {
+) -> ::std::vec::Vec<Loc<Arg>>
+{
     vec![]
 }
 
 #[allow(unused_variables)]
-fn __action177<'input>(
+fn __action177<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Loc<Arg>>, usize),
-) -> ::std::vec::Vec<Loc<Arg>> {
+) -> ::std::vec::Vec<Loc<Arg>>
+{
     v
 }
 
 #[allow(unused_variables)]
-fn __action178<'input>(
+fn __action178<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<Arg>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Loc<Arg> {
+) -> Loc<Arg>
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action179<'input>(
+fn __action179<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<ConstExpr>, usize),
-) -> ::std::option::Option<Loc<ConstExpr>> {
+) -> ::std::option::Option<Loc<ConstExpr>>
+{
     Some(__0)
 }
 
 #[allow(unused_variables)]
-fn __action180<'input>(
+fn __action180<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::option::Option<Loc<ConstExpr>> {
+) -> ::std::option::Option<Loc<ConstExpr>>
+{
     None
 }
 
 #[allow(unused_variables)]
-fn __action181<'input>(
+fn __action181<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::vec::Vec<Loc<ConstExpr>> {
+) -> ::std::vec::Vec<Loc<ConstExpr>>
+{
     vec![]
 }
 
 #[allow(unused_variables)]
-fn __action182<'input>(
+fn __action182<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Loc<ConstExpr>>, usize),
-) -> ::std::vec::Vec<Loc<ConstExpr>> {
+) -> ::std::vec::Vec<Loc<ConstExpr>>
+{
     v
 }
 
 #[allow(unused_variables)]
-fn __action183<'input>(
+fn __action183<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<ConstExpr>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Loc<ConstExpr> {
+) -> Loc<ConstExpr>
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action184<'input>(
+fn __action184<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::vec::Vec<Loc<Expr>> {
+) -> ::std::vec::Vec<Loc<Expr>>
+{
     vec![]
 }
 
 #[allow(unused_variables)]
-fn __action185<'input>(
+fn __action185<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Loc<Expr>>, usize),
-) -> ::std::vec::Vec<Loc<Expr>> {
+) -> ::std::vec::Vec<Loc<Expr>>
+{
     v
 }
 
 #[allow(unused_variables)]
-fn __action186<'input>(
+fn __action186<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<String>, usize),
-) -> ::std::option::Option<Loc<String>> {
+) -> ::std::option::Option<Loc<String>>
+{
     Some(__0)
 }
 
 #[allow(unused_variables)]
-fn __action187<'input>(
+fn __action187<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::option::Option<Loc<String>> {
+) -> ::std::option::Option<Loc<String>>
+{
     None
 }
 
 #[allow(unused_variables)]
-fn __action188<'input>(
+fn __action188<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<String>, usize),
-) -> ::std::vec::Vec<Loc<String>> {
+) -> ::std::vec::Vec<Loc<String>>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action189<'input>(
+fn __action189<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Loc<String>>, usize),
     (_, e, _): (usize, Loc<String>, usize),
-) -> ::std::vec::Vec<Loc<String>> {
-    {
-        let mut v = v;
-        v.push(e);
-        v
-    }
+) -> ::std::vec::Vec<Loc<String>>
+{
+    { let mut v = v; v.push(e); v }
 }
 
 #[allow(unused_variables)]
-fn __action190<'input>(
+fn __action190<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<String>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Loc<String> {
+) -> Loc<String>
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action191<'input>(
+fn __action191<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<Expr>, usize),
-) -> ::std::option::Option<Loc<Expr>> {
+) -> ::std::option::Option<Loc<Expr>>
+{
     Some(__0)
 }
 
 #[allow(unused_variables)]
-fn __action192<'input>(
+fn __action192<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::option::Option<Loc<Expr>> {
+) -> ::std::option::Option<Loc<Expr>>
+{
     None
 }
 
 #[allow(unused_variables)]
-fn __action193<'input>(
+fn __action193<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<Expr>, usize),
-) -> ::std::vec::Vec<Loc<Expr>> {
+) -> ::std::vec::Vec<Loc<Expr>>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action194<'input>(
+fn __action194<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Loc<Expr>>, usize),
     (_, e, _): (usize, Loc<Expr>, usize),
-) -> ::std::vec::Vec<Loc<Expr>> {
-    {
-        let mut v = v;
-        v.push(e);
-        v
-    }
+) -> ::std::vec::Vec<Loc<Expr>>
+{
+    { let mut v = v; v.push(e); v }
 }
 
 #[allow(unused_variables)]
-fn __action195<'input>(
+fn __action195<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<Expr>, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Loc<Expr> {
+) -> Loc<Expr>
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action196<'input>(
+fn __action196<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::vec::Vec<Const> {
+) -> ::std::vec::Vec<Const>
+{
     vec![]
 }
 
 #[allow(unused_variables)]
-fn __action197<'input>(
+fn __action197<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Const>, usize),
-) -> ::std::vec::Vec<Const> {
+) -> ::std::vec::Vec<Const>
+{
     v
 }
 
 #[allow(unused_variables)]
-fn __action198<'input>(
+fn __action198<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Const, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> Const {
+) -> Const
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action199<'input>(
+fn __action199<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, bool, usize),
-) -> ::std::option::Option<bool> {
+) -> ::std::option::Option<bool>
+{
     Some(__0)
 }
 
 #[allow(unused_variables)]
-fn __action200<'input>(
+fn __action200<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::option::Option<bool> {
+) -> ::std::option::Option<bool>
+{
     None
 }
 
 #[allow(unused_variables)]
-fn __action201<'input>(
+fn __action201<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> ::std::vec::Vec<bool> {
+) -> ::std::vec::Vec<bool>
+{
     vec![]
 }
 
 #[allow(unused_variables)]
-fn __action202<'input>(
+fn __action202<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<bool>, usize),
-) -> ::std::vec::Vec<bool> {
+) -> ::std::vec::Vec<bool>
+{
     v
 }
 
 #[allow(unused_variables)]
-fn __action203<'input>(
+fn __action203<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, bool, usize),
     (_, _, _): (usize, &'input str, usize),
-) -> bool {
+) -> bool
+{
     __0
 }
 
 #[allow(unused_variables)]
-fn __action204<'input>(
+fn __action204<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, bool, usize),
-) -> ::std::vec::Vec<bool> {
+) -> ::std::vec::Vec<bool>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action205<'input>(
+fn __action205<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<bool>, usize),
     (_, e, _): (usize, bool, usize),
-) -> ::std::vec::Vec<bool> {
-    {
-        let mut v = v;
-        v.push(e);
-        v
-    }
+) -> ::std::vec::Vec<bool>
+{
+    { let mut v = v; v.push(e); v }
 }
 
 #[allow(unused_variables)]
-fn __action206<'input>(
+fn __action206<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Const, usize),
-) -> ::std::vec::Vec<Const> {
+) -> ::std::vec::Vec<Const>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action207<'input>(
+fn __action207<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Const>, usize),
     (_, e, _): (usize, Const, usize),
-) -> ::std::vec::Vec<Const> {
-    {
-        let mut v = v;
-        v.push(e);
-        v
-    }
+) -> ::std::vec::Vec<Const>
+{
+    { let mut v = v; v.push(e); v }
 }
 
 #[allow(unused_variables)]
-fn __action208<'input>(
+fn __action208<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<ConstExpr>, usize),
-) -> ::std::vec::Vec<Loc<ConstExpr>> {
+) -> ::std::vec::Vec<Loc<ConstExpr>>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action209<'input>(
+fn __action209<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Loc<ConstExpr>>, usize),
     (_, e, _): (usize, Loc<ConstExpr>, usize),
-) -> ::std::vec::Vec<Loc<ConstExpr>> {
-    {
-        let mut v = v;
-        v.push(e);
-        v
-    }
+) -> ::std::vec::Vec<Loc<ConstExpr>>
+{
+    { let mut v = v; v.push(e); v }
 }
 
 #[allow(unused_variables)]
-fn __action210<'input>(
+fn __action210<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Loc<Arg>, usize),
-) -> ::std::vec::Vec<Loc<Arg>> {
+) -> ::std::vec::Vec<Loc<Arg>>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action211<'input>(
+fn __action211<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Loc<Arg>>, usize),
     (_, e, _): (usize, Loc<Arg>, usize),
-) -> ::std::vec::Vec<Loc<Arg>> {
-    {
-        let mut v = v;
-        v.push(e);
-        v
-    }
+) -> ::std::vec::Vec<Loc<Arg>>
+{
+    { let mut v = v; v.push(e); v }
 }
 
 #[allow(unused_variables)]
-fn __action212<'input>(
+fn __action212<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, String, usize),
-) -> ::std::vec::Vec<String> {
+) -> ::std::vec::Vec<String>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action213<'input>(
+fn __action213<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<String>, usize),
     (_, e, _): (usize, String, usize),
-) -> ::std::vec::Vec<String> {
-    {
-        let mut v = v;
-        v.push(e);
-        v
-    }
+) -> ::std::vec::Vec<String>
+{
+    { let mut v = v; v.push(e); v }
 }
 
 #[allow(unused_variables)]
-fn __action214<'input>(
+fn __action214<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, __0, _): (usize, Arg, usize),
-) -> ::std::vec::Vec<Arg> {
+) -> ::std::vec::Vec<Arg>
+{
     vec![__0]
 }
 
 #[allow(unused_variables)]
-fn __action215<'input>(
+fn __action215<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     (_, v, _): (usize, ::std::vec::Vec<Arg>, usize),
     (_, e, _): (usize, Arg, usize),
-) -> ::std::vec::Vec<Arg> {
-    {
-        let mut v = v;
-        v.push(e);
-        v
-    }
+) -> ::std::vec::Vec<Arg>
+{
+    { let mut v = v; v.push(e); v }
 }
 
 #[allow(unused_variables)]
-fn __action216<'input>(
+fn __action216<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -11414,231 +12005,441 @@ fn __action216<'input>(
     __2: (usize, &'input str, usize),
     __3: (usize, &'input str, usize),
     __4: (usize, Loc<Option<Var>>, usize),
-) -> Transition {
+) -> Transition
+{
     let __start0 = __3.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action135(file_id, input, __3);
+    let __temp0 = __action135(
+        file_id,
+        input,
+        __3,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action14(file_id, input, __0, __1, __2, __temp0, __4)
+    __action14(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action217<'input>(
+fn __action217<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, Loc<TrCond>, usize),
     __2: (usize, &'input str, usize),
     __3: (usize, Loc<Option<Var>>, usize),
-) -> Transition {
+) -> Transition
+{
     let __start0 = __2.2.clone();
     let __end0 = __3.0.clone();
-    let __temp0 = __action136(file_id, input, &__start0, &__end0);
+    let __temp0 = __action136(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action14(file_id, input, __0, __1, __2, __temp0, __3)
+    __action14(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action218<'input>(
+fn __action218<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Arg, usize),
     __1: (usize, &'input str, usize),
-) -> ::std::vec::Vec<Arg> {
+) -> ::std::vec::Vec<Arg>
+{
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action160(file_id, input, __0, __1);
+    let __temp0 = __action160(
+        file_id,
+        input,
+        __0,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action214(file_id, input, __temp0)
+    __action214(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action219<'input>(
+fn __action219<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Arg>, usize),
     __1: (usize, Arg, usize),
     __2: (usize, &'input str, usize),
-) -> ::std::vec::Vec<Arg> {
+) -> ::std::vec::Vec<Arg>
+{
     let __start0 = __1.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action160(file_id, input, __1, __2);
+    let __temp0 = __action160(
+        file_id,
+        input,
+        __1,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action215(file_id, input, __0, __temp0)
+    __action215(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action220<'input>(
+fn __action220<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::option::Option<Arg>, usize),
-) -> Vec<Arg> {
+) -> Vec<Arg>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action158(file_id, input, &__start0, &__end0);
+    let __temp0 = __action158(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action146(file_id, input, __temp0, __0)
+    __action146(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action221<'input>(
+fn __action221<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Arg>, usize),
     __1: (usize, ::std::option::Option<Arg>, usize),
-) -> Vec<Arg> {
+) -> Vec<Arg>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action159(file_id, input, __0);
+    let __temp0 = __action159(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action146(file_id, input, __temp0, __1)
+    __action146(
+        file_id,
+        input,
+        __temp0,
+        __1,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action222<'input>(
+fn __action222<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::option::Option<Arg>, usize),
     __2: (usize, &'input str, usize),
-) -> Vec<Arg> {
+) -> Vec<Arg>
+{
     let __start0 = __0.2.clone();
     let __end0 = __1.0.clone();
-    let __temp0 = __action158(file_id, input, &__start0, &__end0);
+    let __temp0 = __action158(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action144(file_id, input, __0, __temp0, __1, __2)
+    __action144(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __1,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action223<'input>(
+fn __action223<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Arg>, usize),
     __2: (usize, ::std::option::Option<Arg>, usize),
     __3: (usize, &'input str, usize),
-) -> Vec<Arg> {
+) -> Vec<Arg>
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action159(file_id, input, __1);
+    let __temp0 = __action159(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action144(file_id, input, __0, __temp0, __2, __3)
+    __action144(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action224<'input>(
+fn __action224<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, bool, usize),
     __1: (usize, &'input str, usize),
-) -> ::std::vec::Vec<bool> {
+) -> ::std::vec::Vec<bool>
+{
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action203(file_id, input, __0, __1);
+    let __temp0 = __action203(
+        file_id,
+        input,
+        __0,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action204(file_id, input, __temp0)
+    __action204(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action225<'input>(
+fn __action225<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<bool>, usize),
     __1: (usize, bool, usize),
     __2: (usize, &'input str, usize),
-) -> ::std::vec::Vec<bool> {
+) -> ::std::vec::Vec<bool>
+{
     let __start0 = __1.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action203(file_id, input, __1, __2);
+    let __temp0 = __action203(
+        file_id,
+        input,
+        __1,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action205(file_id, input, __0, __temp0)
+    __action205(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action226<'input>(
+fn __action226<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::option::Option<bool>, usize),
-) -> Vec<bool> {
+) -> Vec<bool>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action201(file_id, input, &__start0, &__end0);
+    let __temp0 = __action201(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action113(file_id, input, __temp0, __0)
+    __action113(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action227<'input>(
+fn __action227<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<bool>, usize),
     __1: (usize, ::std::option::Option<bool>, usize),
-) -> Vec<bool> {
+) -> Vec<bool>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action202(file_id, input, __0);
+    let __temp0 = __action202(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action113(file_id, input, __temp0, __1)
+    __action113(
+        file_id,
+        input,
+        __temp0,
+        __1,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action228<'input>(
+fn __action228<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Const, usize),
     __1: (usize, &'input str, usize),
-) -> ::std::vec::Vec<Const> {
+) -> ::std::vec::Vec<Const>
+{
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action198(file_id, input, __0, __1);
+    let __temp0 = __action198(
+        file_id,
+        input,
+        __0,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action206(file_id, input, __temp0)
+    __action206(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action229<'input>(
+fn __action229<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Const>, usize),
     __1: (usize, Const, usize),
     __2: (usize, &'input str, usize),
-) -> ::std::vec::Vec<Const> {
+) -> ::std::vec::Vec<Const>
+{
     let __start0 = __1.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action198(file_id, input, __1, __2);
+    let __temp0 = __action198(
+        file_id,
+        input,
+        __1,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action207(file_id, input, __0, __temp0)
+    __action207(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action230<'input>(
+fn __action230<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::option::Option<Const>, usize),
-) -> Vec<Const> {
+) -> Vec<Const>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action196(file_id, input, &__start0, &__end0);
+    let __temp0 = __action196(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action115(file_id, input, __temp0, __0)
+    __action115(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action231<'input>(
+fn __action231<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Const>, usize),
     __1: (usize, ::std::option::Option<Const>, usize),
-) -> Vec<Const> {
+) -> Vec<Const>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action197(file_id, input, __0);
+    let __temp0 = __action197(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action115(file_id, input, __temp0, __1)
+    __action115(
+        file_id,
+        input,
+        __temp0,
+        __1,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action232<'input>(
+fn __action232<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -11648,16 +12449,35 @@ fn __action232<'input>(
     __4: (usize, &'input str, usize),
     __5: (usize, Loc<Vec<Loc<Expr>>>, usize),
     __6: (usize, &'input str, usize),
-) -> ExtAutomaton {
+) -> ExtAutomaton
+{
     let __start0 = __4.2.clone();
     let __end0 = __5.0.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action27(file_id, input, __0, __1, __2, __3, __4, __temp0, __5, __6)
+    __action27(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __3,
+        __4,
+        __temp0,
+        __5,
+        __6,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action233<'input>(
+fn __action233<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
@@ -11666,32 +12486,66 @@ fn __action233<'input>(
     __3: (usize, &'input str, usize),
     __4: (usize, Loc<Vec<Loc<Expr>>>, usize),
     __5: (usize, &'input str, usize),
-) -> FnCall {
+) -> FnCall
+{
     let __start0 = __1.2.clone();
     let __end0 = __2.0.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action41(file_id, input, __0, __1, __temp0, __2, __3, __4, __5)
+    __action41(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __2,
+        __3,
+        __4,
+        __5,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action234<'input>(
+fn __action234<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, &'input str, usize),
     __2: (usize, Loc<Vec<Loc<Expr>>>, usize),
     __3: (usize, &'input str, usize),
-) -> FnCall {
+) -> FnCall
+{
     let __start0 = __1.2.clone();
     let __end0 = __2.0.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action42(file_id, input, __0, __1, __temp0, __2, __3)
+    __action42(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __2,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action235<'input>(
+fn __action235<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -11702,18 +12556,36 @@ fn __action235<'input>(
     __5: (usize, &'input str, usize),
     __6: (usize, Vec<Arg>, usize),
     __7: (usize, ::std::vec::Vec<Statement>, usize),
-) -> Function {
+) -> Function
+{
     let __start0 = __2.2.clone();
     let __end0 = __3.0.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
     __action23(
-        file_id, input, __0, __1, __2, __temp0, __3, __4, __5, __6, __7,
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __3,
+        __4,
+        __5,
+        __6,
+        __7,
     )
 }
 
 #[allow(unused_variables)]
-fn __action236<'input>(
+fn __action236<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -11726,279 +12598,568 @@ fn __action236<'input>(
     __7: (usize, &'input str, usize),
     __8: (usize, Vec<Arg>, usize),
     __9: (usize, ::std::vec::Vec<Statement>, usize),
-) -> Function {
+) -> Function
+{
     let __start0 = __2.2.clone();
     let __end0 = __3.0.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
     __action24(
-        file_id, input, __0, __1, __2, __temp0, __3, __4, __5, __6, __7, __8, __9,
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __3,
+        __4,
+        __5,
+        __6,
+        __7,
+        __8,
+        __9,
     )
 }
 
 #[allow(unused_variables)]
-fn __action237<'input>(
+fn __action237<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, Expr, usize),
-) -> Loc<Expr> {
+) -> Loc<Expr>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action108(file_id, input, __0, __1, __temp0)
+    __action108(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action238<'input>(
+fn __action238<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, Arg, usize),
-) -> Loc<Arg> {
+) -> Loc<Arg>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action127(file_id, input, __0, __1, __temp0)
+    __action127(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action239<'input>(
+fn __action239<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, Vec<Const>, usize),
-) -> Loc<Vec<Const>> {
+) -> Loc<Vec<Const>>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action114(file_id, input, __0, __1, __temp0)
+    __action114(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action240<'input>(
+fn __action240<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, Vec<Loc<Expr>>, usize),
-) -> Loc<Vec<Loc<Expr>>> {
+) -> Loc<Vec<Loc<Expr>>>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action118(file_id, input, __0, __1, __temp0)
+    __action118(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action241<'input>(
+fn __action241<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, Const, usize),
-) -> Loc<Const> {
+) -> Loc<Const>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action129(file_id, input, __0, __1, __temp0)
+    __action129(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action242<'input>(
+fn __action242<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, ConstExpr, usize),
-) -> Loc<ConstExpr> {
+) -> Loc<ConstExpr>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action124(file_id, input, __0, __1, __temp0)
+    __action124(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action243<'input>(
+fn __action243<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, Const, usize),
-) -> Loc<Const> {
+) -> Loc<Const>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action105(file_id, input, __0, __1, __temp0)
+    __action105(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action244<'input>(
+fn __action244<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, Const, usize),
-) -> Loc<Const> {
+) -> Loc<Const>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action104(file_id, input, __0, __1, __temp0)
+    __action104(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action245<'input>(
+fn __action245<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, Expr, usize),
-) -> Loc<Expr> {
+) -> Loc<Expr>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action120(file_id, input, __0, __1, __temp0)
+    __action120(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action246<'input>(
+fn __action246<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, Expr, usize),
-) -> Loc<Expr> {
+) -> Loc<Expr>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action107(file_id, input, __0, __1, __temp0)
+    __action107(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action247<'input>(
+fn __action247<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, Expr, usize),
-) -> Loc<Expr> {
+) -> Loc<Expr>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action106(file_id, input, __0, __1, __temp0)
+    __action106(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action248<'input>(
+fn __action248<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, Vec<Loc<String>>, usize),
-) -> Loc<Vec<Loc<String>>> {
+) -> Loc<Vec<Loc<String>>>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action121(file_id, input, __0, __1, __temp0)
+    __action121(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action249<'input>(
+fn __action249<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, TrCond, usize),
-) -> Loc<TrCond> {
+) -> Loc<TrCond>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action137(file_id, input, __0, __1, __temp0)
+    __action137(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action250<'input>(
+fn __action250<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, Expr, usize),
-) -> Loc<Expr> {
+) -> Loc<Expr>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action112(file_id, input, __0, __1, __temp0)
+    __action112(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action251<'input>(
+fn __action251<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, String, usize),
-) -> Loc<String> {
+) -> Loc<String>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action149(file_id, input, __0, __1, __temp0)
+    __action149(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action252<'input>(
+fn __action252<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, Expr, usize),
-) -> Loc<Expr> {
+) -> Loc<Expr>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action109(file_id, input, __0, __1, __temp0)
+    __action109(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action253<'input>(
+fn __action253<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, &'input str, usize),
-) -> Loc<&'input str> {
+) -> Loc<&'input str>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action134(file_id, input, __0, __1, __temp0)
+    __action134(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action254<'input>(
+fn __action254<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, usize, usize),
     __1: (usize, &'input str, usize),
-) -> Loc<Option<Var>> {
+) -> Loc<Option<Var>>
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action138(file_id, input, &__start0, &__end0);
+    let __temp0 = __action138(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action10(file_id, input, __0, __1, __temp0)
+    __action10(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action255<'input>(file_id: usize, input: &'input str, __0: (usize, String, usize)) -> Arg {
+fn __action255<
+    'input,
+>(
+    file_id: usize,
+    input: &'input str,
+    __0: (usize, String, usize),
+) -> Arg
+{
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action21(file_id, input, __0, __temp0)
+    __action21(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action256<'input>(
+fn __action256<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -12007,16 +13168,34 @@ fn __action256<'input>(
     __3: (usize, &'input str, usize),
     __4: (usize, Loc<Vec<Loc<Expr>>>, usize),
     __5: (usize, &'input str, usize),
-) -> ExtAutomaton {
+) -> ExtAutomaton
+{
     let __start0 = __2.2.clone();
     let __end0 = __3.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action232(file_id, input, __0, __1, __2, __temp0, __3, __4, __5)
+    __action232(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __3,
+        __4,
+        __5,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action257<'input>(
+fn __action257<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -12024,31 +13203,63 @@ fn __action257<'input>(
     __2: (usize, &'input str, usize),
     __3: (usize, Loc<Vec<Loc<Expr>>>, usize),
     __4: (usize, &'input str, usize),
-) -> FnCall {
+) -> FnCall
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action233(file_id, input, __temp0, __0, __1, __2, __3, __4)
+    __action233(
+        file_id,
+        input,
+        __temp0,
+        __0,
+        __1,
+        __2,
+        __3,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action258<'input>(
+fn __action258<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, Loc<Vec<Loc<Expr>>>, usize),
     __2: (usize, &'input str, usize),
-) -> FnCall {
+) -> FnCall
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action234(file_id, input, __temp0, __0, __1, __2)
+    __action234(
+        file_id,
+        input,
+        __temp0,
+        __0,
+        __1,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action259<'input>(
+fn __action259<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -12058,16 +13269,35 @@ fn __action259<'input>(
     __4: (usize, &'input str, usize),
     __5: (usize, Vec<Arg>, usize),
     __6: (usize, ::std::vec::Vec<Statement>, usize),
-) -> Function {
+) -> Function
+{
     let __start0 = __0.2.clone();
     let __end0 = __1.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action235(file_id, input, __0, __temp0, __1, __2, __3, __4, __5, __6)
+    __action235(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __1,
+        __2,
+        __3,
+        __4,
+        __5,
+        __6,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action260<'input>(
+fn __action260<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -12079,466 +13309,959 @@ fn __action260<'input>(
     __6: (usize, &'input str, usize),
     __7: (usize, Vec<Arg>, usize),
     __8: (usize, ::std::vec::Vec<Statement>, usize),
-) -> Function {
+) -> Function
+{
     let __start0 = __0.2.clone();
     let __end0 = __1.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
     __action236(
-        file_id, input, __0, __temp0, __1, __2, __3, __4, __5, __6, __7, __8,
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __1,
+        __2,
+        __3,
+        __4,
+        __5,
+        __6,
+        __7,
+        __8,
     )
 }
 
 #[allow(unused_variables)]
-fn __action261<'input>(file_id: usize, input: &'input str, __0: (usize, Expr, usize)) -> Loc<Expr> {
+fn __action261<
+    'input,
+>(
+    file_id: usize,
+    input: &'input str,
+    __0: (usize, Expr, usize),
+) -> Loc<Expr>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action237(file_id, input, __temp0, __0)
+    __action237(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action262<'input>(file_id: usize, input: &'input str, __0: (usize, Arg, usize)) -> Loc<Arg> {
+fn __action262<
+    'input,
+>(
+    file_id: usize,
+    input: &'input str,
+    __0: (usize, Arg, usize),
+) -> Loc<Arg>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action238(file_id, input, __temp0, __0)
+    __action238(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action263<'input>(
+fn __action263<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Vec<Const>, usize),
-) -> Loc<Vec<Const>> {
+) -> Loc<Vec<Const>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action239(file_id, input, __temp0, __0)
+    __action239(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action264<'input>(
+fn __action264<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Vec<Loc<Expr>>, usize),
-) -> Loc<Vec<Loc<Expr>>> {
+) -> Loc<Vec<Loc<Expr>>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action240(file_id, input, __temp0, __0)
+    __action240(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action265<'input>(
+fn __action265<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Const, usize),
-) -> Loc<Const> {
+) -> Loc<Const>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action241(file_id, input, __temp0, __0)
+    __action241(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action266<'input>(
+fn __action266<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ConstExpr, usize),
-) -> Loc<ConstExpr> {
+) -> Loc<ConstExpr>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action242(file_id, input, __temp0, __0)
+    __action242(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action267<'input>(
+fn __action267<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Const, usize),
-) -> Loc<Const> {
+) -> Loc<Const>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action243(file_id, input, __temp0, __0)
+    __action243(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action268<'input>(
+fn __action268<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Const, usize),
-) -> Loc<Const> {
+) -> Loc<Const>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action244(file_id, input, __temp0, __0)
+    __action244(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action269<'input>(file_id: usize, input: &'input str, __0: (usize, Expr, usize)) -> Loc<Expr> {
+fn __action269<
+    'input,
+>(
+    file_id: usize,
+    input: &'input str,
+    __0: (usize, Expr, usize),
+) -> Loc<Expr>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action245(file_id, input, __temp0, __0)
+    __action245(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action270<'input>(file_id: usize, input: &'input str, __0: (usize, Expr, usize)) -> Loc<Expr> {
+fn __action270<
+    'input,
+>(
+    file_id: usize,
+    input: &'input str,
+    __0: (usize, Expr, usize),
+) -> Loc<Expr>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action246(file_id, input, __temp0, __0)
+    __action246(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action271<'input>(file_id: usize, input: &'input str, __0: (usize, Expr, usize)) -> Loc<Expr> {
+fn __action271<
+    'input,
+>(
+    file_id: usize,
+    input: &'input str,
+    __0: (usize, Expr, usize),
+) -> Loc<Expr>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action247(file_id, input, __temp0, __0)
+    __action247(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action272<'input>(
+fn __action272<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Vec<Loc<String>>, usize),
-) -> Loc<Vec<Loc<String>>> {
+) -> Loc<Vec<Loc<String>>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action248(file_id, input, __temp0, __0)
+    __action248(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action273<'input>(
+fn __action273<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, TrCond, usize),
-) -> Loc<TrCond> {
+) -> Loc<TrCond>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action249(file_id, input, __temp0, __0)
+    __action249(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action274<'input>(file_id: usize, input: &'input str, __0: (usize, Expr, usize)) -> Loc<Expr> {
+fn __action274<
+    'input,
+>(
+    file_id: usize,
+    input: &'input str,
+    __0: (usize, Expr, usize),
+) -> Loc<Expr>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action250(file_id, input, __temp0, __0)
+    __action250(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action275<'input>(
+fn __action275<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, String, usize),
-) -> Loc<String> {
+) -> Loc<String>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action251(file_id, input, __temp0, __0)
+    __action251(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action276<'input>(file_id: usize, input: &'input str, __0: (usize, Expr, usize)) -> Loc<Expr> {
+fn __action276<
+    'input,
+>(
+    file_id: usize,
+    input: &'input str,
+    __0: (usize, Expr, usize),
+) -> Loc<Expr>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action252(file_id, input, __temp0, __0)
+    __action252(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action277<'input>(
+fn __action277<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
-) -> Loc<&'input str> {
+) -> Loc<&'input str>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action253(file_id, input, __temp0, __0)
+    __action253(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action278<'input>(
+fn __action278<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
-) -> Loc<Option<Var>> {
+) -> Loc<Option<Var>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action139(file_id, input, &__start0, &__end0);
+    let __temp0 = __action139(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action254(file_id, input, __temp0, __0)
+    __action254(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action279<'input>(
+fn __action279<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Arg, usize),
     __1: (usize, &'input str, usize),
-) -> Loc<Arg> {
+) -> Loc<Arg>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action262(file_id, input, __0);
+    let __temp0 = __action262(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action178(file_id, input, __temp0, __1)
+    __action178(
+        file_id,
+        input,
+        __temp0,
+        __1,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action280<'input>(
+fn __action280<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Arg, usize),
-) -> ::std::option::Option<Loc<Arg>> {
+) -> ::std::option::Option<Loc<Arg>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action262(file_id, input, __0);
+    let __temp0 = __action262(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action174(file_id, input, __temp0)
+    __action174(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action281<'input>(
+fn __action281<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Arg, usize),
-) -> Vec<Loc<Arg>> {
+) -> Vec<Loc<Arg>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action262(file_id, input, __0);
+    let __temp0 = __action262(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action126(file_id, input, __temp0)
+    __action126(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action282<'input>(
+fn __action282<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Arg, usize),
     __1: (usize, &'input str, usize),
-) -> ::std::vec::Vec<Loc<Arg>> {
+) -> ::std::vec::Vec<Loc<Arg>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action279(file_id, input, __0, __1);
+    let __temp0 = __action279(
+        file_id,
+        input,
+        __0,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action210(file_id, input, __temp0)
+    __action210(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action283<'input>(
+fn __action283<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Loc<Arg>>, usize),
     __1: (usize, Arg, usize),
     __2: (usize, &'input str, usize),
-) -> ::std::vec::Vec<Loc<Arg>> {
+) -> ::std::vec::Vec<Loc<Arg>>
+{
     let __start0 = __1.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action279(file_id, input, __1, __2);
+    let __temp0 = __action279(
+        file_id,
+        input,
+        __1,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action211(file_id, input, __0, __temp0)
+    __action211(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action284<'input>(
+fn __action284<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::option::Option<Loc<Arg>>, usize),
     __2: (usize, &'input str, usize),
-) -> Vec<Loc<Arg>> {
+) -> Vec<Loc<Arg>>
+{
     let __start0 = __0.2.clone();
     let __end0 = __1.0.clone();
-    let __temp0 = __action176(file_id, input, &__start0, &__end0);
+    let __temp0 = __action176(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action125(file_id, input, __0, __temp0, __1, __2)
+    __action125(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __1,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action285<'input>(
+fn __action285<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Loc<Arg>>, usize),
     __2: (usize, ::std::option::Option<Loc<Arg>>, usize),
     __3: (usize, &'input str, usize),
-) -> Vec<Loc<Arg>> {
+) -> Vec<Loc<Arg>>
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action177(file_id, input, __1);
+    let __temp0 = __action177(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action125(file_id, input, __0, __temp0, __2, __3)
+    __action125(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action286<'input>(
+fn __action286<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ConstExpr, usize),
     __1: (usize, &'input str, usize),
-) -> Loc<ConstExpr> {
+) -> Loc<ConstExpr>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action266(file_id, input, __0);
+    let __temp0 = __action266(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action183(file_id, input, __temp0, __1)
+    __action183(
+        file_id,
+        input,
+        __temp0,
+        __1,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action287<'input>(
+fn __action287<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ConstExpr, usize),
-) -> ::std::option::Option<Loc<ConstExpr>> {
+) -> ::std::option::Option<Loc<ConstExpr>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action266(file_id, input, __0);
+    let __temp0 = __action266(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action179(file_id, input, __temp0)
+    __action179(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action288<'input>(
+fn __action288<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ConstExpr, usize),
-) -> Vec<Loc<ConstExpr>> {
+) -> Vec<Loc<ConstExpr>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action266(file_id, input, __0);
+    let __temp0 = __action266(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action123(file_id, input, __temp0)
+    __action123(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action289<'input>(
+fn __action289<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ConstExpr, usize),
     __1: (usize, &'input str, usize),
-) -> ::std::vec::Vec<Loc<ConstExpr>> {
+) -> ::std::vec::Vec<Loc<ConstExpr>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action286(file_id, input, __0, __1);
+    let __temp0 = __action286(
+        file_id,
+        input,
+        __0,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action208(file_id, input, __temp0)
+    __action208(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action290<'input>(
+fn __action290<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Loc<ConstExpr>>, usize),
     __1: (usize, ConstExpr, usize),
     __2: (usize, &'input str, usize),
-) -> ::std::vec::Vec<Loc<ConstExpr>> {
+) -> ::std::vec::Vec<Loc<ConstExpr>>
+{
     let __start0 = __1.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action286(file_id, input, __1, __2);
+    let __temp0 = __action286(
+        file_id,
+        input,
+        __1,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action209(file_id, input, __0, __temp0)
+    __action209(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action291<'input>(
+fn __action291<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::option::Option<Loc<ConstExpr>>, usize),
     __2: (usize, &'input str, usize),
-) -> Vec<Loc<ConstExpr>> {
+) -> Vec<Loc<ConstExpr>>
+{
     let __start0 = __0.2.clone();
     let __end0 = __1.0.clone();
-    let __temp0 = __action181(file_id, input, &__start0, &__end0);
+    let __temp0 = __action181(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action122(file_id, input, __0, __temp0, __1, __2)
+    __action122(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __1,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action292<'input>(
+fn __action292<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Loc<ConstExpr>>, usize),
     __2: (usize, ::std::option::Option<Loc<ConstExpr>>, usize),
     __3: (usize, &'input str, usize),
-) -> Vec<Loc<ConstExpr>> {
+) -> Vec<Loc<ConstExpr>>
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action182(file_id, input, __1);
+    let __temp0 = __action182(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action122(file_id, input, __0, __temp0, __2, __3)
+    __action122(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action293<'input>(
+fn __action293<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Expr, usize),
     __1: (usize, &'input str, usize),
-) -> Loc<Expr> {
+) -> Loc<Expr>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action269(file_id, input, __0);
+    let __temp0 = __action269(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action195(file_id, input, __temp0, __1)
+    __action195(
+        file_id,
+        input,
+        __temp0,
+        __1,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action294<'input>(
+fn __action294<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Expr, usize),
     __1: (usize, &'input str, usize),
     __2: (usize, Loc<Expr>, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action269(file_id, input, __0);
+    let __temp0 = __action269(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action80(file_id, input, __temp0, __1, __2)
+    __action80(
+        file_id,
+        input,
+        __temp0,
+        __1,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action295<'input>(
+fn __action295<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Expr, usize),
-) -> ::std::option::Option<Loc<Expr>> {
+) -> ::std::option::Option<Loc<Expr>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action269(file_id, input, __0);
+    let __temp0 = __action269(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action191(file_id, input, __temp0)
+    __action191(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action296<'input>(
+fn __action296<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -12550,7 +14273,8 @@ fn __action296<'input>(
     __6: (usize, &'input str, usize),
     __7: (usize, Expr, usize),
     __8: (usize, &'input str, usize),
-) -> RamStruct {
+) -> RamStruct
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
     let __start1 = __3.0.clone();
@@ -12559,21 +14283,49 @@ fn __action296<'input>(
     let __end2 = __5.2.clone();
     let __start3 = __7.0.clone();
     let __end3 = __7.2.clone();
-    let __temp0 = __action269(file_id, input, __1);
+    let __temp0 = __action269(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action269(file_id, input, __3);
+    let __temp1 = __action269(
+        file_id,
+        input,
+        __3,
+    );
     let __temp1 = (__start1, __temp1, __end1);
-    let __temp2 = __action269(file_id, input, __5);
+    let __temp2 = __action269(
+        file_id,
+        input,
+        __5,
+    );
     let __temp2 = (__start2, __temp2, __end2);
-    let __temp3 = __action269(file_id, input, __7);
+    let __temp3 = __action269(
+        file_id,
+        input,
+        __7,
+    );
     let __temp3 = (__start3, __temp3, __end3);
     __action38(
-        file_id, input, __0, __temp0, __2, __temp1, __4, __temp2, __6, __temp3, __8,
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+        __temp1,
+        __4,
+        __temp2,
+        __6,
+        __temp3,
+        __8,
     )
 }
 
 #[allow(unused_variables)]
-fn __action297<'input>(
+fn __action297<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -12581,31 +14333,59 @@ fn __action297<'input>(
     __2: (usize, &'input str, usize),
     __3: (usize, Expr, usize),
     __4: (usize, &'input str, usize),
-) -> RomStruct {
+) -> RomStruct
+{
     let __start0 = __3.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action269(file_id, input, __3);
+    let __temp0 = __action269(
+        file_id,
+        input,
+        __3,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action39(file_id, input, __0, __1, __2, __temp0, __4)
+    __action39(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action298<'input>(
+fn __action298<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Loc<String>, usize),
     __1: (usize, &'input str, usize),
     __2: (usize, Expr, usize),
-) -> Statement {
+) -> Statement
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action269(file_id, input, __2);
+    let __temp0 = __action269(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action31(file_id, input, __0, __1, __temp0)
+    __action31(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action299<'input>(
+fn __action299<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -12615,41 +14395,77 @@ fn __action299<'input>(
     __4: (usize, &'input str, usize),
     __5: (usize, Expr, usize),
     __6: (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
     let __start1 = __3.0.clone();
     let __end1 = __3.2.clone();
     let __start2 = __5.0.clone();
     let __end2 = __5.2.clone();
-    let __temp0 = __action269(file_id, input, __1);
+    let __temp0 = __action269(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action269(file_id, input, __3);
+    let __temp1 = __action269(
+        file_id,
+        input,
+        __3,
+    );
     let __temp1 = (__start1, __temp1, __end1);
-    let __temp2 = __action269(file_id, input, __5);
+    let __temp2 = __action269(
+        file_id,
+        input,
+        __5,
+    );
     let __temp2 = (__start2, __temp2, __end2);
     __action57(
-        file_id, input, __0, __temp0, __2, __temp1, __4, __temp2, __6,
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+        __temp1,
+        __4,
+        __temp2,
+        __6,
     )
 }
 
 #[allow(unused_variables)]
-fn __action300<'input>(
+fn __action300<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, Expr, usize),
     __2: (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action269(file_id, input, __1);
+    let __temp0 = __action269(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action59(file_id, input, __0, __temp0, __2)
+    __action59(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action301<'input>(
+fn __action301<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -12657,503 +14473,981 @@ fn __action301<'input>(
     __2: (usize, &'input str, usize),
     __3: (usize, Expr, usize),
     __4: (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __3.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action269(file_id, input, __3);
+    let __temp0 = __action269(
+        file_id,
+        input,
+        __3,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action60(file_id, input, __0, __1, __2, __temp0, __4)
+    __action60(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action302<'input>(
+fn __action302<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Expr, usize),
     __1: (usize, &'input str, usize),
-) -> ::std::vec::Vec<Loc<Expr>> {
+) -> ::std::vec::Vec<Loc<Expr>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action293(file_id, input, __0, __1);
+    let __temp0 = __action293(
+        file_id,
+        input,
+        __0,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action193(file_id, input, __temp0)
+    __action193(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action303<'input>(
+fn __action303<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Loc<Expr>>, usize),
     __1: (usize, Expr, usize),
     __2: (usize, &'input str, usize),
-) -> ::std::vec::Vec<Loc<Expr>> {
+) -> ::std::vec::Vec<Loc<Expr>>
+{
     let __start0 = __1.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action293(file_id, input, __1, __2);
+    let __temp0 = __action293(
+        file_id,
+        input,
+        __1,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action194(file_id, input, __0, __temp0)
+    __action194(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action304<'input>(
+fn __action304<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::option::Option<Loc<Expr>>, usize),
-) -> Vec<Loc<Expr>> {
+) -> Vec<Loc<Expr>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action184(file_id, input, &__start0, &__end0);
+    let __temp0 = __action184(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action119(file_id, input, __temp0, __0)
+    __action119(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action305<'input>(
+fn __action305<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Loc<Expr>>, usize),
     __1: (usize, ::std::option::Option<Loc<Expr>>, usize),
-) -> Vec<Loc<Expr>> {
+) -> Vec<Loc<Expr>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action185(file_id, input, __0);
+    let __temp0 = __action185(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action119(file_id, input, __temp0, __1)
+    __action119(
+        file_id,
+        input,
+        __temp0,
+        __1,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action306<'input>(
+fn __action306<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, String, usize),
     __1: (usize, &'input str, usize),
-) -> Loc<String> {
+) -> Loc<String>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action275(file_id, input, __0);
+    let __temp0 = __action275(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action190(file_id, input, __temp0, __1)
+    __action190(
+        file_id,
+        input,
+        __temp0,
+        __1,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action307<'input>(file_id: usize, input: &'input str, __0: (usize, String, usize)) -> Const {
-    let __start0 = __0.0.clone();
-    let __end0 = __0.2.clone();
-    let __temp0 = __action275(file_id, input, __0);
-    let __temp0 = (__start0, __temp0, __end0);
-    __action98(file_id, input, __temp0)
-}
-
-#[allow(unused_variables)]
-fn __action308<'input>(
+fn __action307<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, String, usize),
-) -> ::std::option::Option<Loc<String>> {
+) -> Const
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action275(file_id, input, __0);
+    let __temp0 = __action275(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action186(file_id, input, __temp0)
+    __action98(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action309<'input>(
+fn __action308<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, String, usize),
-) -> Vec<Loc<String>> {
+) -> ::std::option::Option<Loc<String>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action275(file_id, input, __0);
+    let __temp0 = __action275(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action148(file_id, input, __temp0)
+    __action186(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action310<'input>(
+fn __action309<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, String, usize),
-) -> Loc<Option<Var>> {
+) -> Vec<Loc<String>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action275(file_id, input, __0);
+    let __temp0 = __action275(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action11(file_id, input, __temp0)
+    __action148(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action311<'input>(
+fn __action310<
+    'input,
+>(
+    file_id: usize,
+    input: &'input str,
+    __0: (usize, String, usize),
+) -> Loc<Option<Var>>
+{
+    let __start0 = __0.0.clone();
+    let __end0 = __0.2.clone();
+    let __temp0 = __action275(
+        file_id,
+        input,
+        __0,
+    );
+    let __temp0 = (__start0, __temp0, __end0);
+    __action11(
+        file_id,
+        input,
+        __temp0,
+    )
+}
+
+#[allow(unused_variables)]
+fn __action311<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, String, usize),
     __1: (usize, &'input str, usize),
     __2: (usize, Expr, usize),
-) -> Statement {
+) -> Statement
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action275(file_id, input, __0);
+    let __temp0 = __action275(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action298(file_id, input, __temp0, __1, __2)
+    __action298(
+        file_id,
+        input,
+        __temp0,
+        __1,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action312<'input>(
+fn __action312<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, String, usize),
     __2: (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action275(file_id, input, __1);
+    let __temp0 = __action275(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action58(file_id, input, __0, __temp0, __2)
+    __action58(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action313<'input>(file_id: usize, input: &'input str, __0: (usize, String, usize)) -> Expr {
+fn __action313<
+    'input,
+>(
+    file_id: usize,
+    input: &'input str,
+    __0: (usize, String, usize),
+) -> Expr
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action275(file_id, input, __0);
+    let __temp0 = __action275(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action64(file_id, input, __temp0)
+    __action64(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action314<'input>(
+fn __action314<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, String, usize),
     __1: (usize, &'input str, usize),
-) -> ::std::vec::Vec<Loc<String>> {
+) -> ::std::vec::Vec<Loc<String>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action306(file_id, input, __0, __1);
+    let __temp0 = __action306(
+        file_id,
+        input,
+        __0,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action188(file_id, input, __temp0)
+    __action188(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action315<'input>(
+fn __action315<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Loc<String>>, usize),
     __1: (usize, String, usize),
     __2: (usize, &'input str, usize),
-) -> ::std::vec::Vec<Loc<String>> {
+) -> ::std::vec::Vec<Loc<String>>
+{
     let __start0 = __1.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action306(file_id, input, __1, __2);
+    let __temp0 = __action306(
+        file_id,
+        input,
+        __1,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action189(file_id, input, __0, __temp0)
+    __action189(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action316<'input>(
+fn __action316<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::option::Option<Loc<String>>, usize),
     __2: (usize, &'input str, usize),
-) -> Vec<Loc<String>> {
+) -> Vec<Loc<String>>
+{
     let __start0 = __0.2.clone();
     let __end0 = __1.0.clone();
-    let __temp0 = __action154(file_id, input, &__start0, &__end0);
+    let __temp0 = __action154(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action147(file_id, input, __0, __temp0, __1, __2)
+    __action147(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __1,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action317<'input>(
+fn __action317<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Loc<String>>, usize),
     __2: (usize, ::std::option::Option<Loc<String>>, usize),
     __3: (usize, &'input str, usize),
-) -> Vec<Loc<String>> {
+) -> Vec<Loc<String>>
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action155(file_id, input, __1);
+    let __temp0 = __action155(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action147(file_id, input, __0, __temp0, __2, __3)
+    __action147(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action318<'input>(
+fn __action318<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, String, usize),
     __1: (usize, &'input str, usize),
-) -> ::std::vec::Vec<String> {
+) -> ::std::vec::Vec<String>
+{
     let __start0 = __0.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action173(file_id, input, __0, __1);
+    let __temp0 = __action173(
+        file_id,
+        input,
+        __0,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action212(file_id, input, __temp0)
+    __action212(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action319<'input>(
+fn __action319<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<String>, usize),
     __1: (usize, String, usize),
     __2: (usize, &'input str, usize),
-) -> ::std::vec::Vec<String> {
+) -> ::std::vec::Vec<String>
+{
     let __start0 = __1.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action173(file_id, input, __1, __2);
+    let __temp0 = __action173(
+        file_id,
+        input,
+        __1,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action213(file_id, input, __0, __temp0)
+    __action213(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action320<'input>(
+fn __action320<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::option::Option<String>, usize),
-) -> Vec<String> {
+) -> Vec<String>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.0.clone();
-    let __temp0 = __action171(file_id, input, &__start0, &__end0);
+    let __temp0 = __action171(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action128(file_id, input, __temp0, __0)
+    __action128(
+        file_id,
+        input,
+        __temp0,
+        __0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action321<'input>(
+fn __action321<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<String>, usize),
     __1: (usize, ::std::option::Option<String>, usize),
-) -> Vec<String> {
+) -> Vec<String>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action172(file_id, input, __0);
+    let __temp0 = __action172(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action128(file_id, input, __temp0, __1)
+    __action128(
+        file_id,
+        input,
+        __temp0,
+        __1,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action322<'input>(file_id: usize, input: &'input str, __0: (usize, Arg, usize)) -> Vec<Arg> {
+fn __action322<
+    'input,
+>(
+    file_id: usize,
+    input: &'input str,
+    __0: (usize, Arg, usize),
+) -> Vec<Arg>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action156(file_id, input, __0);
+    let __temp0 = __action156(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action220(file_id, input, __temp0)
+    __action220(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action323<'input>(
+fn __action323<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> Vec<Arg> {
+) -> Vec<Arg>
+{
     let __start0 = __lookbehind.clone();
     let __end0 = __lookahead.clone();
-    let __temp0 = __action157(file_id, input, &__start0, &__end0);
+    let __temp0 = __action157(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action220(file_id, input, __temp0)
+    __action220(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action324<'input>(
+fn __action324<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Arg>, usize),
     __1: (usize, Arg, usize),
-) -> Vec<Arg> {
+) -> Vec<Arg>
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action156(file_id, input, __1);
+    let __temp0 = __action156(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action221(file_id, input, __0, __temp0)
+    __action221(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action325<'input>(
+fn __action325<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Arg>, usize),
-) -> Vec<Arg> {
+) -> Vec<Arg>
+{
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action157(file_id, input, &__start0, &__end0);
+    let __temp0 = __action157(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action221(file_id, input, __0, __temp0)
+    __action221(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action326<'input>(
+fn __action326<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, Arg, usize),
     __2: (usize, &'input str, usize),
-) -> Vec<Arg> {
+) -> Vec<Arg>
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action156(file_id, input, __1);
+    let __temp0 = __action156(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action222(file_id, input, __0, __temp0, __2)
+    __action222(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action327<'input>(
+fn __action327<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, &'input str, usize),
-) -> Vec<Arg> {
+) -> Vec<Arg>
+{
     let __start0 = __0.2.clone();
     let __end0 = __1.0.clone();
-    let __temp0 = __action157(file_id, input, &__start0, &__end0);
+    let __temp0 = __action157(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action222(file_id, input, __0, __temp0, __1)
+    __action222(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __1,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action328<'input>(
+fn __action328<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Arg>, usize),
     __2: (usize, Arg, usize),
     __3: (usize, &'input str, usize),
-) -> Vec<Arg> {
+) -> Vec<Arg>
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action156(file_id, input, __2);
+    let __temp0 = __action156(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action223(file_id, input, __0, __1, __temp0, __3)
+    __action223(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action329<'input>(
+fn __action329<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Arg>, usize),
     __2: (usize, &'input str, usize),
-) -> Vec<Arg> {
+) -> Vec<Arg>
+{
     let __start0 = __1.2.clone();
     let __end0 = __2.0.clone();
-    let __temp0 = __action157(file_id, input, &__start0, &__end0);
+    let __temp0 = __action157(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action223(file_id, input, __0, __1, __temp0, __2)
+    __action223(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action330<'input>(file_id: usize, input: &'input str, __0: (usize, bool, usize)) -> Vec<bool> {
+fn __action330<
+    'input,
+>(
+    file_id: usize,
+    input: &'input str,
+    __0: (usize, bool, usize),
+) -> Vec<bool>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action199(file_id, input, __0);
+    let __temp0 = __action199(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action226(file_id, input, __temp0)
+    __action226(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action331<'input>(
+fn __action331<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> Vec<bool> {
+) -> Vec<bool>
+{
     let __start0 = __lookbehind.clone();
     let __end0 = __lookahead.clone();
-    let __temp0 = __action200(file_id, input, &__start0, &__end0);
+    let __temp0 = __action200(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action226(file_id, input, __temp0)
+    __action226(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action332<'input>(
+fn __action332<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<bool>, usize),
     __1: (usize, bool, usize),
-) -> Vec<bool> {
+) -> Vec<bool>
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action199(file_id, input, __1);
+    let __temp0 = __action199(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action227(file_id, input, __0, __temp0)
+    __action227(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action333<'input>(
+fn __action333<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<bool>, usize),
-) -> Vec<bool> {
+) -> Vec<bool>
+{
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action200(file_id, input, &__start0, &__end0);
+    let __temp0 = __action200(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action227(file_id, input, __0, __temp0)
+    __action227(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action334<'input>(
+fn __action334<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Const, usize),
-) -> Vec<Const> {
+) -> Vec<Const>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action110(file_id, input, __0);
+    let __temp0 = __action110(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action230(file_id, input, __temp0)
+    __action230(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action335<'input>(
+fn __action335<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> Vec<Const> {
+) -> Vec<Const>
+{
     let __start0 = __lookbehind.clone();
     let __end0 = __lookahead.clone();
-    let __temp0 = __action111(file_id, input, &__start0, &__end0);
+    let __temp0 = __action111(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action230(file_id, input, __temp0)
+    __action230(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action336<'input>(
+fn __action336<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Const>, usize),
     __1: (usize, Const, usize),
-) -> Vec<Const> {
+) -> Vec<Const>
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action110(file_id, input, __1);
+    let __temp0 = __action110(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action231(file_id, input, __0, __temp0)
+    __action231(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action337<'input>(
+fn __action337<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Const>, usize),
-) -> Vec<Const> {
+) -> Vec<Const>
+{
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action111(file_id, input, &__start0, &__end0);
+    let __temp0 = __action111(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action231(file_id, input, __0, __temp0)
+    __action231(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action338<'input>(
+fn __action338<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Loc<Expr>, usize),
@@ -13162,20 +15456,40 @@ fn __action338<'input>(
     __3: (usize, &'input str, usize),
     __4: (usize, Const, usize),
     __5: (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
     let __start1 = __4.0.clone();
     let __end1 = __4.2.clone();
-    let __temp0 = __action110(file_id, input, __2);
+    let __temp0 = __action110(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action110(file_id, input, __4);
+    let __temp1 = __action110(
+        file_id,
+        input,
+        __4,
+    );
     let __temp1 = (__start1, __temp1, __end1);
-    __action54(file_id, input, __0, __1, __temp0, __3, __temp1, __5)
+    __action54(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __3,
+        __temp1,
+        __5,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action339<'input>(
+fn __action339<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Loc<Expr>, usize),
@@ -13183,20 +15497,41 @@ fn __action339<'input>(
     __2: (usize, Const, usize),
     __3: (usize, &'input str, usize),
     __4: (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
     let __start1 = __3.2.clone();
     let __end1 = __4.0.clone();
-    let __temp0 = __action110(file_id, input, __2);
+    let __temp0 = __action110(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action111(file_id, input, &__start1, &__end1);
+    let __temp1 = __action111(
+        file_id,
+        input,
+        &__start1,
+        &__end1,
+    );
     let __temp1 = (__start1, __temp1, __end1);
-    __action54(file_id, input, __0, __1, __temp0, __3, __temp1, __4)
+    __action54(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __3,
+        __temp1,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action340<'input>(
+fn __action340<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Loc<Expr>, usize),
@@ -13204,157 +15539,305 @@ fn __action340<'input>(
     __2: (usize, &'input str, usize),
     __3: (usize, Const, usize),
     __4: (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __1.2.clone();
     let __end0 = __2.0.clone();
     let __start1 = __3.0.clone();
     let __end1 = __3.2.clone();
-    let __temp0 = __action111(file_id, input, &__start0, &__end0);
+    let __temp0 = __action111(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action110(file_id, input, __3);
+    let __temp1 = __action110(
+        file_id,
+        input,
+        __3,
+    );
     let __temp1 = (__start1, __temp1, __end1);
-    __action54(file_id, input, __0, __1, __temp0, __2, __temp1, __4)
+    __action54(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __2,
+        __temp1,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action341<'input>(
+fn __action341<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Loc<Expr>, usize),
     __1: (usize, &'input str, usize),
     __2: (usize, &'input str, usize),
     __3: (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __1.2.clone();
     let __end0 = __2.0.clone();
     let __start1 = __2.2.clone();
     let __end1 = __3.0.clone();
-    let __temp0 = __action111(file_id, input, &__start0, &__end0);
+    let __temp0 = __action111(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action111(file_id, input, &__start1, &__end1);
+    let __temp1 = __action111(
+        file_id,
+        input,
+        &__start1,
+        &__end1,
+    );
     let __temp1 = (__start1, __temp1, __end1);
-    __action54(file_id, input, __0, __1, __temp0, __2, __temp1, __3)
+    __action54(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __2,
+        __temp1,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action342<'input>(
+fn __action342<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> Program {
+) -> Program
+{
     let __start0 = __lookbehind.clone();
     let __end0 = __lookahead.clone();
-    let __temp0 = __action150(file_id, input, &__start0, &__end0);
+    let __temp0 = __action150(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action1(file_id, input, __temp0)
+    __action1(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action343<'input>(
+fn __action343<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Import>, usize),
-) -> Program {
+) -> Program
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action151(file_id, input, __0);
+    let __temp0 = __action151(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action1(file_id, input, __temp0)
+    __action1(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action344<'input>(
+fn __action344<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Expr, usize),
     __1: (usize, (), usize),
     __2: (usize, Loc<Expr>, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action261(file_id, input, __0);
+    let __temp0 = __action261(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action71(file_id, input, __temp0, __1, __2)
+    __action71(
+        file_id,
+        input,
+        __temp0,
+        __1,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action345<'input>(
+fn __action345<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Loc<Expr>, usize),
     __1: (usize, &'input str, usize),
     __2: (usize, Expr, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action261(file_id, input, __2);
+    let __temp0 = __action261(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action73(file_id, input, __0, __1, __temp0)
+    __action73(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action346<'input>(
+fn __action346<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, Arg, usize),
     __2: (usize, &'input str, usize),
-) -> Vec<Loc<Arg>> {
+) -> Vec<Loc<Arg>>
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action280(file_id, input, __1);
+    let __temp0 = __action280(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action284(file_id, input, __0, __temp0, __2)
+    __action284(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action347<'input>(
+fn __action347<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, &'input str, usize),
-) -> Vec<Loc<Arg>> {
+) -> Vec<Loc<Arg>>
+{
     let __start0 = __0.2.clone();
     let __end0 = __1.0.clone();
-    let __temp0 = __action175(file_id, input, &__start0, &__end0);
+    let __temp0 = __action175(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action284(file_id, input, __0, __temp0, __1)
+    __action284(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __1,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action348<'input>(
+fn __action348<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Loc<Arg>>, usize),
     __2: (usize, Arg, usize),
     __3: (usize, &'input str, usize),
-) -> Vec<Loc<Arg>> {
+) -> Vec<Loc<Arg>>
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action280(file_id, input, __2);
+    let __temp0 = __action280(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action285(file_id, input, __0, __1, __temp0, __3)
+    __action285(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action349<'input>(
+fn __action349<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Loc<Arg>>, usize),
     __2: (usize, &'input str, usize),
-) -> Vec<Loc<Arg>> {
+) -> Vec<Loc<Arg>>
+{
     let __start0 = __1.2.clone();
     let __end0 = __2.0.clone();
-    let __temp0 = __action175(file_id, input, &__start0, &__end0);
+    let __temp0 = __action175(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action285(file_id, input, __0, __1, __temp0, __2)
+    __action285(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action350<'input>(
+fn __action350<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -13362,16 +15845,31 @@ fn __action350<'input>(
     __2: (usize, &'input str, usize),
     __3: (usize, Loc<Vec<Loc<Expr>>>, usize),
     __4: (usize, &'input str, usize),
-) -> FnCall {
+) -> FnCall
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action263(file_id, input, __1);
+    let __temp0 = __action263(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action257(file_id, input, __0, __temp0, __2, __3, __4)
+    __action257(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+        __3,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action351<'input>(
+fn __action351<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -13380,16 +15878,32 @@ fn __action351<'input>(
     __3: (usize, &'input str, usize),
     __4: (usize, Vec<Loc<Expr>>, usize),
     __5: (usize, &'input str, usize),
-) -> ExtAutomaton {
+) -> ExtAutomaton
+{
     let __start0 = __4.0.clone();
     let __end0 = __4.2.clone();
-    let __temp0 = __action264(file_id, input, __4);
+    let __temp0 = __action264(
+        file_id,
+        input,
+        __4,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action256(file_id, input, __0, __1, __2, __3, __temp0, __5)
+    __action256(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __3,
+        __temp0,
+        __5,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action352<'input>(
+fn __action352<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -13397,47 +15911,89 @@ fn __action352<'input>(
     __2: (usize, &'input str, usize),
     __3: (usize, Vec<Loc<Expr>>, usize),
     __4: (usize, &'input str, usize),
-) -> FnCall {
+) -> FnCall
+{
     let __start0 = __3.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action264(file_id, input, __3);
+    let __temp0 = __action264(
+        file_id,
+        input,
+        __3,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action350(file_id, input, __0, __1, __2, __temp0, __4)
+    __action350(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action353<'input>(
+fn __action353<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, Vec<Loc<Expr>>, usize),
     __2: (usize, &'input str, usize),
-) -> FnCall {
+) -> FnCall
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action264(file_id, input, __1);
+    let __temp0 = __action264(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action258(file_id, input, __0, __temp0, __2)
+    __action258(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action354<'input>(
+fn __action354<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, String, usize),
     __1: (usize, &'input str, usize),
     __2: (usize, Const, usize),
     __3: (usize, &'input str, usize),
-) -> Arg {
+) -> Arg
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action265(file_id, input, __2);
+    let __temp0 = __action265(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action22(file_id, input, __0, __1, __temp0, __3)
+    __action22(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action355<'input>(
+fn __action355<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -13445,16 +16001,31 @@ fn __action355<'input>(
     __2: (usize, ConstBiOp, usize),
     __3: (usize, Const, usize),
     __4: (usize, &'input str, usize),
-) -> Const {
+) -> Const
+{
     let __start0 = __3.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action265(file_id, input, __3);
+    let __temp0 = __action265(
+        file_id,
+        input,
+        __3,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action101(file_id, input, __0, __1, __2, __temp0, __4)
+    __action101(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action356<'input>(
+fn __action356<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -13462,16 +16033,31 @@ fn __action356<'input>(
     __2: (usize, ConstBiOp, usize),
     __3: (usize, Const, usize),
     __4: (usize, &'input str, usize),
-) -> Const {
+) -> Const
+{
     let __start0 = __3.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action265(file_id, input, __3);
+    let __temp0 = __action265(
+        file_id,
+        input,
+        __3,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action102(file_id, input, __0, __1, __2, __temp0, __4)
+    __action102(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action357<'input>(
+fn __action357<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -13479,32 +16065,61 @@ fn __action357<'input>(
     __2: (usize, &'input str, usize),
     __3: (usize, Const, usize),
     __4: (usize, &'input str, usize),
-) -> ConstExpr {
+) -> ConstExpr
+{
     let __start0 = __3.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action265(file_id, input, __3);
+    let __temp0 = __action265(
+        file_id,
+        input,
+        __3,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action49(file_id, input, __0, __1, __2, __temp0, __4)
+    __action49(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action358<'input>(
+fn __action358<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Loc<Expr>, usize),
     __1: (usize, &'input str, usize),
     __2: (usize, Const, usize),
     __3: (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action265(file_id, input, __2);
+    let __temp0 = __action265(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action55(file_id, input, __0, __1, __temp0, __3)
+    __action55(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action359<'input>(
+fn __action359<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -13512,247 +16127,469 @@ fn __action359<'input>(
     __2: (usize, &'input str, usize),
     __3: (usize, Expr, usize),
     __4: (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action265(file_id, input, __1);
+    let __temp0 = __action265(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action301(file_id, input, __0, __temp0, __2, __3, __4)
+    __action301(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+        __3,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action360<'input>(
+fn __action360<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ConstExpr, usize),
     __2: (usize, &'input str, usize),
-) -> Vec<Loc<ConstExpr>> {
+) -> Vec<Loc<ConstExpr>>
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action287(file_id, input, __1);
+    let __temp0 = __action287(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action291(file_id, input, __0, __temp0, __2)
+    __action291(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action361<'input>(
+fn __action361<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, &'input str, usize),
-) -> Vec<Loc<ConstExpr>> {
+) -> Vec<Loc<ConstExpr>>
+{
     let __start0 = __0.2.clone();
     let __end0 = __1.0.clone();
-    let __temp0 = __action180(file_id, input, &__start0, &__end0);
+    let __temp0 = __action180(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action291(file_id, input, __0, __temp0, __1)
+    __action291(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __1,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action362<'input>(
+fn __action362<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Loc<ConstExpr>>, usize),
     __2: (usize, ConstExpr, usize),
     __3: (usize, &'input str, usize),
-) -> Vec<Loc<ConstExpr>> {
+) -> Vec<Loc<ConstExpr>>
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action287(file_id, input, __2);
+    let __temp0 = __action287(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action292(file_id, input, __0, __1, __temp0, __3)
+    __action292(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action363<'input>(
+fn __action363<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Loc<ConstExpr>>, usize),
     __2: (usize, &'input str, usize),
-) -> Vec<Loc<ConstExpr>> {
+) -> Vec<Loc<ConstExpr>>
+{
     let __start0 = __1.2.clone();
     let __end0 = __2.0.clone();
-    let __temp0 = __action180(file_id, input, &__start0, &__end0);
+    let __temp0 = __action180(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action292(file_id, input, __0, __1, __temp0, __2)
+    __action292(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action364<'input>(
+fn __action364<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Const, usize),
     __1: (usize, ConstBiOp, usize),
     __2: (usize, Const, usize),
-) -> Const {
+) -> Const
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action267(file_id, input, __2);
+    let __temp0 = __action267(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action94(file_id, input, __0, __1, __temp0)
+    __action94(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action365<'input>(
+fn __action365<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Const, usize),
     __1: (usize, ConstBiOp, usize),
     __2: (usize, Const, usize),
-) -> Const {
+) -> Const
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action268(file_id, input, __2);
+    let __temp0 = __action268(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action96(file_id, input, __0, __1, __temp0)
+    __action96(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action366<'input>(
+fn __action366<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Expr, usize),
-) -> Vec<Loc<Expr>> {
+) -> Vec<Loc<Expr>>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action295(file_id, input, __0);
+    let __temp0 = __action295(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action304(file_id, input, __temp0)
+    __action304(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action367<'input>(
+fn __action367<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> Vec<Loc<Expr>> {
+) -> Vec<Loc<Expr>>
+{
     let __start0 = __lookbehind.clone();
     let __end0 = __lookahead.clone();
-    let __temp0 = __action192(file_id, input, &__start0, &__end0);
+    let __temp0 = __action192(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action304(file_id, input, __temp0)
+    __action304(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action368<'input>(
+fn __action368<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Loc<Expr>>, usize),
     __1: (usize, Expr, usize),
-) -> Vec<Loc<Expr>> {
+) -> Vec<Loc<Expr>>
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action295(file_id, input, __1);
+    let __temp0 = __action295(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action305(file_id, input, __0, __temp0)
+    __action305(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action369<'input>(
+fn __action369<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Loc<Expr>>, usize),
-) -> Vec<Loc<Expr>> {
+) -> Vec<Loc<Expr>>
+{
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action192(file_id, input, &__start0, &__end0);
+    let __temp0 = __action192(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action305(file_id, input, __0, __temp0)
+    __action305(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action370<'input>(
+fn __action370<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Loc<Expr>>, usize),
     __1: (usize, Expr, usize),
-) -> Vec<Loc<Expr>> {
+) -> Vec<Loc<Expr>>
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action295(file_id, input, __1);
+    let __temp0 = __action295(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action116(file_id, input, __0, __temp0)
+    __action116(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action371<'input>(
+fn __action371<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Loc<Expr>>, usize),
-) -> Vec<Loc<Expr>> {
+) -> Vec<Loc<Expr>>
+{
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action192(file_id, input, &__start0, &__end0);
+    let __temp0 = __action192(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action116(file_id, input, __0, __temp0)
+    __action116(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action372<'input>(
+fn __action372<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Expr, usize),
     __1: (usize, &'input str, usize),
     __2: (usize, Expr, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action270(file_id, input, __0);
+    let __temp0 = __action270(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action345(file_id, input, __temp0, __1, __2)
+    __action345(
+        file_id,
+        input,
+        __temp0,
+        __1,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action373<'input>(
+fn __action373<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Loc<Expr>, usize),
     __1: (usize, (), usize),
     __2: (usize, Expr, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action270(file_id, input, __2);
+    let __temp0 = __action270(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action77(file_id, input, __0, __1, __temp0)
+    __action77(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action374<'input>(
+fn __action374<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Expr, usize),
     __1: (usize, &'input str, usize),
     __2: (usize, Expr, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action271(file_id, input, __2);
+    let __temp0 = __action271(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action294(file_id, input, __0, __1, __temp0)
+    __action294(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action375<'input>(
+fn __action375<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Expr, usize),
     __1: (usize, (), usize),
     __2: (usize, Expr, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action271(file_id, input, __0);
+    let __temp0 = __action271(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action373(file_id, input, __temp0, __1, __2)
+    __action373(
+        file_id,
+        input,
+        __temp0,
+        __1,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action376<'input>(
+fn __action376<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -13761,16 +16598,32 @@ fn __action376<'input>(
     __3: (usize, &'input str, usize),
     __4: (usize, Vec<Loc<Expr>>, usize),
     __5: (usize, &'input str, usize),
-) -> ExtAutomaton {
+) -> ExtAutomaton
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action272(file_id, input, __1);
+    let __temp0 = __action272(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action351(file_id, input, __0, __temp0, __2, __3, __4, __5)
+    __action351(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+        __3,
+        __4,
+        __5,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action377<'input>(
+fn __action377<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -13778,32 +16631,61 @@ fn __action377<'input>(
     __2: (usize, &'input str, usize),
     __3: (usize, &'input str, usize),
     __4: (usize, Loc<Option<Var>>, usize),
-) -> Transition {
+) -> Transition
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action273(file_id, input, __1);
+    let __temp0 = __action273(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action216(file_id, input, __0, __temp0, __2, __3, __4)
+    __action216(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+        __3,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action378<'input>(
+fn __action378<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, TrCond, usize),
     __2: (usize, &'input str, usize),
     __3: (usize, Loc<Option<Var>>, usize),
-) -> Transition {
+) -> Transition
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action273(file_id, input, __1);
+    let __temp0 = __action273(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action217(file_id, input, __0, __temp0, __2, __3)
+    __action217(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action379<'input>(
+fn __action379<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Expr, usize),
@@ -13812,16 +16694,32 @@ fn __action379<'input>(
     __3: (usize, &'input str, usize),
     __4: (usize, Const, usize),
     __5: (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action274(file_id, input, __0);
+    let __temp0 = __action274(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action338(file_id, input, __temp0, __1, __2, __3, __4, __5)
+    __action338(
+        file_id,
+        input,
+        __temp0,
+        __1,
+        __2,
+        __3,
+        __4,
+        __5,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action380<'input>(
+fn __action380<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Expr, usize),
@@ -13829,16 +16727,31 @@ fn __action380<'input>(
     __2: (usize, Const, usize),
     __3: (usize, &'input str, usize),
     __4: (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action274(file_id, input, __0);
+    let __temp0 = __action274(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action339(file_id, input, __temp0, __1, __2, __3, __4)
+    __action339(
+        file_id,
+        input,
+        __temp0,
+        __1,
+        __2,
+        __3,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action381<'input>(
+fn __action381<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Expr, usize),
@@ -13846,226 +16759,429 @@ fn __action381<'input>(
     __2: (usize, &'input str, usize),
     __3: (usize, Const, usize),
     __4: (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action274(file_id, input, __0);
+    let __temp0 = __action274(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action340(file_id, input, __temp0, __1, __2, __3, __4)
+    __action340(
+        file_id,
+        input,
+        __temp0,
+        __1,
+        __2,
+        __3,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action382<'input>(
+fn __action382<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Expr, usize),
     __1: (usize, &'input str, usize),
     __2: (usize, &'input str, usize),
     __3: (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action274(file_id, input, __0);
+    let __temp0 = __action274(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action341(file_id, input, __temp0, __1, __2, __3)
+    __action341(
+        file_id,
+        input,
+        __temp0,
+        __1,
+        __2,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action383<'input>(
+fn __action383<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Expr, usize),
     __1: (usize, &'input str, usize),
     __2: (usize, Const, usize),
     __3: (usize, &'input str, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action274(file_id, input, __0);
+    let __temp0 = __action274(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action358(file_id, input, __temp0, __1, __2, __3)
+    __action358(
+        file_id,
+        input,
+        __temp0,
+        __1,
+        __2,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action384<'input>(
+fn __action384<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Loc<Expr>, usize),
     __1: (usize, (), usize),
     __2: (usize, Expr, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action274(file_id, input, __2);
+    let __temp0 = __action274(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action67(file_id, input, __0, __1, __temp0)
+    __action67(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action385<'input>(
+fn __action385<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Loc<String>>, usize),
     __1: (usize, String, usize),
-) -> Vec<Loc<String>> {
+) -> Vec<Loc<String>>
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action308(file_id, input, __1);
+    let __temp0 = __action308(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action117(file_id, input, __0, __temp0)
+    __action117(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action386<'input>(
+fn __action386<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<Loc<String>>, usize),
-) -> Vec<Loc<String>> {
+) -> Vec<Loc<String>>
+{
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action187(file_id, input, &__start0, &__end0);
+    let __temp0 = __action187(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action117(file_id, input, __0, __temp0)
+    __action117(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action387<'input>(
+fn __action387<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, String, usize),
     __2: (usize, &'input str, usize),
-) -> Vec<Loc<String>> {
+) -> Vec<Loc<String>>
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action308(file_id, input, __1);
+    let __temp0 = __action308(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action316(file_id, input, __0, __temp0, __2)
+    __action316(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action388<'input>(
+fn __action388<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, &'input str, usize),
-) -> Vec<Loc<String>> {
+) -> Vec<Loc<String>>
+{
     let __start0 = __0.2.clone();
     let __end0 = __1.0.clone();
-    let __temp0 = __action187(file_id, input, &__start0, &__end0);
+    let __temp0 = __action187(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action316(file_id, input, __0, __temp0, __1)
+    __action316(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __1,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action389<'input>(
+fn __action389<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Loc<String>>, usize),
     __2: (usize, String, usize),
     __3: (usize, &'input str, usize),
-) -> Vec<Loc<String>> {
+) -> Vec<Loc<String>>
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action308(file_id, input, __2);
+    let __temp0 = __action308(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action317(file_id, input, __0, __1, __temp0, __3)
+    __action317(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action390<'input>(
+fn __action390<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Loc<String>>, usize),
     __2: (usize, &'input str, usize),
-) -> Vec<Loc<String>> {
+) -> Vec<Loc<String>>
+{
     let __start0 = __1.2.clone();
     let __end0 = __2.0.clone();
-    let __temp0 = __action187(file_id, input, &__start0, &__end0);
+    let __temp0 = __action187(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action317(file_id, input, __0, __1, __temp0, __2)
+    __action317(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action391<'input>(
+fn __action391<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Expr, usize),
     __1: (usize, (), usize),
     __2: (usize, Expr, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action276(file_id, input, __2);
+    let __temp0 = __action276(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action344(file_id, input, __0, __1, __temp0)
+    __action344(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action392<'input>(
+fn __action392<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, Expr, usize),
     __1: (usize, (), usize),
     __2: (usize, Expr, usize),
-) -> Expr {
+) -> Expr
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action276(file_id, input, __0);
+    let __temp0 = __action276(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action384(file_id, input, __temp0, __1, __2)
+    __action384(
+        file_id,
+        input,
+        __temp0,
+        __1,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action393<'input>(
+fn __action393<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Statement>, usize),
     __2: (usize, &'input str, usize),
     __3: (usize, ::std::vec::Vec<Transition>, usize),
-) -> State {
+) -> State
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action277(file_id, input, __0);
+    let __temp0 = __action277(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action18(file_id, input, __temp0, __1, __2, __3)
+    __action18(
+        file_id,
+        input,
+        __temp0,
+        __1,
+        __2,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action394<'input>(
+fn __action394<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Statement>, usize),
     __2: (usize, &'input str, usize),
     __3: (usize, ::std::vec::Vec<Transition>, usize),
-) -> State {
+) -> State
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action277(file_id, input, __0);
+    let __temp0 = __action277(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action19(file_id, input, __temp0, __1, __2, __3)
+    __action19(
+        file_id,
+        input,
+        __temp0,
+        __1,
+        __2,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action395<'input>(
+fn __action395<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Statement>, usize),
-) -> State {
+) -> State
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action277(file_id, input, __0);
+    let __temp0 = __action277(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action20(file_id, input, __temp0, __1)
+    __action20(
+        file_id,
+        input,
+        __temp0,
+        __1,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action396<'input>(
+fn __action396<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -14077,18 +17193,37 @@ fn __action396<'input>(
     __6: (usize, Vec<Loc<String>>, usize),
     __7: (usize, ::std::vec::Vec<State>, usize),
     __8: (usize, (Vec<Loc<String>>, Vec<State>), usize),
-) -> Automaton {
+) -> Automaton
+{
     let __start0 = __6.2.clone();
     let __end0 = __7.0.clone();
-    let __temp0 = __action142(file_id, input, &__start0, &__end0);
+    let __temp0 = __action142(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
     __action7(
-        file_id, input, __0, __1, __2, __3, __4, __5, __6, __temp0, __7, __8,
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __3,
+        __4,
+        __5,
+        __6,
+        __temp0,
+        __7,
+        __8,
     )
 }
 
 #[allow(unused_variables)]
-fn __action397<'input>(
+fn __action397<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -14101,49 +17236,96 @@ fn __action397<'input>(
     __7: (usize, ::std::vec::Vec<Vec<VarAssign>>, usize),
     __8: (usize, ::std::vec::Vec<State>, usize),
     __9: (usize, (Vec<Loc<String>>, Vec<State>), usize),
-) -> Automaton {
+) -> Automaton
+{
     let __start0 = __7.0.clone();
     let __end0 = __7.2.clone();
-    let __temp0 = __action143(file_id, input, __7);
+    let __temp0 = __action143(
+        file_id,
+        input,
+        __7,
+    );
     let __temp0 = (__start0, __temp0, __end0);
     __action7(
-        file_id, input, __0, __1, __2, __3, __4, __5, __6, __temp0, __8, __9,
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __3,
+        __4,
+        __5,
+        __6,
+        __temp0,
+        __8,
+        __9,
     )
 }
 
 #[allow(unused_variables)]
-fn __action398<'input>(
+fn __action398<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, Vec<Loc<String>>, usize),
     __2: (usize, (Vec<Loc<String>>, Vec<State>), usize),
-) -> (Vec<Loc<String>>, Vec<State>) {
+) -> (Vec<Loc<String>>, Vec<State>)
+{
     let __start0 = __1.2.clone();
     let __end0 = __2.0.clone();
-    let __temp0 = __action140(file_id, input, &__start0, &__end0);
+    let __temp0 = __action140(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action8(file_id, input, __0, __1, __temp0, __2)
+    __action8(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action399<'input>(
+fn __action399<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, Vec<Loc<String>>, usize),
     __2: (usize, ::std::vec::Vec<State>, usize),
     __3: (usize, (Vec<Loc<String>>, Vec<State>), usize),
-) -> (Vec<Loc<String>>, Vec<State>) {
+) -> (Vec<Loc<String>>, Vec<State>)
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action141(file_id, input, __2);
+    let __temp0 = __action141(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action8(file_id, input, __0, __1, __temp0, __3)
+    __action8(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action400<'input>(
+fn __action400<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -14154,18 +17336,36 @@ fn __action400<'input>(
     __5: (usize, Vec<Arg>, usize),
     __6: (usize, Vec<Loc<String>>, usize),
     __7: (usize, (Vec<Loc<String>>, Vec<State>), usize),
-) -> Automaton {
+) -> Automaton
+{
     let __start0 = __6.2.clone();
     let __end0 = __7.0.clone();
-    let __temp0 = __action140(file_id, input, &__start0, &__end0);
+    let __temp0 = __action140(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
     __action396(
-        file_id, input, __0, __1, __2, __3, __4, __5, __6, __temp0, __7,
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __3,
+        __4,
+        __5,
+        __6,
+        __temp0,
+        __7,
     )
 }
 
 #[allow(unused_variables)]
-fn __action401<'input>(
+fn __action401<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -14177,18 +17377,35 @@ fn __action401<'input>(
     __6: (usize, Vec<Loc<String>>, usize),
     __7: (usize, ::std::vec::Vec<State>, usize),
     __8: (usize, (Vec<Loc<String>>, Vec<State>), usize),
-) -> Automaton {
+) -> Automaton
+{
     let __start0 = __7.0.clone();
     let __end0 = __7.2.clone();
-    let __temp0 = __action141(file_id, input, __7);
+    let __temp0 = __action141(
+        file_id,
+        input,
+        __7,
+    );
     let __temp0 = (__start0, __temp0, __end0);
     __action396(
-        file_id, input, __0, __1, __2, __3, __4, __5, __6, __temp0, __8,
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __3,
+        __4,
+        __5,
+        __6,
+        __temp0,
+        __8,
     )
 }
 
 #[allow(unused_variables)]
-fn __action402<'input>(
+fn __action402<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -14200,18 +17417,37 @@ fn __action402<'input>(
     __6: (usize, Vec<Loc<String>>, usize),
     __7: (usize, ::std::vec::Vec<Vec<VarAssign>>, usize),
     __8: (usize, (Vec<Loc<String>>, Vec<State>), usize),
-) -> Automaton {
+) -> Automaton
+{
     let __start0 = __7.2.clone();
     let __end0 = __8.0.clone();
-    let __temp0 = __action140(file_id, input, &__start0, &__end0);
+    let __temp0 = __action140(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
     __action397(
-        file_id, input, __0, __1, __2, __3, __4, __5, __6, __7, __temp0, __8,
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __3,
+        __4,
+        __5,
+        __6,
+        __7,
+        __temp0,
+        __8,
     )
 }
 
 #[allow(unused_variables)]
-fn __action403<'input>(
+fn __action403<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -14224,18 +17460,36 @@ fn __action403<'input>(
     __7: (usize, ::std::vec::Vec<Vec<VarAssign>>, usize),
     __8: (usize, ::std::vec::Vec<State>, usize),
     __9: (usize, (Vec<Loc<String>>, Vec<State>), usize),
-) -> Automaton {
+) -> Automaton
+{
     let __start0 = __8.0.clone();
     let __end0 = __8.2.clone();
-    let __temp0 = __action141(file_id, input, __8);
+    let __temp0 = __action141(
+        file_id,
+        input,
+        __8,
+    );
     let __temp0 = (__start0, __temp0, __end0);
     __action397(
-        file_id, input, __0, __1, __2, __3, __4, __5, __6, __7, __temp0, __9,
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __3,
+        __4,
+        __5,
+        __6,
+        __7,
+        __temp0,
+        __9,
     )
 }
 
 #[allow(unused_variables)]
-fn __action404<'input>(
+fn __action404<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -14244,16 +17498,34 @@ fn __action404<'input>(
     __3: (usize, &'input str, usize),
     __4: (usize, &'input str, usize),
     __5: (usize, Vec<Arg>, usize),
-) -> Function {
+) -> Function
+{
     let __start0 = __5.2.clone();
     let __end0 = __5.2.clone();
-    let __temp0 = __action132(file_id, input, &__start0, &__end0);
+    let __temp0 = __action132(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action259(file_id, input, __0, __1, __2, __3, __4, __5, __temp0)
+    __action259(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __3,
+        __4,
+        __5,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action405<'input>(
+fn __action405<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -14263,16 +17535,33 @@ fn __action405<'input>(
     __4: (usize, &'input str, usize),
     __5: (usize, Vec<Arg>, usize),
     __6: (usize, ::std::vec::Vec<Statement>, usize),
-) -> Function {
+) -> Function
+{
     let __start0 = __6.0.clone();
     let __end0 = __6.2.clone();
-    let __temp0 = __action133(file_id, input, __6);
+    let __temp0 = __action133(
+        file_id,
+        input,
+        __6,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action259(file_id, input, __0, __1, __2, __3, __4, __5, __temp0)
+    __action259(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __3,
+        __4,
+        __5,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action406<'input>(
+fn __action406<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -14283,18 +17572,36 @@ fn __action406<'input>(
     __5: (usize, &'input str, usize),
     __6: (usize, &'input str, usize),
     __7: (usize, Vec<Arg>, usize),
-) -> Function {
+) -> Function
+{
     let __start0 = __7.2.clone();
     let __end0 = __7.2.clone();
-    let __temp0 = __action132(file_id, input, &__start0, &__end0);
+    let __temp0 = __action132(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
     __action260(
-        file_id, input, __0, __1, __2, __3, __4, __5, __6, __7, __temp0,
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __3,
+        __4,
+        __5,
+        __6,
+        __7,
+        __temp0,
     )
 }
 
 #[allow(unused_variables)]
-fn __action407<'input>(
+fn __action407<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -14306,34 +17613,67 @@ fn __action407<'input>(
     __6: (usize, &'input str, usize),
     __7: (usize, Vec<Arg>, usize),
     __8: (usize, ::std::vec::Vec<Statement>, usize),
-) -> Function {
+) -> Function
+{
     let __start0 = __8.0.clone();
     let __end0 = __8.2.clone();
-    let __temp0 = __action133(file_id, input, __8);
+    let __temp0 = __action133(
+        file_id,
+        input,
+        __8,
+    );
     let __temp0 = (__start0, __temp0, __end0);
     __action260(
-        file_id, input, __0, __1, __2, __3, __4, __5, __6, __7, __temp0,
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __3,
+        __4,
+        __5,
+        __6,
+        __7,
+        __temp0,
     )
 }
 
 #[allow(unused_variables)]
-fn __action408<'input>(
+fn __action408<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, Const, usize),
     __2: (usize, &'input str, usize),
     __3: (usize, &'input str, usize),
-) -> IfStruct {
+) -> IfStruct
+{
     let __start0 = __2.2.clone();
     let __end0 = __3.0.clone();
-    let __temp0 = __action132(file_id, input, &__start0, &__end0);
+    let __temp0 = __action132(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action36(file_id, input, __0, __1, __2, __temp0, __3)
+    __action36(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action409<'input>(
+fn __action409<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -14341,16 +17681,31 @@ fn __action409<'input>(
     __2: (usize, &'input str, usize),
     __3: (usize, ::std::vec::Vec<Statement>, usize),
     __4: (usize, &'input str, usize),
-) -> IfStruct {
+) -> IfStruct
+{
     let __start0 = __3.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action133(file_id, input, __3);
+    let __temp0 = __action133(
+        file_id,
+        input,
+        __3,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action36(file_id, input, __0, __1, __2, __temp0, __4)
+    __action36(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action410<'input>(
+fn __action410<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -14358,20 +17713,43 @@ fn __action410<'input>(
     __2: (usize, &'input str, usize),
     __3: (usize, &'input str, usize),
     __4: (usize, &'input str, usize),
-) -> IfStruct {
+) -> IfStruct
+{
     let __start0 = __2.2.clone();
     let __end0 = __3.0.clone();
     let __start1 = __3.2.clone();
     let __end1 = __4.0.clone();
-    let __temp0 = __action132(file_id, input, &__start0, &__end0);
+    let __temp0 = __action132(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action132(file_id, input, &__start1, &__end1);
+    let __temp1 = __action132(
+        file_id,
+        input,
+        &__start1,
+        &__end1,
+    );
     let __temp1 = (__start1, __temp1, __end1);
-    __action37(file_id, input, __0, __1, __2, __temp0, __3, __temp1, __4)
+    __action37(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __3,
+        __temp1,
+        __4,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action411<'input>(
+fn __action411<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -14380,20 +17758,42 @@ fn __action411<'input>(
     __3: (usize, &'input str, usize),
     __4: (usize, ::std::vec::Vec<Statement>, usize),
     __5: (usize, &'input str, usize),
-) -> IfStruct {
+) -> IfStruct
+{
     let __start0 = __2.2.clone();
     let __end0 = __3.0.clone();
     let __start1 = __4.0.clone();
     let __end1 = __4.2.clone();
-    let __temp0 = __action132(file_id, input, &__start0, &__end0);
+    let __temp0 = __action132(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action133(file_id, input, __4);
+    let __temp1 = __action133(
+        file_id,
+        input,
+        __4,
+    );
     let __temp1 = (__start1, __temp1, __end1);
-    __action37(file_id, input, __0, __1, __2, __temp0, __3, __temp1, __5)
+    __action37(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __3,
+        __temp1,
+        __5,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action412<'input>(
+fn __action412<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -14402,20 +17802,42 @@ fn __action412<'input>(
     __3: (usize, ::std::vec::Vec<Statement>, usize),
     __4: (usize, &'input str, usize),
     __5: (usize, &'input str, usize),
-) -> IfStruct {
+) -> IfStruct
+{
     let __start0 = __3.0.clone();
     let __end0 = __3.2.clone();
     let __start1 = __4.2.clone();
     let __end1 = __5.0.clone();
-    let __temp0 = __action133(file_id, input, __3);
+    let __temp0 = __action133(
+        file_id,
+        input,
+        __3,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action132(file_id, input, &__start1, &__end1);
+    let __temp1 = __action132(
+        file_id,
+        input,
+        &__start1,
+        &__end1,
+    );
     let __temp1 = (__start1, __temp1, __end1);
-    __action37(file_id, input, __0, __1, __2, __temp0, __4, __temp1, __5)
+    __action37(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __4,
+        __temp1,
+        __5,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action413<'input>(
+fn __action413<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
@@ -14425,307 +17847,554 @@ fn __action413<'input>(
     __4: (usize, &'input str, usize),
     __5: (usize, ::std::vec::Vec<Statement>, usize),
     __6: (usize, &'input str, usize),
-) -> IfStruct {
+) -> IfStruct
+{
     let __start0 = __3.0.clone();
     let __end0 = __3.2.clone();
     let __start1 = __5.0.clone();
     let __end1 = __5.2.clone();
-    let __temp0 = __action133(file_id, input, __3);
+    let __temp0 = __action133(
+        file_id,
+        input,
+        __3,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    let __temp1 = __action133(file_id, input, __5);
+    let __temp1 = __action133(
+        file_id,
+        input,
+        __5,
+    );
     let __temp1 = (__start1, __temp1, __end1);
-    __action37(file_id, input, __0, __1, __2, __temp0, __4, __temp1, __6)
+    __action37(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+        __4,
+        __temp1,
+        __6,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action414<'input>(
+fn __action414<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, &'input str, usize),
     __2: (usize, ::std::vec::Vec<Transition>, usize),
-) -> State {
+) -> State
+{
     let __start0 = __0.2.clone();
     let __end0 = __1.0.clone();
-    let __temp0 = __action132(file_id, input, &__start0, &__end0);
+    let __temp0 = __action132(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action393(file_id, input, __0, __temp0, __1, __2)
+    __action393(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __1,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action415<'input>(
+fn __action415<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Statement>, usize),
     __2: (usize, &'input str, usize),
     __3: (usize, ::std::vec::Vec<Transition>, usize),
-) -> State {
+) -> State
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action133(file_id, input, __1);
+    let __temp0 = __action133(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action393(file_id, input, __0, __temp0, __2, __3)
+    __action393(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action416<'input>(
+fn __action416<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, &'input str, usize),
     __2: (usize, ::std::vec::Vec<Transition>, usize),
-) -> State {
+) -> State
+{
     let __start0 = __0.2.clone();
     let __end0 = __1.0.clone();
-    let __temp0 = __action132(file_id, input, &__start0, &__end0);
+    let __temp0 = __action132(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action394(file_id, input, __0, __temp0, __1, __2)
+    __action394(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __1,
+        __2,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action417<'input>(
+fn __action417<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Statement>, usize),
     __2: (usize, &'input str, usize),
     __3: (usize, ::std::vec::Vec<Transition>, usize),
-) -> State {
+) -> State
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action133(file_id, input, __1);
+    let __temp0 = __action133(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action394(file_id, input, __0, __temp0, __2, __3)
+    __action394(
+        file_id,
+        input,
+        __0,
+        __temp0,
+        __2,
+        __3,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action418<'input>(
+fn __action418<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
-) -> State {
+) -> State
+{
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action132(file_id, input, &__start0, &__end0);
+    let __temp0 = __action132(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action395(file_id, input, __0, __temp0)
+    __action395(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action419<'input>(
+fn __action419<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Statement>, usize),
-) -> State {
+) -> State
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action133(file_id, input, __1);
+    let __temp0 = __action133(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action395(file_id, input, __0, __temp0)
+    __action395(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action420<'input>(
+fn __action420<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, &'input str, usize),
-) -> State {
+) -> State
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action130(file_id, input, &__start0, &__end0);
+    let __temp0 = __action130(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action414(file_id, input, __0, __1, __temp0)
+    __action414(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action421<'input>(
+fn __action421<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, &'input str, usize),
     __2: (usize, ::std::vec::Vec<Transition>, usize),
-) -> State {
+) -> State
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action131(file_id, input, __2);
+    let __temp0 = __action131(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action414(file_id, input, __0, __1, __temp0)
+    __action414(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action422<'input>(
+fn __action422<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Statement>, usize),
     __2: (usize, &'input str, usize),
-) -> State {
+) -> State
+{
     let __start0 = __2.2.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action130(file_id, input, &__start0, &__end0);
+    let __temp0 = __action130(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action415(file_id, input, __0, __1, __2, __temp0)
+    __action415(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action423<'input>(
+fn __action423<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Statement>, usize),
     __2: (usize, &'input str, usize),
     __3: (usize, ::std::vec::Vec<Transition>, usize),
-) -> State {
+) -> State
+{
     let __start0 = __3.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action131(file_id, input, __3);
+    let __temp0 = __action131(
+        file_id,
+        input,
+        __3,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action415(file_id, input, __0, __1, __2, __temp0)
+    __action415(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action424<'input>(
+fn __action424<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, &'input str, usize),
-) -> State {
+) -> State
+{
     let __start0 = __1.2.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action130(file_id, input, &__start0, &__end0);
+    let __temp0 = __action130(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action416(file_id, input, __0, __1, __temp0)
+    __action416(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action425<'input>(
+fn __action425<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, &'input str, usize),
     __2: (usize, ::std::vec::Vec<Transition>, usize),
-) -> State {
+) -> State
+{
     let __start0 = __2.0.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action131(file_id, input, __2);
+    let __temp0 = __action131(
+        file_id,
+        input,
+        __2,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action416(file_id, input, __0, __1, __temp0)
+    __action416(
+        file_id,
+        input,
+        __0,
+        __1,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action426<'input>(
+fn __action426<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Statement>, usize),
     __2: (usize, &'input str, usize),
-) -> State {
+) -> State
+{
     let __start0 = __2.2.clone();
     let __end0 = __2.2.clone();
-    let __temp0 = __action130(file_id, input, &__start0, &__end0);
+    let __temp0 = __action130(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action417(file_id, input, __0, __1, __2, __temp0)
+    __action417(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action427<'input>(
+fn __action427<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, &'input str, usize),
     __1: (usize, ::std::vec::Vec<Statement>, usize),
     __2: (usize, &'input str, usize),
     __3: (usize, ::std::vec::Vec<Transition>, usize),
-) -> State {
+) -> State
+{
     let __start0 = __3.0.clone();
     let __end0 = __3.2.clone();
-    let __temp0 = __action131(file_id, input, __3);
+    let __temp0 = __action131(
+        file_id,
+        input,
+        __3,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action417(file_id, input, __0, __1, __2, __temp0)
+    __action417(
+        file_id,
+        input,
+        __0,
+        __1,
+        __2,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action428<'input>(
+fn __action428<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, String, usize),
-) -> Vec<String> {
+) -> Vec<String>
+{
     let __start0 = __0.0.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action169(file_id, input, __0);
+    let __temp0 = __action169(
+        file_id,
+        input,
+        __0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action320(file_id, input, __temp0)
+    __action320(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action429<'input>(
+fn __action429<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __lookbehind: &usize,
     __lookahead: &usize,
-) -> Vec<String> {
+) -> Vec<String>
+{
     let __start0 = __lookbehind.clone();
     let __end0 = __lookahead.clone();
-    let __temp0 = __action170(file_id, input, &__start0, &__end0);
+    let __temp0 = __action170(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action320(file_id, input, __temp0)
+    __action320(
+        file_id,
+        input,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action430<'input>(
+fn __action430<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<String>, usize),
     __1: (usize, String, usize),
-) -> Vec<String> {
+) -> Vec<String>
+{
     let __start0 = __1.0.clone();
     let __end0 = __1.2.clone();
-    let __temp0 = __action169(file_id, input, __1);
+    let __temp0 = __action169(
+        file_id,
+        input,
+        __1,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action321(file_id, input, __0, __temp0)
+    __action321(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
 #[allow(unused_variables)]
-fn __action431<'input>(
+fn __action431<
+    'input,
+>(
     file_id: usize,
     input: &'input str,
     __0: (usize, ::std::vec::Vec<String>, usize),
-) -> Vec<String> {
+) -> Vec<String>
+{
     let __start0 = __0.2.clone();
     let __end0 = __0.2.clone();
-    let __temp0 = __action170(file_id, input, &__start0, &__end0);
+    let __temp0 = __action170(
+        file_id,
+        input,
+        &__start0,
+        &__end0,
+    );
     let __temp0 = (__start0, __temp0, __end0);
-    __action321(file_id, input, __0, __temp0)
+    __action321(
+        file_id,
+        input,
+        __0,
+        __temp0,
+    )
 }
 
-pub trait __ToTriple<'input> {
-    fn to_triple(
-        value: Self,
-    ) -> Result<
-        (usize, Token<'input>, usize),
-        __lalrpop_util::ParseError<usize, Token<'input>, &'static str>,
-    >;
+pub trait __ToTriple<'input, > {
+    fn to_triple(value: Self) -> Result<(usize,Token<'input>,usize), __lalrpop_util::ParseError<usize, Token<'input>, &'static str>>;
 }
 
-impl<'input> __ToTriple<'input> for (usize, Token<'input>, usize) {
-    fn to_triple(
-        value: Self,
-    ) -> Result<
-        (usize, Token<'input>, usize),
-        __lalrpop_util::ParseError<usize, Token<'input>, &'static str>,
-    > {
+impl<'input, > __ToTriple<'input, > for (usize, Token<'input>, usize) {
+    fn to_triple(value: Self) -> Result<(usize,Token<'input>,usize), __lalrpop_util::ParseError<usize, Token<'input>, &'static str>> {
         Ok(value)
     }
 }
-impl<'input> __ToTriple<'input> for Result<(usize, Token<'input>, usize), &'static str> {
-    fn to_triple(
-        value: Self,
-    ) -> Result<
-        (usize, Token<'input>, usize),
-        __lalrpop_util::ParseError<usize, Token<'input>, &'static str>,
-    > {
+impl<'input, > __ToTriple<'input, > for Result<(usize, Token<'input>, usize), &'static str> {
+    fn to_triple(value: Self) -> Result<(usize,Token<'input>,usize), __lalrpop_util::ParseError<usize, Token<'input>, &'static str>> {
         match value {
             Ok(v) => Ok(v),
             Err(error) => Err(__lalrpop_util::ParseError::User { error }),

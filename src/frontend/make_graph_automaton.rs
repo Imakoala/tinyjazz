@@ -42,12 +42,12 @@ With this representation, simulation can be done with a threadpool : each state 
 */
 
 use crate::ast::{graph_automaton::*, typed_ast as typ};
-use crate::frontend::scheduler;
+
 use ahash::AHashMap;
 use std::rc::Rc;
 use typ::*;
 
-pub fn make_graph(prog: &typ::Program) -> Result<ProgramGraph, scheduler::ScheduleError> {
+pub fn make_graph(prog: &typ::Program) -> ProgramGraph {
     let state_rename_map = prog
         .states
         .iter()
@@ -97,14 +97,14 @@ pub fn make_graph(prog: &typ::Program) -> Result<ProgramGraph, scheduler::Schedu
     //     ,state.inputs, state.shared_outputs.iter().map(|(s, _)| *s).collect::<Vec<usize>>())
     // }
     let schedule = Vec::new(); // scheduler::schedule(&states, shared.len())?;
-    Ok(ProgramGraph {
+    ProgramGraph {
         init_states,
         shared,
         states,
         schedule,
         outputs,
         inputs,
-    })
+    }
 }
 
 fn make_state(

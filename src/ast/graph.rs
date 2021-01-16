@@ -1,12 +1,18 @@
 pub use crate::ast::BiOp;
 use global_counter::global_counter;
-use std::{cell::RefCell, rc::Rc};
-use std::{hash::Hash, ops::Deref};
+use std::{cell::RefCell, hash::Hash, ops::Deref, rc::Rc};
+//this is just used to get a unique value.
 global_counter!(COUNTER, u32, 0);
 fn get_value() -> u32 {
     COUNTER.inc();
     COUNTER.get_cloned()
 }
+//Without going into too much details, the RCell type is a wrapper (some kind of pointer),
+//with reference counting included (so it can be freed).
+//It allows for mutable access to the value inside,
+//and has a unique id which is used for hashing.
+//this impl is way better than the one in graph_automaton.rs, which is supposed to disseapear at
+//some point anyway.
 #[derive(Debug, Clone, Eq)]
 pub struct RCell<T>(Rc<(RefCell<T>, u32)>);
 impl<T> RCell<T> {
@@ -35,19 +41,29 @@ impl<T: Hash> Hash for RCell<T> {
         (self.0).1.hash(state);
     }
 }
+//the main program. Only needs the name and value of the outputs, and the size of the inputs.
+#[derive(Debug, Clone)]
+pub struct FlatProgramGraph {
+    pub outputs: Vec<(String, RCell<Node>)>,
+    pub inputs: Vec<usize>,
+}
+
+//A "Node" of the dataflow graph is an operation
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub enum Node {
-    Input(usize),
+    Input(usize), //Input for the whole program
     Const(Vec<bool>),
     Not(RCell<Node>),
     Slice(RCell<Node>, usize, usize),
     BiOp(BiOp, RCell<Node>, RCell<Node>),
     Mux(RCell<Node>, RCell<Node>, RCell<Node>),
-    Reg(usize, RCell<Node>), //size, node.
+    Reg(usize, RCell<Node>), //The size is still specified
     Ram(RCell<Node>, RCell<Node>, RCell<Node>, RCell<Node>),
-    Rom(usize, RCell<Node>),
-    TmpValueHolder(usize),
+    Rom(usize, RCell<Node>), //Size specified here as well
+    TmpValueHolder(usize), //This is used while building the graph. All instance of this are removed.
 }
+//As this struct can be recursive, I needed to make my own pretty-printer
+//(the default one just overflows the stack when it is applied on a cyclic struct...)
 impl std::fmt::Debug for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", print_node(self, false, "".into()))
@@ -111,9 +127,4 @@ fn print_node(node: &Node, in_reg: bool, indent: String) -> String {
         ),
         Node::TmpValueHolder(i) => format!("Temp value {}", i),
     }
-}
-#[derive(Debug, Clone)]
-pub struct FlatProgramGraph {
-    pub outputs: Vec<(String, RCell<Node>)>,
-    pub inputs: Vec<usize>,
 }

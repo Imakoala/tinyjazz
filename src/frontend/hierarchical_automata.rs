@@ -4,13 +4,18 @@ use crate::ast::parse_ast::*;
 use ahash::{AHashMap, AHashSet};
 use global_counter::global_counter;
 /*
-This automaton collapses external automata.
+This file collapses external automata calls.
 Basically, it makes new shared variables for the output, and replaces the automaton call by shared var assignation.
 Then it renames every shared var and state in the called automaton, and copies all the states and shared variables in the main automaton.
 
 This repeats until there are no more external automata.
+
+See the pdf report for a bit more detail
+Warning : this file contains long and convoluted code.
 */
 //TODO: instant transitions
+
+//Errors
 #[derive(Debug)]
 pub enum WrongNumberType {
     Args,
@@ -31,6 +36,8 @@ pub enum CollapseAutomataError {
     UnknownVar(Pos, String),
     WrongNumber(WrongNumberType, Pos, usize, usize),
 }
+
+//Two different module counter : for the inlined variables, and for the inputs.
 global_counter!(INLINE_MODULE_COUNTER, u32, 0);
 global_counter!(MODULE_INPUT_COUNTER, u32, 0);
 type Result<T> = std::result::Result<T, CollapseAutomataError>;
@@ -40,7 +47,9 @@ fn get_input_name(name: &String) -> String {
     MODULE_INPUT_COUNTER.inc();
     format!("{}#mod_input#{}", name, counter)
 }
-//makes all transitions shared variables
+//makes all transitions shared variables : add them as shared vars,
+//assign them the original expression, and then replace the expression
+//in the transition with just the variable.
 pub fn make_transitions_shared(prog: &mut Program, iter: u32) {
     for (mod_name, automaton) in prog.automata.iter_mut() {
         let shared_map: AHashSet<String> = automaton
@@ -79,7 +88,7 @@ pub fn make_transitions_shared(prog: &mut Program, iter: u32) {
     }
 }
 
-//replace default transitions
+//replace default transition with "not any other transition"
 pub fn make_transitions_explicit(prog: &mut Program) {
     for (_mod_name, automaton) in prog.automata.iter_mut() {
         for (_state_name, state) in automaton.states.iter_mut() {
@@ -136,7 +145,7 @@ pub fn make_transitions_explicit(prog: &mut Program) {
     }
 }
 
-//collapse all hierarchical automata, to build one big non deterministic automaton (or multiple parallel deterministic automata)
+//replace each external automaton call with a parallel automaton.
 pub fn collapse_automata(prog: &mut Program) -> Result<()> {
     make_transitions_shared(prog, 1);
     make_transitions_explicit(prog);
@@ -144,8 +153,8 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
     let mut new_states = Vec::new();
     let mut new_init_states = Vec::new();
     let mut new_shared = Vec::new();
-    //collapse automaton while something changes.
-    //TODO : detect cycles and fail if there is one. Currently the compiler just hangs.
+    //collapse automaton while something keeps changing.
+    //TODO : detect cycles and fail if there is one. Currently the compiler just hangs / the stack overflows.
     while changed {
         changed = false;
         let main_automaton = prog
@@ -265,12 +274,14 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
                 transitions: state.transitions.clone(),
                 weak: state.weak,
             };
+            //then iterates through the external automaton calls of the state
             for ExtAutomaton {
                 inputs,
                 outputs,
                 name,
             } in extern_automata
             {
+                //checks the name
                 if name.value == main_automaton.name {
                     return Err(CollapseAutomataError::CyclicAutomatonCall(
                         name.value.clone(),
@@ -280,6 +291,7 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
                 let automaton = prog.automata.get(&name.value).ok_or(
                     CollapseAutomataError::UnknownAutomaton(name.loc, name.value.clone()),
                 )?;
+                //checks the inputs
                 if automaton.inputs.len() != inputs.len() {
                     return Err(CollapseAutomataError::WrongNumber(
                         WrongNumberType::Args,
@@ -288,6 +300,7 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
                         inputs.len(),
                     ));
                 }
+                //checks the outputs
                 if automaton.outputs.len() != outputs.len() {
                     return Err(CollapseAutomataError::WrongNumber(
                         WrongNumberType::ReturnVars,
@@ -296,7 +309,7 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
                         inputs.len(),
                     ));
                 }
-
+                //links the variables from the outputs / inputs of external automaton to the call
                 let mut in_names = Vec::new();
                 for (expr, arg) in inputs.value.iter().zip(automaton.inputs.iter()) {
                     let name = get_input_name(&name.value);
@@ -323,7 +336,7 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
                     automaton,
                     main_automaton.init_states.contains(&state.name),
                 )?;
-
+                //Add the new states, init states, shared variables, and link states, to the main automaton
                 new_init_states.append(&mut init_states);
                 new_states.append(&mut states);
                 new_shared.append(&mut shared);
@@ -340,6 +353,7 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
             }
             new_states.push(link_state);
         }
+
         let main_automaton = prog.automata.get_mut("main").unwrap();
         main_automaton.states = main_automaton
             .states
@@ -360,9 +374,8 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
             main_automaton.states.insert(state.name.to_string(), state);
         }
     }
+    //delete every automaton except main, they are no longer needed.
     prog.automata = prog.automata.drain().filter(|(s, _)| s == "main").collect();
-    // make_transitions_shared(prog, 2);
-    // println!("{:#?}", prog);
     Ok(())
 }
 
@@ -384,7 +397,7 @@ fn get_exit_condition(state: &State) -> Loc<Expr> {
     }
     expr
 }
-
+//compute all the parents of a state (the states that have a transition to this one)
 fn compute_states_parents(automaton: &Automaton) -> AHashMap<&str, Vec<&str>> {
     let mut state_parents = AHashMap::new();
     for (_, state) in automaton.states.iter() {
@@ -406,6 +419,7 @@ fn compute_states_parents(automaton: &Automaton) -> AHashMap<&str, Vec<&str>> {
     }
     state_parents
 }
+//utility function for renaming things
 fn get_rename(counter: u32, name: &str, namespace: &str) -> String {
     format!("inline_mod${}${}${}$", name, namespace, counter)
 }
@@ -414,7 +428,7 @@ fn get_pause_name(counter: u32, name: &str, namespace: &str) -> String {
     format!("inline_mod_pause${}${}${}$", name, namespace, counter)
 }
 
-//Build the inline automaton corresponding to a automaton and a contexts
+//Build the inline automaton corresponding to a automaton and a context
 pub fn make_automaton(
     resume_condition: &Loc<TrCond>,
     reset_condition: &Loc<Expr>,
@@ -423,15 +437,19 @@ pub fn make_automaton(
     automaton: &Automaton,
     is_init: bool,
 ) -> Result<(Vec<State>, Vec<Loc<String>>, Vec<VarAssign>, Vec<String>)> {
-    //new_states, init states, new shared, outputs
+    //the return vars are : new_states, init states, new shared, outputs
+
+    //Each inlined automaton has its own, unique id.
     let counter = INLINE_MODULE_COUNTER.get_cloned();
     INLINE_MODULE_COUNTER.inc();
     let mut shared_rename_map = AHashMap::new();
     let mut shared = Vec::new();
     let mut states = Vec::new();
+    //get the renamed inputs
     for (s, rename) in automaton.inputs.iter().zip(inputs.drain(..)) {
         shared_rename_map.insert(s.name.clone(), rename);
     }
+    //and outputs
     for arg in automaton.outputs.iter() {
         let var = VarAssign {
             var: Loc::new(arg.size.loc, arg.name.clone()),
@@ -446,6 +464,7 @@ pub fn make_automaton(
         shared.push(new_var.clone());
         shared_rename_map.insert(var.var.value.clone(), name);
     }
+    //and shared variables (have to be renamed to avoid conflicts)
     for var in automaton.shared.iter() {
         let mut new_var = var.clone();
         let name = get_rename(counter, &new_var.var.value, &automaton.name);
@@ -469,6 +488,7 @@ pub fn make_automaton(
             }
         })
         .collect();
+    //get the pause state and the execution state for each state of the called automaton
     for (_, state) in &automaton.states {
         let (new_state, pause_state) = make_state(
             counter,
@@ -482,6 +502,7 @@ pub fn make_automaton(
         states.push(new_state);
         states.push(pause_state);
     }
+    //get the outputs' name
     let outputs = automaton
         .outputs
         .iter()
@@ -495,6 +516,8 @@ pub fn make_automaton(
                 .clone())
         })
         .collect::<Result<Vec<String>>>()?;
+    //the new init states, which is either au pause state if the calling automaton is not init, or an exec state
+    //if the calling automaton is init.
     let init_states = automaton
         .init_states
         .iter()
@@ -526,6 +549,7 @@ pub fn make_state(
         .iter()
         .map(|s| replace_var_in_statement(s, &shared_rename_map, counter, namespace))
         .collect::<Vec<Statement>>();
+    //get the new transitions
     let transitions = state
         .transitions
         .iter()
@@ -539,6 +563,7 @@ pub fn make_state(
                     namespace,
                 ),
             );
+            //the condition when the calling automaton stays in the node
             let transition_stay = Loc::new(
                 renamed_expr.loc,
                 TrCond::Expr(Expr::BiOp(
@@ -550,6 +575,7 @@ pub fn make_state(
                     )),
                 )),
             );
+            //the condition when it exits the node (and the called automaton is then paused)
             let transition_pause = Loc::new(
                 renamed_expr.loc,
                 TrCond::Expr(Expr::BiOp(
@@ -589,6 +615,7 @@ pub fn make_state(
         })
         .flatten()
         .collect::<Vec<Transition>>();
+    //make the condition for which the automaton must be paused
     let mut pause_transitions = reset_transitions.clone();
     let reset_condition = reset_transitions
         .iter()

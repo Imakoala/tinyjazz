@@ -9,7 +9,6 @@ use crate::frontend::{
     hierarchical_automata::CollapseAutomataError,
     nested_expr::FlattenError,
     parser_wrapper::{ParseErrorType, ParserError},
-    scheduler::ScheduleError,
     typing::TypingError,
 };
 
@@ -24,7 +23,6 @@ pub enum ErrorType {
     Typing(TypingError),
     ColAutomata(CollapseAutomataError),
     FlattenError(FlattenError),
-    ScheduleError(ScheduleError),
 }
 
 fn get_diagnostic(
@@ -247,17 +245,6 @@ fn get_diagnostic(
                 .with_labels(vec![Label::primary(pos.0, pos.1..pos.2)])
                 .with_message(note)
         }
-        ErrorType::ScheduleError(error) => match error {
-            ScheduleError::CycleError => Diagnostic::error()
-                .with_message("Error : cyclic immediate shared variable assignment")
-                .with_notes(vec![
-                    "Could not derive a sound node execution order".to_string()
-                ])
-                .with_code("E0023"),
-            ScheduleError::Other(s) => Diagnostic::error()
-                .with_message(format!("Error : {}", s))
-                .with_code("E0024"),
-        },
     }
 }
 
@@ -329,16 +316,6 @@ impl From<(FlattenError, Rc<SimpleFiles<String, String>>)> for TinyjazzError {
         let (typ_error, files) = err;
         TinyjazzError {
             error: ErrorType::FlattenError(typ_error),
-            files,
-        }
-    }
-}
-
-impl From<(ScheduleError, Rc<SimpleFiles<String, String>>)> for TinyjazzError {
-    fn from(err: (ScheduleError, Rc<SimpleFiles<String, String>>)) -> Self {
-        let (error, files) = err;
-        TinyjazzError {
-            error: ErrorType::ScheduleError(error),
             files,
         }
     }

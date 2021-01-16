@@ -5,6 +5,7 @@ use std::ops::{Deref, DerefMut};
 A simpler, typed ast
 */
 //a sized value, useful for typing expr.
+//It works just like "Loc" from the previous ast
 #[derive(Debug, Clone)]
 pub struct Sized<T> {
     pub value: T,

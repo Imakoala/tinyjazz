@@ -11,14 +11,14 @@ Then as all constants in automata are values again, it can inlines the remaining
 
 It stops if the depth exceed a constant currently, probably a cli parameter eventually
 */
-
+//TODO : make this an argument instead of a builtin const
 pub const REC_DEPTH: u32 = 1000;
 global_counter!(FN_CALL_VARIABLE, u32, 0);
 
+//error handling
 #[derive(Debug)]
 pub enum ExpandFnError {
-    //CyclicRecursion(Loc<String>, Vec<i32>),
-    StackOverflow(Loc<String>), //Actually just recusion depth...
+    StackOverflow(Loc<String>), //Actually just recursion depth...
     WrongNumber(WrongNumberType, Pos, String, usize, usize),
     ReplaceConstError(ComputeConstError),
     UnknowFunction(Pos, String),
@@ -44,7 +44,7 @@ impl From<ComputeConstError> for ExpandFnError {
         ExpandFnError::ReplaceConstError(err)
     }
 }
-
+//the main function which iterates on every function
 pub fn expand_functions(
     prog: &mut Program,
     type_map: &mut AHashMap<String, (i32, Pos)>,
@@ -61,9 +61,12 @@ pub fn expand_functions(
             return Err(ExpandFnError::StackOverflow(changed.unwrap()));
         }
     }
+    //erase the functions as they are no longer needed after that
+    prog.functions.clear();
+    prog.functions.shrink_to_fit();
     Ok(())
 }
-
+//this replaces function calls in a node
 fn replace_fn_calls(
     prog: &mut Program,
     type_map: &mut AHashMap<String, (i32, Pos)>,
@@ -267,34 +270,6 @@ fn inline_function(
         }
         vars_map.insert(func.return_vars[i].name.clone(), var.value.clone());
     }
-    //Link the output parameters
-    // let stat_outputs = Statement::Assign(
-    //     outputs
-    //         .iter()
-    //         .enumerate()
-    //         .map(|(i, var)| {
-    //             // let name = format!(
-    //             //     "$ret${}${}${}${}",
-    //             //     *func.name, args_string, func.return_vars[i].name, counter
-    //             // );
-
-    //             let expr_loc = (fncall.name.loc.0, fncall.name.loc.1, fncall.args.loc.2 + 1);
-    //             VarAssign {
-    //                 var: Loc {
-    //                     value: var.to_string(),
-    //                     loc: var.loc,
-    //                 },
-    //                 expr: Loc {
-    //                     value: Expr::Var(Loc {
-    //                         value: var.value.clone(),
-    //                         loc: expr_loc,
-    //                     }),
-    //                     loc: expr_loc,
-    //                 },
-    //             }
-    //         })
-    //         .collect(),
-    // );
 
     //Make the function body
     let mut func_body = func.statements.clone();
@@ -309,9 +284,6 @@ fn inline_function(
 
     //push in the right order
     out_statements.append(&mut func_body);
-    // if outputs.len() > 0 {
-    //     out_statements.push(stat_outputs);
-    // }
     Ok(())
 }
 
@@ -347,7 +319,7 @@ fn replace_vars(
         map_vars_in_statement(statement, &mut closure);
     }
 }
-
+//like in constants, this takes a closure, to reduce code duplication
 fn map_vars_in_expr<F>(expr: &mut Expr, f: &mut F)
 where
     F: FnMut(&mut String),
@@ -430,7 +402,7 @@ where
             }
         }
         Statement::ExtAutomaton(_) => {
-            panic!("SHould not happen: nested automaton in function inlining")
+            panic!("Should not happen: nested automaton in function inlining")
         }
     }
 }

@@ -62,17 +62,17 @@ pub fn interprete<'a>(
 }
 
 fn get_value(
-    node: &RCell<Node>,
+    state: &RCell<Node>,
     reg_map: &HashMap<RCell<Node>, Vec<bool>>,
     next_reg_map: &mut HashMap<RCell<Node>, Vec<bool>>,
     mem: &mut HashMap<RCell<Node>, Vec<bool>>,
     inputs: &Vec<Vec<bool>>,
     ram: Arc<Mutex<HashMap<Vec<bool>, Vec<bool>>>>,
 ) -> Vec<bool> {
-    if let Some(v) = mem.get(node) {
+    if let Some(v) = mem.get(state) {
         return v.clone();
     }
-    let res = match node.borrow().clone() {
+    let res = match state.borrow().clone() {
         Node::Input(i) => inputs[i].clone(),
         Node::Const(c) => c,
         Node::Not(n) => {
@@ -104,7 +104,7 @@ fn get_value(
         }
         Node::Reg(s, n) => {
             let prev_v = reg_map.get(&n).unwrap_or(&vec![false; s]).clone();
-            mem.insert(node.clone(), prev_v.clone());
+            mem.insert(state.clone(), prev_v.clone());
             let v = get_value(&n, reg_map, next_reg_map, mem, inputs, ram);
             next_reg_map.insert(n, v);
             prev_v
@@ -131,7 +131,7 @@ fn get_value(
             panic!("Should not happen : tmp value in interpreter")
         }
     };
-    mem.insert(node.clone(), res.clone());
+    mem.insert(state.clone(), res.clone());
     res
 }
 

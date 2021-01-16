@@ -4,6 +4,8 @@ use crate::ast::parse_ast::*;
 use std::path::PathBuf;
 use ahash::AHashMap;
 grammar(file_id: usize);
+
+//a non empty, comma separated list
 NonEmptyComma<T>: Vec<T> = { 
     <v:(<T> ",")+> <e:T?> => match e { 
         None => v,
@@ -14,7 +16,7 @@ NonEmptyComma<T>: Vec<T> = {
         }
     }
 };     
-   
+//a possibly empty, comma separated list
 Comma<T>: Vec<T> = { 
     <v:(<T> ",")*> <e:T?> => match e { 
         None => v,
@@ -25,7 +27,7 @@ Comma<T>: Vec<T> = {
         }
     }
 };
-
+//either a single element, or multiple elements separated by commas and surrounded by parenthesis
 ParCommaOrSingle<T> : Vec<T> = {
     "(" <v:(<T> ",")*> <e:T?> ")" => match e { 
         None => v,
@@ -37,6 +39,7 @@ ParCommaOrSingle<T> : Vec<T> = {
     },
     <T> => vec![<>]
 };
+//Get the localization value
 #[inline]
 Loc<T> : Loc<T> = {
     <l:@L> <val:T> <r:@R> => {
@@ -46,7 +49,7 @@ Loc<T> : Loc<T> = {
         }
     }
 }
-
+//The main program
 pub Program : Program = {
     <imports:Import*> => Program {
         imports, 
@@ -67,12 +70,12 @@ pub Program : Program = {
         p
     }
 }
-
+//THe init node
 Init : Vec<Loc<String>> = {
     "init" <ParCommaOrSingle<Loc<Var>>> => <>,
      => Vec::new()
 }
-
+//an automaton
 Automaton: Automaton = {
     "automaton" <name:r"[a-zA-Z_][a-zA-Z_0-9]*\("> <ins:Comma<Arg>> ")" "=" <out:ParCommaOrSingle<Arg>>
     <mut init: Init>
@@ -95,7 +98,7 @@ Automaton: Automaton = {
         }
     }
 }
-
+//additional automaton in parallel
 AndAutomata: (Vec<Loc<String>>, Vec<State>) = {
     "and automaton" 
     <mut init: Init>
@@ -113,12 +116,12 @@ AndAutomata: (Vec<Loc<String>>, Vec<State>) = {
     },
     => (Vec::new(), Vec::new())
 }
-
+//the name of a state in a transition (terminate is currently unused)
 StateName : Loc<Option<Var>> = {
     <l:@L> "terminate" <r:@R> => Loc::new((file_id, l, r), None),
     <v:Loc<Var>> => Loc::new(v.loc, Some(v.value))
 }
-
+//a condition in a transition
 TrCond: TrCond = {
     "default" => TrCond::Default, 
     <Expr> => TrCond::Expr(<>)
@@ -262,7 +265,9 @@ ExtAutomaton: ExtAutomaton = {
         name: Loc {value: name.strip_suffix("(").unwrap().to_string(), loc: (file_id, name_loc_l, name_loc_r)},
     }
 }
-
+//an import for another file. It is a bit complicated, but it is not possible
+//to have import as a separate token or the file name conflicts with variable names
+//in the lexer.
 Import : Import = {
     <s:r#"import[ ]+[^/\n "]*(/[^/\n "]*)*"#> => 
     PathBuf::from(
@@ -385,19 +390,21 @@ Bool : bool = {
     "0" => false,
     "false"=> false,
 }
-
+//a constant expression
 ConstExpr: ConstExpr = {
     Bool => ConstExpr::Known(vec![<>]),
     "[" <Comma<Bool>> "]" => ConstExpr::Known(<>),
     "[" <b:Bool> ";" <c:Loc<Const>> "]" => ConstExpr::Unknown(b, c)
 }
-
+//a number
 Num: i32 = {
     <s:r"[0-9]+"> => i32::from_str(s).unwrap(),
     "0" => 0,
     "1" => 1
 }
-
+//Precedence is a bit weird in lalrpop, in that it doen't exist.
+//It makes it a bit hard to express... This is why there are multiple
+//types of expressions
 Unit: Expr = {
     <ConstExpr> => Expr::Const(<>),
     <e:Loc<Unit>> "[" <c1:Const?> ".." <c2:Const?> "]" => Expr::Slice(Box::new(e), c1, c2),
@@ -471,6 +478,7 @@ Expr : Expr = {
     OrExpr
 }
 
+//Same problem for constants
 AddOp: ConstBiOp = {
     "+" => ConstBiOp::Plus,
     "-" => ConstBiOp::Minus,
@@ -518,7 +526,7 @@ Const: Const = {
     ConstCmp,
 
 }
-
+//ignores comments
 match {
     r"(\(\*([^*]|[\r\n]|(\*+([^*\)]|[\r\n])))*\*+\))|(//.*)" => { }, //skip (**) and // comments
 }

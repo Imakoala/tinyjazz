@@ -64,6 +64,7 @@ impl<T> DerefMut for Loc<T> {
     }
 }
 //the main program
+//the derive directive just tells the compiler to generate the code for pretty-printing and cloning the struct
 #[derive(Debug, Clone)]
 pub struct Program {
     pub imports: Vec<Import>,                   //all imported files
@@ -91,12 +92,12 @@ pub struct VarAssign {
 }
 pub type Var = String;
 
+//a constant assign
 #[derive(Debug, Clone)]
 pub struct ConstVarAssign {
     pub var: Var,
     pub cons: Const,
 }
-
 #[derive(Debug, Clone)]
 pub struct Value(Vec<bool>);
 
@@ -107,13 +108,13 @@ pub struct ExtAutomaton {
     pub outputs: Loc<Vec<Loc<Var>>>,
     pub name: Loc<Var>,
 }
-
+//a state
 #[derive(Debug, Clone)]
 pub struct State {
     pub name: Loc<String>,
     pub statements: Vec<Statement>,
     pub transitions: Vec<Transition>,
-    pub weak: bool,
+    pub weak: bool, //unused currently
 }
 #[derive(Debug, Clone)]
 pub struct Transition {
@@ -121,6 +122,7 @@ pub struct Transition {
     pub state: Loc<Option<Var>>,
     pub reset: bool,
 }
+//We have to track whether the transition was <Expr> -> <State> or <Default> -> <State>
 #[derive(Debug, Clone)]
 pub enum TrCond {
     Default,
@@ -150,7 +152,7 @@ impl TrCond {
         }
     }
 }
-//a statement can be either (tuple) = (tuple), var = expr, or (tuple) = function call
+//a statement can be either one or multiple variable assignation, an if statement, a function call, or an automaton call.
 #[derive(Debug, Clone)]
 pub enum Statement {
     Assign(Vec<VarAssign>),
@@ -174,8 +176,8 @@ pub enum ConstExpr {
 #[derive(Debug, Clone)]
 pub enum Expr {
     Const(ConstExpr),
-    Not(Box<Expr>),
-    Slice(Box<Loc<Expr>>, Option<Const>, Option<Const>),
+    Not(Box<Expr>), //Recursive struct need to be boxed. It just a kind of pointer.
+    Slice(Box<Loc<Expr>>, Option<Const>, Option<Const>), //The two const are options because we can slice like this : a[1..]
     BiOp(BiOp, Box<Loc<Expr>>, Box<Loc<Expr>>),
     Mux(Box<Loc<Expr>>, Box<Loc<Expr>>, Box<Loc<Expr>>),
     Var(Loc<Var>),

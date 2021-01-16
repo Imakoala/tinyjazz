@@ -24,7 +24,7 @@ To display a help page with all the options:
 ## Code structure
 
 The [build.rs](build.rs) file is used to generate the parser and lexer from .lalrpop files during compilation.
-All the code is in [/src](src/), organised in different files.
+All the code is in [/src](src/), organised in different files. In all folders, the mod.rs file contains explanations about the structure of the folder.
 
 * [The main file](src/main.rs) handles the command line interface, and calls all the other functions.
 * [USAGE.docopt](src/USAGE.docopt) is a high-level description of the command line interface, which the docopt crate uses to generates a command line parser.

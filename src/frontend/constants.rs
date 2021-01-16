@@ -2,9 +2,9 @@ use crate::ast::parse_ast::*;
 use ahash::AHashMap;
 use solvent::DepGraph;
 /*
-In this file, we try to simplify all the constants as much as possible, to prepare for
-recursive expansion.
-In particular, the global constants are replaced, and all the constants outiside of functions are replaced by simple numbers.
+In this file, we try to simplify all the constants as much as possible.
+In particular, the global constants are replaced,
+and all the constants outiside of functions are replaced by simple numbers.
 */
 #[derive(Clone, Debug)]
 pub enum ComputeConstError {
@@ -119,7 +119,7 @@ fn simplify_const(
     }
     Ok(())
 }
-
+//map_consts_in_statements specialized with the "simplify" function
 fn simplify_consts_in_statement(
     statement: &mut Statement,
     consts: &AHashMap<String, Const>,
@@ -128,7 +128,7 @@ fn simplify_consts_in_statement(
     let mut closure = |c: &mut Const| simplify_const(c, consts, static_args);
     map_consts_in_statement(statement, &mut closure)
 }
-
+//map_consts_in_statements specialized with the "compute" function
 pub fn compute_consts_in_statement(
     statement: &mut Statement,
     consts: &AHashMap<String, Const>,
@@ -140,7 +140,7 @@ pub fn compute_consts_in_statement(
     map_consts_in_statement(statement, &mut closure)
 }
 
-//Use a generic here, more clear
+//Takes a closure as an inputs, and maps it on all consts in a statement
 fn map_consts_in_statement<F>(statement: &mut Statement, f: &mut F) -> Result<(), ComputeConstError>
 where
     F: FnMut(&mut Const) -> Result<(), ComputeConstError>,
@@ -187,7 +187,7 @@ where
         }
     }
 }
-
+//compute the value of a constant operation
 fn compute_op(op: &ConstBiOp, v1: i32, v2: i32, loc: Pos) -> Result<i32, ComputeConstError> {
     match op {
         ConstBiOp::Plus => Ok(v1 + v2),
@@ -210,7 +210,7 @@ fn compute_op(op: &ConstBiOp, v1: i32, v2: i32, loc: Pos) -> Result<i32, Compute
         ConstBiOp::Or => Ok(((v1 != 0) || (v2 != 0)) as i32),
     }
 }
-
+//same as with statements, but for expressions
 fn compute_consts_in_expr(
     expr: &mut Expr,
     consts: &AHashMap<String, Const>,
@@ -221,7 +221,7 @@ fn compute_consts_in_expr(
     };
     map_consts_in_expr(expr, &mut closure)
 }
-
+//same
 fn map_consts_in_expr<F>(expr: &mut Expr, f: &mut F) -> Result<(), ComputeConstError>
 where
     F: FnMut(&mut Const) -> Result<(), ComputeConstError>,
@@ -301,7 +301,7 @@ fn compute_global_consts(consts: &mut AHashMap<String, Const>) -> Result<(), Com
         get_dependancies(c, &mut deps, &mut locs);
         depgraph.register_dependencies(s.to_string(), deps)
     }
-
+    //here we use a library to compute const in the right order so dependancies are always satisfied
     for dep in depgraph.dependencies_of(&start)? {
         let dep = dep?.to_string(); //convert the result of reference to just &str
         if dep == start {
@@ -343,6 +343,7 @@ pub fn compute_const(
         }
     }
 }
+//get all the const variable a const variable depends on.
 fn get_dependancies(c: &Const, deps: &mut Vec<String>, locs: &mut AHashMap<String, Pos>) {
     match c {
         Const::Value(_) => (),

@@ -42,8 +42,7 @@ fn process_file(path: PathBuf) -> Result<FlatProgramGraph, util::errors::Tinyjaz
     frontend::functions::expand_functions(&mut prog, &mut type_map)
         .map_err(|e| (e, files.clone()))?;
     let prog = frontend::typing::type_prog(prog, type_map).map_err(|e| (e, files.clone()))?;
-    let graph =
-        frontend::make_graph_automaton::make_graph(&prog).map_err(|e| (e, files.clone()))?;
+    let graph = frontend::make_graph_automaton::make_graph(&prog);
     let graph = frontend::automaton::flatten_automata(&graph);
     Ok(graph)
 }
