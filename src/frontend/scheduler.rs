@@ -1,5 +1,5 @@
 /*
-This module orders the nodes so that all shared variables are set before they are used.
+This module orders the states so that all shared variables are set before they are used.
 It fails if there is a cycle.
 TODO : it should also fail if a shared variable can be assigned to twice.
 */
@@ -22,17 +22,17 @@ impl From<solvent::SolventError> for ScheduleError {
     }
 }
 #[allow(dead_code)]
-pub fn schedule(prog: &Vec<ProgramNode>, n_shared: usize) -> Result<Vec<usize>, ScheduleError> {
-    let mut source_map = vec![Vec::new(); n_shared]; //what node compute each shared var.
-    for (id, pnode) in prog.iter().enumerate() {
-        for (o, _) in &pnode.shared_outputs {
+pub fn schedule(prog: &Vec<ProgramState>, n_shared: usize) -> Result<Vec<usize>, ScheduleError> {
+    let mut source_map = vec![Vec::new(); n_shared]; //what state compute each shared var.
+    for (id, pstate) in prog.iter().enumerate() {
+        for (o, _) in &pstate.shared_outputs {
             source_map[*o].push(id)
         }
     }
     let mut depgraph = DepGraph::<usize>::new();
-    for (id, pnode) in prog.iter().enumerate() {
+    for (id, pstate) in prog.iter().enumerate() {
         depgraph.register_dependency(usize::MAX, id);
-        for i in &pnode.inputs {
+        for i in &pstate.inputs {
             depgraph.register_dependencies(id, source_map[*i].clone())
         }
     }

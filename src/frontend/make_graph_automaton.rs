@@ -1,43 +1,43 @@
 /*
 In these files, we optimize the program by cutting unecessary instructions, and build a simpler form.
 
-It builds a graph representation of the program, where the nodes are operation.
+It builds a graph representation of the program, where the states are operation.
 Ex :
 
 a -- \
       + -- c
 b -- /
 
-The nodes are separated in connnected components. Non-connected components are simultaneous.
+The states are separated in connnected components. Non-connected components are simultaneous.
 If a shared variable is defined multiple times during one cycle, it causes undefined behaviour (the compiler will choose one pretty much randomly).
 No error message will be thrown, as there are no runtime errors and static analysis can't determine if a variable will be assigned to twice or not.
 
-Each node then determine "inputs" and "outputs" (inputs are shared variables, outputs are shared variables and transition variables), and creates a graph between inputs and outputs.
+Each state then determine "inputs" and "outputs" (inputs are shared variables, outputs are shared variables and transition variables), and creates a graph between inputs and outputs.
 
-The transition variables are then linked to other nodes
+The transition variables are then linked to other states
 Ex :
 
-node 1:
+state 1:
         /-- not -- [out]
 [in] --|
-        \-- slice 1 -- [node 1]
-        \-- slice 0 -- [node 2]
+        \-- slice 1 -- [state 1]
+        \-- slice 0 -- [state 2]
 
-node2:
+state2:
 [in2] -- \
-          + -- --- slice1 [node 1]
-[in1] -- /     \-- slice2 [node 2]
+          + -- --- slice1 [state 1]
+[in1] -- /     \-- slice2 [state 2]
 
 
-Internal node graphs cannot have cycles (because they are ordered), and are immutable, and so I will use a custom representation with each node pointing to the next
-with Rc. (a node point to its parents only)
-With this representation, we keep only the outputs, which keeps a reference to all the nodes necessary to compute them
+Internal state graphs cannot have cycles (because they are ordered), and are immutable, and so I will use a custom representation with each state pointing to the next
+with Rc. (a state point to its parents only)
+With this representation, we keep only the outputs, which keeps a reference to all the states necessary to compute them
 and everything else will be dropped by the compiler, hence the free optimisation.
 
-For program nodes, we keep a vec of nodes and they are represented by their id. It can't be done like expr nodes because program nodes can
+For program states, we keep a vec of states and they are represented by their id. It can't be done like expr states because program states can
 contain cycles.
 
-With this representation, simulation can be done with a threadpool : each node is simulated in its own thread.
+With this representation, simulation can be done with a threadpool : each state is simulated in its own thread.
 
 */
 
@@ -48,8 +48,8 @@ use std::rc::Rc;
 use typ::*;
 
 pub fn make_graph(prog: &typ::Program) -> Result<ProgramGraph, scheduler::ScheduleError> {
-    let node_rename_map = prog
-        .nodes
+    let state_rename_map = prog
+        .states
         .iter()
         .enumerate()
         .map(|(i, (name, _))| (name.clone(), i))
@@ -58,7 +58,7 @@ pub fn make_graph(prog: &typ::Program) -> Result<ProgramGraph, scheduler::Schedu
         .inputs
         .iter()
         .map(|s| &s.value)
-        .chain(prog.nodes.iter().map(|(name, _)| name))
+        .chain(prog.states.iter().map(|(name, _)| name))
         .chain(prog.shared.iter().map(|(s, _)| s))
         .enumerate()
         .map(|(i, s)| (s.clone(), i))
@@ -68,21 +68,21 @@ pub fn make_graph(prog: &typ::Program) -> Result<ProgramGraph, scheduler::Schedu
         .iter()
         .map(|s| vec![false; s.size])
         .chain(
-            prog.nodes
+            prog.states
                 .iter()
-                .map(|(name, _)| vec![prog.init_nodes.contains(name)]),
+                .map(|(name, _)| vec![prog.init_states.contains(name)]),
         )
         .chain(prog.shared.iter().map(|(_s, init)| init.clone()))
         .collect::<Vec<Vec<bool>>>();
-    let nodes = prog
-        .nodes
+    let states = prog
+        .states
         .iter()
-        .map(|(_, node)| make_node(node, &node_rename_map, &shared_rename_map))
-        .collect::<Vec<ProgramNode>>();
-    let init_nodes = prog
-        .init_nodes
+        .map(|(_, state)| make_state(state, &state_rename_map, &shared_rename_map))
+        .collect::<Vec<ProgramState>>();
+    let init_states = prog
+        .init_states
         .iter()
-        .map(|s| *node_rename_map.get(s).unwrap())
+        .map(|s| *state_rename_map.get(s).unwrap())
         .collect();
     let outputs = prog
         .outputs
@@ -90,31 +90,31 @@ pub fn make_graph(prog: &typ::Program) -> Result<ProgramGraph, scheduler::Schedu
         .map(|v| (v.value.clone(), *shared_rename_map.get(&v.value).unwrap()))
         .collect();
     let inputs = prog.inputs.iter().map(|var| var.size).collect();
-    // println!("{:#?}", nodes);
+    // println!("{:#?}", states);
     // println!("{:#?}", shared_rename_map);
-    // for node in &nodes {
+    // for state in &states {
     //     println!("--------------------------------------------------\n inputs : {:#?} \n \n outputs : {:#?} "
-    //     ,node.inputs, node.shared_outputs.iter().map(|(s, _)| *s).collect::<Vec<usize>>())
+    //     ,state.inputs, state.shared_outputs.iter().map(|(s, _)| *s).collect::<Vec<usize>>())
     // }
-    let schedule = Vec::new(); // scheduler::schedule(&nodes, shared.len())?;
+    let schedule = Vec::new(); // scheduler::schedule(&states, shared.len())?;
     Ok(ProgramGraph {
-        init_nodes,
+        init_states,
         shared,
-        nodes,
+        states,
         schedule,
         outputs,
         inputs,
     })
 }
 
-fn make_node(
-    node: &Node,
-    node_rename_map: &AHashMap<String, usize>,
+fn make_state(
+    state: &State,
+    state_rename_map: &AHashMap<String, usize>,
     shared_rename_map: &AHashMap<String, usize>,
-) -> ProgramNode {
+) -> ProgramState {
     let mut expr_map = Some(AHashMap::new());
     let mut inputs = Vec::new();
-    let local_rename_map = node
+    let local_rename_map = state
         .statements
         .iter()
         .filter_map(|(v, _)| {
@@ -127,28 +127,28 @@ fn make_node(
         .enumerate()
         .map(|(i, s)| (s, i))
         .collect();
-    let transition_outputs = node
+    let transition_outputs = state
         .transitions
         .iter()
-        .map(|(var, node_name, reset)| {
-            let node_id = if node_name.is_none() {
+        .map(|(var, state_name, reset)| {
+            let state_id = if state_name.is_none() {
                 None
             } else {
-                Some(*node_rename_map.get(node_name.as_ref().unwrap()).unwrap())
+                Some(*state_rename_map.get(state_name.as_ref().unwrap()).unwrap())
             };
-            let expr_node = var_to_node(
+            let expr_state = var_to_state(
                 None,
-                node,
+                state,
                 var,
                 shared_rename_map,
                 &local_rename_map,
                 &mut expr_map,
                 &mut None, //shared variables used in transitions are not added as outputs
             );
-            (node_id, expr_node, *reset)
+            (state_id, expr_state, *reset)
         })
         .collect();
-    let shared_outputs = node
+    let shared_outputs = state
         .statements
         .iter()
         .filter_map(|(v, expr)| {
@@ -156,9 +156,9 @@ fn make_node(
                 let var_id = *shared_rename_map.get(s).unwrap();
                 Some((
                     var_id,
-                    expr_to_node(
+                    expr_to_state(
                         None,
-                        node,
+                        state,
                         expr,
                         shared_rename_map,
                         &local_rename_map,
@@ -171,19 +171,19 @@ fn make_node(
             }
         })
         .collect();
-    ProgramNode {
+    ProgramState {
         transition_outputs,
         shared_outputs,
         inputs,
-        weak: node.weak,
+        weak: state.weak,
         n_vars: local_rename_map.len(),
     }
 }
 //inputs = None means that we are inside a register.
 //FIXME : this is a very bad idea and doent work with nested registers, which are perfectly legal.
-fn expr_to_node(
+fn expr_to_state(
     var_id: Option<usize>,
-    node: &Node,
+    state: &State,
     expr: &Expr,
     shared_rename_map: &AHashMap<String, usize>,
     local_rename_map: &AHashMap<String, usize>,
@@ -191,16 +191,16 @@ fn expr_to_node(
     inputs: &mut Option<&mut Vec<usize>>,
 ) -> Rc<ExprNode> {
     if let Some(id) = var_id {
-        if let Some(node) = expr_map.as_mut().map(|map| map.get(&id)).flatten() {
-            return node.clone();
+        if let Some(state) = expr_map.as_mut().map(|map| map.get(&id)).flatten() {
+            return state.clone();
         }
     }
     let op = match &expr.value {
         ExprType::Term(e) => match &e.value {
             ExprTermType::Var(v) => {
-                return var_to_node(
+                return var_to_state(
                     var_id,
-                    node,
+                    state,
                     &v,
                     shared_rename_map,
                     local_rename_map,
@@ -211,9 +211,9 @@ fn expr_to_node(
             ExprTermType::Const(c) => ExprOperation::Const(c.clone()),
         },
         ExprType::Not(e) => match &e.value {
-            ExprTermType::Var(v) => ExprOperation::Not(var_to_node(
+            ExprTermType::Var(v) => ExprOperation::Not(var_to_state(
                 None,
-                node,
+                state,
                 &v,
                 shared_rename_map,
                 local_rename_map,
@@ -224,9 +224,9 @@ fn expr_to_node(
         },
         ExprType::Slice(e, i1, i2) => match &e.value {
             ExprTermType::Var(v) => ExprOperation::Slice(
-                var_to_node(
+                var_to_state(
                     None,
-                    node,
+                    state,
                     &v,
                     shared_rename_map,
                     local_rename_map,
@@ -240,9 +240,9 @@ fn expr_to_node(
         },
         ExprType::BiOp(op, e1, e2) => {
             let n1 = match &e1.value {
-                ExprTermType::Var(v) => var_to_node(
+                ExprTermType::Var(v) => var_to_state(
                     None,
-                    node,
+                    state,
                     &v,
                     shared_rename_map,
                     local_rename_map,
@@ -255,9 +255,9 @@ fn expr_to_node(
                 }),
             };
             let n2 = match &e2.value {
-                ExprTermType::Var(v) => var_to_node(
+                ExprTermType::Var(v) => var_to_state(
                     None,
-                    node,
+                    state,
                     &v,
                     shared_rename_map,
                     local_rename_map,
@@ -273,9 +273,9 @@ fn expr_to_node(
         }
         ExprType::Mux(e1, e2, e3) => {
             let n1 = match &e1.value {
-                ExprTermType::Var(v) => var_to_node(
+                ExprTermType::Var(v) => var_to_state(
                     None,
-                    node,
+                    state,
                     &v,
                     shared_rename_map,
                     local_rename_map,
@@ -288,9 +288,9 @@ fn expr_to_node(
                 }),
             };
             let n2 = match &e2.value {
-                ExprTermType::Var(v) => var_to_node(
+                ExprTermType::Var(v) => var_to_state(
                     None,
-                    node,
+                    state,
                     &v,
                     shared_rename_map,
                     local_rename_map,
@@ -303,9 +303,9 @@ fn expr_to_node(
                 }),
             };
             let n3 = match &e3.value {
-                ExprTermType::Var(v) => var_to_node(
+                ExprTermType::Var(v) => var_to_state(
                     None,
-                    node,
+                    state,
                     &v,
                     shared_rename_map,
                     local_rename_map,
@@ -327,9 +327,9 @@ fn expr_to_node(
                 } else {
                     ExprOperation::Reg(
                         e.size,
-                        Some(var_to_node(
+                        Some(var_to_state(
                             None,
-                            node,
+                            state,
                             v,
                             shared_rename_map,
                             local_rename_map,
@@ -348,9 +348,9 @@ fn expr_to_node(
             write_data: e4,
         }) => {
             let n1 = match &e1.value {
-                ExprTermType::Var(v) => var_to_node(
+                ExprTermType::Var(v) => var_to_state(
                     None,
-                    node,
+                    state,
                     &v,
                     shared_rename_map,
                     local_rename_map,
@@ -363,9 +363,9 @@ fn expr_to_node(
                 }),
             };
             let n2 = match &e2.value {
-                ExprTermType::Var(v) => var_to_node(
+                ExprTermType::Var(v) => var_to_state(
                     None,
-                    node,
+                    state,
                     &v,
                     shared_rename_map,
                     local_rename_map,
@@ -378,9 +378,9 @@ fn expr_to_node(
                 }),
             };
             let n3 = match &e3.value {
-                ExprTermType::Var(v) => var_to_node(
+                ExprTermType::Var(v) => var_to_state(
                     None,
-                    node,
+                    state,
                     &v,
                     shared_rename_map,
                     local_rename_map,
@@ -393,9 +393,9 @@ fn expr_to_node(
                 }),
             };
             let n4 = match &e4.value {
-                ExprTermType::Var(v) => var_to_node(
+                ExprTermType::Var(v) => var_to_state(
                     None,
-                    node,
+                    state,
                     &v,
                     shared_rename_map,
                     local_rename_map,
@@ -411,9 +411,9 @@ fn expr_to_node(
         }
         ExprType::Rom(e) => {
             let n = match &e.value {
-                ExprTermType::Var(v) => var_to_node(
+                ExprTermType::Var(v) => var_to_state(
                     None,
-                    node,
+                    state,
                     &v,
                     shared_rename_map,
                     local_rename_map,
@@ -429,22 +429,22 @@ fn expr_to_node(
         }
         ExprType::Last(v) => ExprOperation::Last(*shared_rename_map.get(v).unwrap()),
     };
-    let node = Rc::new(ExprNode {
+    let state = Rc::new(ExprNode {
         id: var_id,
         op,
         ..Default::default()
     });
     if let Some(map) = expr_map {
         if let Some(id) = var_id {
-            map.insert(id, node.clone());
+            map.insert(id, state.clone());
         }
     }
-    node
+    state
 }
 
-fn var_to_node(
+fn var_to_state(
     var_id: Option<usize>,
-    node: &Node,
+    state: &State,
     var: &Var,
     shared_rename_map: &AHashMap<String, usize>,
     local_rename_map: &AHashMap<String, usize>,
@@ -454,10 +454,10 @@ fn var_to_node(
     match var {
         Var::Local(s) => {
             let id = *local_rename_map.get(s).expect(&*format!("{}", s));
-            let expr = node.statements.get(var).unwrap();
-            expr_to_node(
+            let expr = state.statements.get(var).unwrap();
+            expr_to_state(
                 var_id.or(Some(id)),
-                node,
+                state,
                 expr,
                 shared_rename_map,
                 local_rename_map,

@@ -45,14 +45,14 @@ pub fn flatten(prog: &mut Program) -> Result<()> {
             })
             .collect::<Result<Vec<Statement>>>()?;
     }
-    for (_, m) in &mut prog.modules {
-        for (_, node) in &mut m.nodes {
-            let Node {
+    for (_, m) in &mut prog.automata {
+        for (_, state) in &mut m.states {
+            let State {
                 name,
                 weak: _,
                 statements,
                 transitions,
-            } = node;
+            } = state;
             *statements = statements
                 .drain(..)
                 .flat_map(|stat| {
@@ -64,7 +64,7 @@ pub fn flatten(prog: &mut Program) -> Result<()> {
                 })
                 .collect::<Result<Vec<Statement>>>()?;
             //transition must be handled as well.
-            //They are flattened into statements in the end of the node body
+            //They are flattened into statements in the end of the state body
             *transitions = transitions
                 .drain(..)
                 .map(|transition| {
@@ -144,7 +144,7 @@ fn flatten_statement(statement: Statement) -> Result<Vec<Statement>> {
             res.push(Statement::FnAssign(fn_assign));
             Ok(res)
         }
-        Statement::ExtModule(_) => {
+        Statement::ExtAutomaton(_) => {
             panic!("Should not happen: nested automaton after they are collapsed")
         }
     }

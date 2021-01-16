@@ -31,7 +31,7 @@ pub enum ExprOperation {
     Slice(Rc<ExprNode>, usize, usize),
     BiOp(BiOp, Rc<ExprNode>, Rc<ExprNode>),
     Mux(Rc<ExprNode>, Rc<ExprNode>, Rc<ExprNode>),
-    Reg(usize, Option<Rc<ExprNode>>), //size, node. None means a reference to itself.
+    Reg(usize, Option<Rc<ExprNode>>), //size, state. None means a reference to itself.
     Ram(Rc<ExprNode>, Rc<ExprNode>, Rc<ExprNode>, Rc<ExprNode>),
     Rom(usize, Rc<ExprNode>),
     Last(usize),
@@ -42,17 +42,17 @@ impl Default for ExprOperation {
     }
 }
 #[derive(Debug, Clone)]
-pub struct ProgramNode {
+pub struct ProgramState {
     pub shared_outputs: Vec<(usize, Rc<ExprNode>)>,
-    pub transition_outputs: Vec<(Option<usize>, Rc<ExprNode>, bool)>, //node_id, var, reset
+    pub transition_outputs: Vec<(Option<usize>, Rc<ExprNode>, bool)>, //state_id, var, reset
     pub inputs: Vec<usize>, //does not include the inputs in transitions
     pub weak: bool,
     pub n_vars: usize,
 }
 #[derive(Debug, Clone)]
 pub struct ProgramGraph {
-    pub init_nodes: Vec<usize>,
-    pub nodes: Vec<ProgramNode>,
+    pub init_states: Vec<usize>,
+    pub states: Vec<ProgramState>,
     pub shared: Vec<Vec<bool>>, //size of each shared variable
     pub schedule: Vec<usize>,
     pub outputs: Vec<(String, usize)>,

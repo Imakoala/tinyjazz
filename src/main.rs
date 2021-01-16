@@ -1,7 +1,4 @@
-extern crate lalrpop_util;
-
-extern crate global_counter;
-
+//Module declaration
 mod ast;
 mod backends;
 mod frontend;
@@ -9,13 +6,17 @@ mod interpreters;
 mod optimization;
 mod test;
 mod util;
+//The standard hashmap is cryptographically secure.
+//I use a faster, non-crypto one.
 use ahash::AHashMap;
+use ast::graph::FlatProgramGraph;
 use docopt::Docopt;
 use serde::Deserialize;
 use std::{path::PathBuf, process::exit};
+
 //Docopt generates a CLI automatically from this usage string. Pretty amazing.
 const USAGE: &'static str = include_str!("USAGE.docopt");
-
+//Docopt will generate this struct from the CLI
 #[derive(Debug, Deserialize)]
 struct Args {
     arg_file: String,
@@ -29,124 +30,64 @@ struct Args {
     flag_o: usize,
 }
 
-// fn print_expr(expr: &ast::Expr) -> String {
-//     if let ast::Expr::Var(v) = expr {
-//         format!("{}", v.value)
-//     } else {
-//         format!("{:?}", expr)
-//     }
-// }
-
-// fn print_stat(stat: &ast::Statement) {
-//     match stat {
-//         ast::Statement::Assign(vec) => {
-//             for v in vec {
-//                 println!("      {} = {}", v.var.value, print_expr(&v.expr.value));
-//             }
-//         }
-//         ast::Statement::If(a) => {
-//             println!("      {:?}", a);
-//         }
-//         ast::Statement::FnAssign(a) => {
-//             println!("      {:?}", a);
-//         }
-//     }
-// }
-
-// pub fn print_prog(prog: &ast::Program) {
-//     for (_, modules) in &prog.modules {
-//         println!("{} : \n\n", modules.name);
-//         for (_, node) in &modules.nodes {
-//             println!("  {} : \n\n", node.name.value);
-//             for stat in &node.statements {
-//                 print_stat(stat)
-//             }
-//             println!("\n\n  transitions : ");
-//             for (expr, a, _b) in &node.transitions {
-//                 println!("  |{} -> {}", print_expr(&expr.value), a.value);
-//             }
-//         }
-//     }
-// }
-//println!("{:#?}", expr);
-fn process_file(
-    path: PathBuf,
-) -> Result<ast::graph_automaton::ProgramGraph, util::errors::TinyjazzError> {
+fn process_file(path: PathBuf) -> Result<FlatProgramGraph, util::errors::TinyjazzError> {
     let (mut prog, files) = frontend::parser_wrapper::parse(path)?;
     frontend::constants::compute_consts(&mut prog).map_err(|e| (e, files.clone()))?;
     frontend::hierarchical_automata::collapse_automata(&mut prog)
-        .map_err(|e| (e, files.clone()))?;
+        .map_err(|e| (e, files.clone()))?; //this is just error handling
     frontend::nested_expr::flatten(&mut prog).map_err(|e| (e, files.clone()))?;
+    //a map the keep the input and output types of function,
+    //even when they are inlined
     let mut type_map = AHashMap::new();
     frontend::functions::expand_functions(&mut prog, &mut type_map)
         .map_err(|e| (e, files.clone()))?;
-    prog.functions = AHashMap::new(); //the functions are no longer useful
-                                      //at this point, the ast is ready to be typed.
     let prog = frontend::typing::type_prog(prog, type_map).map_err(|e| (e, files.clone()))?;
     let graph =
         frontend::make_graph_automaton::make_graph(&prog).map_err(|e| (e, files.clone()))?;
-
+    let graph = frontend::automaton::flatten_automata(&graph);
     Ok(graph)
 }
-
-fn compile_prog(prog: &ast::graph_automaton::ProgramGraph) -> ast::graph::FlatProgramGraph {
-    let graph = frontend::automaton::flatten_automata(&prog);
-    graph
-}
-
 fn main() {
+    //gets the args from docopt
     let args: Args = Docopt::new(USAGE)
         .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
+    //prints the version
     if args.flag_version {
         println!("tinyjazz version 0.0.1");
         return;
     }
+    //compute the intermediate representation from either the netlist,
+    //or the .tj file, depending on the arguments
     let mut flat_prog = if args.flag_netlist {
         frontend::from_netlist::from_netlist(&*args.arg_file)
     } else {
-        let prog_result = process_file(args.arg_file.into());
-        if let Err(err) = prog_result {
+        process_file(args.arg_file.into()).unwrap_or_else(|err| {
             err.print().unwrap();
             exit(1)
-        }
-        let prog = if let Ok(prog) = prog_result {
-            prog
-        } else {
-            panic!()
-        };
-
-        let res = compile_prog(&prog);
-        if args.flag_hl {
-            if let Some(steps) = args.flag_s {
-                for outputs in
-                    interpreters::high_level_interpreter::interprete(&prog, args.flag_i.clone())
-                        .take(steps)
-                {
-                    println!("{:?}", outputs);
-                }
-            }
-        }
-        res
+        })
     };
+    //optimises it if necessary
     if args.flag_o >= 1 {
         optimization::basic::optimize(&mut flat_prog);
     }
+    //write the output to "out.net"
     let file = std::fs::File::create("out.net").unwrap();
     backends::netlist::to_netlist(&flat_prog, file).unwrap();
+    //print it if necessary
     if args.flag_print {
         println!("{:#?}", flat_prog)
     }
+    //output the .dot visualisation if necessary
     if args.flag_dot {
         util::viz::render(&flat_prog);
     }
-    if !args.flag_hl {
-        if let Some(steps) = args.flag_s {
-            for outputs in
-                interpreters::low_level_interpreter::interprete(&flat_prog, args.flag_i).take(steps)
-            {
-                println!("{:?}", outputs);
-            }
+    //interprete the file for <steps> steps
+    if let Some(steps) = args.flag_s {
+        for outputs in
+            interpreters::low_level_interpreter::interprete(&flat_prog, args.flag_i).take(steps)
+        {
+            println!("{:?}", outputs);
         }
     }
 }

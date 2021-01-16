@@ -7,7 +7,7 @@ use global_counter::global_counter;
 /*
 This file recusively inlines functions.
 It simply alternates between inlining all functions, then computing all constants.
-Then as all constants in modules are values again, it can inlines the remaining functions, and so on.
+Then as all constants in automata are values again, it can inlines the remaining functions, and so on.
 
 It stops if the depth exceed a constant currently, probably a cli parameter eventually
 */
@@ -69,10 +69,10 @@ fn replace_fn_calls(
     type_map: &mut AHashMap<String, (i32, Pos)>,
 ) -> Result<Option<Loc<String>>, ExpandFnError> {
     let mut changed = None;
-    for (_mod_name, module) in prog.modules.iter_mut() {
-        for (_, node) in module.nodes.iter_mut() {
+    for (_mod_name, automaton) in prog.automata.iter_mut() {
+        for (_, state) in automaton.states.iter_mut() {
             changed = changed.or(replace_fn_calls_in_statements(
-                &mut node.statements,
+                &mut state.statements,
                 &mut prog.functions,
                 type_map,
             )?);
@@ -160,7 +160,7 @@ fn replace_fn_calls_in_statements(
                 inline_function(func, &mut fn_assign.f, outputs, &mut new_vec, type_map)?;
                 changed = Some(fn_assign.f.name.clone());
             }
-            Statement::ExtModule(_) => {
+            Statement::ExtAutomaton(_) => {
                 panic!("SHould not happen: nested automaton in function inlining")
             }
         }
@@ -429,7 +429,7 @@ where
                 f(&mut v.value)
             }
         }
-        Statement::ExtModule(_) => {
+        Statement::ExtAutomaton(_) => {
             panic!("SHould not happen: nested automaton in function inlining")
         }
     }

@@ -31,7 +31,7 @@ pub fn compute_consts(prog: &mut Program) -> Result<(), ComputeConstError> {
     compute_global_consts(&mut prog.global_consts)?;
 
     //iterate through statements to call appropriate functions
-    for (_, m) in &mut prog.modules {
+    for (_, m) in &mut prog.automata {
         for arg in &mut m.inputs {
             let res = compute_const(&arg.size, &prog.global_consts)?;
             arg.size.value = Const::Value(res);
@@ -43,11 +43,11 @@ pub fn compute_consts(prog: &mut Program) -> Result<(), ComputeConstError> {
         for shared in &mut m.shared {
             compute_consts_in_expr(&mut shared.expr, &prog.global_consts)?;
         }
-        for (_, node) in &mut m.nodes {
-            for statement in &mut node.statements {
+        for (_, state) in &mut m.states {
+            for statement in &mut state.statements {
                 compute_consts_in_statement(statement, &prog.global_consts)?;
             }
-            for transition in &mut node.transitions {
+            for transition in &mut state.transitions {
                 if let TrCond::Expr(expr) = &mut transition.condition.value {
                     compute_consts_in_expr(
                         &mut Loc::new(transition.condition.loc, expr),
@@ -179,7 +179,7 @@ where
             }
             Ok(())
         }
-        Statement::ExtModule(e) => {
+        Statement::ExtAutomaton(e) => {
             for input_e in e.inputs.iter_mut() {
                 map_consts_in_expr(input_e, f)?;
             }

@@ -180,8 +180,8 @@ pub fn parse(
         for (name, func) in prog.functions {
             main_program.functions.insert(name, func);
         }
-        for (name, module) in prog.modules {
-            main_program.modules.insert(name, module);
+        for (name, automaton) in prog.automata {
+            main_program.automata.insert(name, automaton);
         }
         for (name, cons) in prog.global_consts {
             main_program.global_consts.insert(name, cons);

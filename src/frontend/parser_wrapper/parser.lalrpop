@@ -50,7 +50,7 @@ Loc<T> : Loc<T> = {
 pub Program : Program = {
     <imports:Import*> => Program {
         imports, 
-        modules: AHashMap::new(),
+        automata: AHashMap::new(),
         functions: AHashMap::new(),
         global_consts: AHashMap::new(),
     },
@@ -58,8 +58,8 @@ pub Program : Program = {
         p.functions.insert((*func.name).clone(), func);
         p
     },
-    <mut p:Program> <module:Module> => {
-        p.modules.insert(module.name.clone(), module);
+    <mut p:Program> <automaton:Automaton> => {
+        p.automata.insert(automaton.name.clone(), automaton);
         p
     },
     <mut p:Program> <c:GlobalConst> => {
@@ -73,48 +73,48 @@ Init : Vec<Loc<String>> = {
      => Vec::new()
 }
 
-Module: Module = {
+Automaton: Automaton = {
     "automaton" <name:r"[a-zA-Z_][a-zA-Z_0-9]*\("> <ins:Comma<Arg>> ")" "=" <out:ParCommaOrSingle<Arg>>
     <mut init: Init>
     <s:SharedVar*>
-    <mut nodes:Node*> 
-    <mut a_n:AndModules>
+    <mut states:State*> 
+    <mut a_n:AndAutomata>
     => {
-        if init.is_empty() && !nodes.is_empty() {
-            init.push(nodes[0].name.clone())
+        if init.is_empty() && !states.is_empty() {
+            init.push(states[0].name.clone())
         }
         init.append(&mut a_n.0);
-        nodes.append(&mut a_n.1);
-        Module {
+        states.append(&mut a_n.1);
+        Automaton {
             name : name.strip_suffix("(").unwrap().to_string(),
             inputs: ins, 
             outputs: out,
             shared: s.into_iter().flatten().collect(),
-            nodes : nodes.drain(..).map(|node| (node.name.value.clone(), node)).collect::<AHashMap<String, Node>>(),
-            init_nodes: init
+            states : states.drain(..).map(|state| (state.name.value.clone(), state)).collect::<AHashMap<String, State>>(),
+            init_states: init
         }
     }
 }
 
-AndModules: (Vec<Loc<String>>, Vec<Node>) = {
+AndAutomata: (Vec<Loc<String>>, Vec<State>) = {
     "and automaton" 
     <mut init: Init>
-    <mut nodes:Node*> 
-    <a_n:AndModules> 
+    <mut states:State*> 
+    <a_n:AndAutomata> 
     => {
         let (mut prev_i, mut prev_n) = a_n;
-        if init.is_empty() && !nodes.is_empty() {
-            init.push(nodes[0].name.clone())
+        if init.is_empty() && !states.is_empty() {
+            init.push(states[0].name.clone())
         }
         prev_i.append(&mut init);
-        prev_n.append(&mut nodes);
+        prev_n.append(&mut states);
         (prev_i, prev_n)
 
     },
     => (Vec::new(), Vec::new())
 }
 
-NodeName : Loc<Option<Var>> = {
+StateName : Loc<Option<Var>> = {
     <l:@L> "terminate" <r:@R> => Loc::new((file_id, l, r), None),
     <v:Loc<Var>> => Loc::new(v.loc, Some(v.value))
 }
@@ -125,47 +125,47 @@ TrCond: TrCond = {
 }
 
 Transition : Transition = {
-    "|" <c:Loc<TrCond>> "->" <reset:"reset"?> <v:NodeName> => Transition {
+    "|" <c:Loc<TrCond>> "->" <reset:"reset"?> <v:StateName> => Transition {
         condition: c, 
-        node: v, 
+        state: v, 
         reset: reset.is_some()
     }
 }
 
-NodeBody : (Vec<ExtModule>, Vec<Statement>) = {
-    <e: ExtModule> <mut n:NodeBody> => {
+StateBody : (Vec<ExtAutomaton>, Vec<Statement>) = {
+    <e: ExtAutomaton> <mut n:StateBody> => {
         n.0.push(e);
         n
     },
-    <s: Statement> <mut n:NodeBody> => {
+    <s: Statement> <mut n:StateBody> => {
         n.1.push(s);
         n
     },
     => (Vec::new(), Vec::new())
 }
 
-Node : Node = {
+State : State = {
     <name:Loc<r"[a-zA-Z_][a-zA-Z_0-9]*:">> <s:Statement*> "until" <t:Transition*> => 
-    Node {
+    State {
         name: Loc::new(name.loc, name.strip_suffix(":").unwrap().to_string()),
         statements: s,
         transitions : t,
         weak: true
     },
     <name:Loc<r"[a-zA-Z_][a-zA-Z_0-9]*:">> <s:Statement*> "unless" <t:Transition*> =>  
-    Node {
+    State {
         name: Loc::new(name.loc, name.strip_suffix(":").unwrap().to_string()), 
         statements: s, 
         transitions : t,
         weak: false
     },
     <name:Loc<r"[a-zA-Z_][a-zA-Z_0-9]*:">> <s:Statement*> =>  
-    Node {
+    State {
         name: Loc::new(name.loc, name.strip_suffix(":").unwrap().to_string()),
         statements: s, 
         transitions : vec![Transition {
             condition: Loc::new(name.loc, TrCond::Default), 
-            node: Loc::new(name.loc, Some(name.strip_suffix(":").unwrap().to_string())),
+            state: Loc::new(name.loc, Some(name.strip_suffix(":").unwrap().to_string())),
             reset: false,
         }],
         weak: true
@@ -254,9 +254,9 @@ SharedVar : Vec<VarAssign> = {
     }
 }
 
-ExtModule: ExtModule = {
+ExtAutomaton: ExtAutomaton = {
     "use" <out:Loc<ParCommaOrSingle<Loc<Var>>>> "=" <name_loc_l:@L> <name:r"[a-zA-Z_][a-zA-Z_0-9]*\("> <name_loc_r:@R> <ins:Loc<Comma<Loc<Expr>>>> ")" => 
-    ExtModule {
+    ExtAutomaton {
         inputs: ins,
         outputs: out,
         name: Loc {value: name.strip_suffix("(").unwrap().to_string(), loc: (file_id, name_loc_l, name_loc_r)},
@@ -317,7 +317,7 @@ Statement: Statement = {
         vars: v,
         f,
     }),
-    <ExtModule> => Statement::ExtModule(<>),
+    <ExtAutomaton> => Statement::ExtAutomaton(<>),
 
 
 }

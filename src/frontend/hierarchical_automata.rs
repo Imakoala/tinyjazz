@@ -4,11 +4,11 @@ use crate::ast::parse_ast::*;
 use ahash::{AHashMap, AHashSet};
 use global_counter::global_counter;
 /*
-This module collapses external modules.
-Basically, it makes new shared variables for the output, and replaces the module call by shared var assignation.
-Then it renames every shared var and node in the called module, and copies all the nodes and shared variables in the main module.
+This automaton collapses external automata.
+Basically, it makes new shared variables for the output, and replaces the automaton call by shared var assignation.
+Then it renames every shared var and state in the called automaton, and copies all the states and shared variables in the main automaton.
 
-This repeats until there are no more external modules.
+This repeats until there are no more external automata.
 */
 //TODO: instant transitions
 #[derive(Debug)]
@@ -25,9 +25,9 @@ impl Display for WrongNumberType {
     }
 }
 pub enum CollapseAutomataError {
-    CyclicModuleCall(String),
-    UnknownModule(Pos, String),
-    NoMainModule,
+    CyclicAutomatonCall(String),
+    UnknownAutomaton(Pos, String),
+    NoMainAutomaton,
     UnknownVar(Pos, String),
     WrongNumber(WrongNumberType, Pos, usize, usize),
 }
@@ -42,17 +42,17 @@ fn get_input_name(name: &String) -> String {
 }
 //makes all transitions shared variables
 pub fn make_transitions_shared(prog: &mut Program, iter: u32) {
-    for (mod_name, module) in prog.modules.iter_mut() {
-        let shared_map: AHashSet<String> = module
+    for (mod_name, automaton) in prog.automata.iter_mut() {
+        let shared_map: AHashSet<String> = automaton
             .shared
             .iter()
             .map(|v_a| v_a.var.value.clone())
-            .chain(module.nodes.iter().map(|(name, _)| name.clone()))
-            .chain(module.inputs.iter().map(|a| a.name.clone()))
+            .chain(automaton.states.iter().map(|(name, _)| name.clone()))
+            .chain(automaton.inputs.iter().map(|a| a.name.clone()))
             .collect();
-        for (node_name, node) in module.nodes.iter_mut() {
+        for (state_name, state) in automaton.states.iter_mut() {
             let mut statement = Vec::new();
-            for (i, transition) in node.transitions.iter_mut().enumerate() {
+            for (i, transition) in state.transitions.iter_mut().enumerate() {
                 if let TrCond::Expr(e) = &mut transition.condition.value {
                     if let Expr::Var(v) = e {
                         if shared_map.contains(&v.value) {
@@ -61,9 +61,9 @@ pub fn make_transitions_shared(prog: &mut Program, iter: u32) {
                     }
                     let new_name = Loc::new(
                         transition.condition.loc,
-                        format!("s_r{}$t{}${}${}", iter, i, node_name, mod_name),
+                        format!("s_r{}$t{}${}${}", iter, i, state_name, mod_name),
                     );
-                    module.shared.push(VarAssign {
+                    automaton.shared.push(VarAssign {
                         var: new_name.clone(),
                         expr: Loc::new(new_name.loc, Expr::Const(ConstExpr::Known(vec![false]))),
                     });
@@ -74,29 +74,29 @@ pub fn make_transitions_shared(prog: &mut Program, iter: u32) {
                     });
                 }
             }
-            node.statements.push(Statement::Assign(statement));
+            state.statements.push(Statement::Assign(statement));
         }
     }
 }
 
 //replace default transitions
 pub fn make_transitions_explicit(prog: &mut Program) {
-    for (_mod_name, module) in prog.modules.iter_mut() {
-        for (_node_name, node) in module.nodes.iter_mut() {
-            if !node.transitions.iter().any(|t| {
+    for (_mod_name, automaton) in prog.automata.iter_mut() {
+        for (_state_name, state) in automaton.states.iter_mut() {
+            if !state.transitions.iter().any(|t| {
                 if let TrCond::Default = t.condition.value {
                     true
                 } else {
                     false
                 }
             }) {
-                node.transitions.push(Transition {
-                    condition: Loc::new(node.name.loc, TrCond::Default),
-                    node: Loc::new(node.name.loc, Some(node.name.value.clone())),
+                state.transitions.push(Transition {
+                    condition: Loc::new(state.name.loc, TrCond::Default),
+                    state: Loc::new(state.name.loc, Some(state.name.value.clone())),
                     reset: false,
                 })
             }
-            let all_conditions = node
+            let all_conditions = state
                 .transitions
                 .iter()
                 .fold(None, |prev, transition| {
@@ -117,14 +117,14 @@ pub fn make_transitions_explicit(prog: &mut Program) {
                     }
                 })
                 .unwrap_or(Loc::new(
-                    node.name.loc,
+                    state.name.loc,
                     Expr::Const(ConstExpr::Known(vec![false])),
                 ));
             let default_condition = Loc::new(
                 all_conditions.loc,
                 Expr::Not(Box::new(all_conditions.value)),
             );
-            for transition in node.transitions.iter_mut() {
+            for transition in state.transitions.iter_mut() {
                 if transition.condition.is_default() {
                     transition.condition = Loc::new(
                         default_condition.loc,
@@ -141,56 +141,56 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
     make_transitions_shared(prog, 1);
     make_transitions_explicit(prog);
     let mut changed = true;
-    let mut new_nodes = Vec::new();
-    let mut new_init_nodes = Vec::new();
+    let mut new_states = Vec::new();
+    let mut new_init_states = Vec::new();
     let mut new_shared = Vec::new();
     //collapse automaton while something changes.
     //TODO : detect cycles and fail if there is one. Currently the compiler just hangs.
     while changed {
         changed = false;
-        let main_module = prog
-            .modules
+        let main_automaton = prog
+            .automata
             .get("main")
-            .ok_or(CollapseAutomataError::NoMainModule)?;
-        //It need to be able to "predict" if a node will be entered, and so the parents of each node are needed.
-        let node_parents = compute_nodes_parents(main_module);
-        //iterates on nodes with external module calls
-        for (_, node) in main_module.nodes.iter() {
-            let extern_modules = node
+            .ok_or(CollapseAutomataError::NoMainAutomaton)?;
+        //It need to be able to "predict" if a state will be entered, and so the parents of each state are needed.
+        let state_parents = compute_states_parents(main_automaton);
+        //iterates on states with external automaton calls
+        for (_, state) in main_automaton.states.iter() {
+            let extern_automata = state
                 .statements
                 .iter()
                 .filter_map(|s| {
-                    if let Statement::ExtModule(e) = s {
+                    if let Statement::ExtAutomaton(e) = s {
                         Some(e)
                     } else {
                         None
                     }
                 })
-                .collect::<Vec<&ExtModule>>();
-            if extern_modules.is_empty() {
+                .collect::<Vec<&ExtAutomaton>>();
+            if extern_automata.is_empty() {
                 continue;
             }
             changed = true;
-            let exit_condition = get_exit_condition(node);
-            //get the global conditions for "entering the node through a [reset/resume] transition"
+            let exit_condition = get_exit_condition(state);
+            //get the global conditions for "entering the state through a [reset/resume] transition"
             let (mut in_conditions_reset, mut in_conditions_resume): (
                 Vec<(bool, Loc<Expr>)>,
                 Vec<(bool, Loc<Expr>)>,
-            ) = node_parents
-                .get(&*node.name.value)
+            ) = state_parents
+                .get(&*state.name.value)
                 .unwrap()
                 .iter()
                 .map(|s| {
-                    let parent = main_module.nodes.get(*s).unwrap();
+                    let parent = main_automaton.states.get(*s).unwrap();
                     parent.transitions.iter().filter_map(|transition| {
-                        if transition.node.value.is_some()
-                            && transition.node.value.clone().unwrap() == node.name.value
+                        if transition.state.value.is_some()
+                            && transition.state.value.clone().unwrap() == state.name.value
                         {
                             Some((
                                 transition.reset,
                                 Loc::new(
                                     transition.condition.loc,
-                                    //condition = the transition condition is true, and the automaton is currently executing the parent node
+                                    //condition = the transition condition is true, and the automaton is currently executing the parent state
                                     Expr::BiOp(
                                         BiOp::And,
                                         Box::new(Loc::new(
@@ -198,8 +198,8 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
                                             transition.condition.clone().value.unwrap(),
                                         )),
                                         Box::new(Loc::new(
-                                            node.name.loc,
-                                            Expr::Var(node.name.clone()),
+                                            state.name.loc,
+                                            Expr::Var(state.name.clone()),
                                         )),
                                     ),
                                 ),
@@ -225,7 +225,7 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
                     }
                 })
                 .unwrap_or(Loc::new(
-                    node.name.loc,
+                    state.name.loc,
                     Expr::Const(ConstExpr::Known(vec![false])),
                 ));
             let resume_condition = in_conditions_resume
@@ -245,62 +245,60 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
                     }
                 })
                 .unwrap_or(Loc::new(
-                    node.name.loc,
+                    state.name.loc,
                     TrCond::Expr(Expr::Const(ConstExpr::Known(vec![false]))),
                 ));
-            //This is the node which reads the value of the automaton and write them to shared variables.
-            let mut link_node = Node {
-                name: node.name.clone(),
-                statements: node
+            //This is the state which reads the value of the automaton and write them to shared variables.
+            let mut link_state = State {
+                name: state.name.clone(),
+                statements: state
                     .statements
                     .iter()
                     .filter_map(|s| {
-                        if let Statement::ExtModule(_) = s {
+                        if let Statement::ExtAutomaton(_) = s {
                             None
                         } else {
                             Some(s.clone())
                         }
                     })
                     .collect(),
-                transitions: node.transitions.clone(),
-                weak: node.weak,
+                transitions: state.transitions.clone(),
+                weak: state.weak,
             };
-            for ExtModule {
+            for ExtAutomaton {
                 inputs,
                 outputs,
                 name,
-            } in extern_modules
+            } in extern_automata
             {
-                if name.value == main_module.name {
-                    return Err(CollapseAutomataError::CyclicModuleCall(name.value.clone()));
+                if name.value == main_automaton.name {
+                    return Err(CollapseAutomataError::CyclicAutomatonCall(
+                        name.value.clone(),
+                    ));
                 }
                 let pos = name.loc;
-                let module =
-                    prog.modules
-                        .get(&name.value)
-                        .ok_or(CollapseAutomataError::UnknownModule(
-                            name.loc,
-                            name.value.clone(),
-                        ))?;
-                if module.inputs.len() != inputs.len() {
+                let automaton = prog.automata.get(&name.value).ok_or(
+                    CollapseAutomataError::UnknownAutomaton(name.loc, name.value.clone()),
+                )?;
+                if automaton.inputs.len() != inputs.len() {
                     return Err(CollapseAutomataError::WrongNumber(
                         WrongNumberType::Args,
                         name.loc,
-                        module.inputs.len(),
+                        automaton.inputs.len(),
                         inputs.len(),
                     ));
                 }
-                if module.outputs.len() != outputs.len() {
+                if automaton.outputs.len() != outputs.len() {
                     return Err(CollapseAutomataError::WrongNumber(
                         WrongNumberType::ReturnVars,
                         name.loc,
-                        module.inputs.len(),
+                        automaton.inputs.len(),
                         inputs.len(),
                     ));
                 }
 
                 let mut in_names = Vec::new();
-                for (expr, arg) in inputs.value.iter().zip(module.inputs.iter()) {
+                for (expr, arg) in inputs.value.iter().zip(automaton.inputs.iter()) {
                     let name = get_input_name(&name.value);
                     in_names.push(name.clone());
                     new_shared.push(VarAssign {
@@ -310,24 +308,26 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
                             Expr::Const(ConstExpr::Unknown(false, arg.size.clone())),
                         ),
                     });
-                    link_node.statements.push(Statement::Assign(vec![VarAssign {
-                        var: Loc::new(expr.loc, name.clone()),
-                        expr: expr.clone(),
-                    }]));
+                    link_state
+                        .statements
+                        .push(Statement::Assign(vec![VarAssign {
+                            var: Loc::new(expr.loc, name.clone()),
+                            expr: expr.clone(),
+                        }]));
                 }
-                let (mut nodes, mut init_nodes, mut shared, automaton_outputs) = make_automaton(
+                let (mut states, mut init_states, mut shared, automaton_outputs) = make_automaton(
                     &resume_condition,
                     &reset_condition,
                     exit_condition.clone(),
                     in_names,
-                    module,
-                    main_module.init_nodes.contains(&node.name),
+                    automaton,
+                    main_automaton.init_states.contains(&state.name),
                 )?;
 
-                new_init_nodes.append(&mut init_nodes);
-                new_nodes.append(&mut nodes);
+                new_init_states.append(&mut init_states);
+                new_states.append(&mut states);
                 new_shared.append(&mut shared);
-                link_node.statements.push(Statement::Assign(
+                link_state.statements.push(Statement::Assign(
                     outputs
                         .iter()
                         .zip(automaton_outputs.iter())
@@ -338,15 +338,15 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
                         .collect(),
                 ))
             }
-            new_nodes.push(link_node);
+            new_states.push(link_state);
         }
-        let main_module = prog.modules.get_mut("main").unwrap();
-        main_module.nodes = main_module
-            .nodes
+        let main_automaton = prog.automata.get_mut("main").unwrap();
+        main_automaton.states = main_automaton
+            .states
             .drain()
             .filter(|(_, n)| {
                 !n.statements.iter().any(|s| {
-                    if let Statement::ExtModule(_) = s {
+                    if let Statement::ExtAutomaton(_) = s {
                         true
                     } else {
                         false
@@ -354,22 +354,22 @@ pub fn collapse_automata(prog: &mut Program) -> Result<()> {
                 })
             })
             .collect();
-        main_module.shared.append(&mut new_shared);
-        main_module.init_nodes.append(&mut new_init_nodes);
-        for node in new_nodes.drain(..) {
-            main_module.nodes.insert(node.name.to_string(), node);
+        main_automaton.shared.append(&mut new_shared);
+        main_automaton.init_states.append(&mut new_init_states);
+        for state in new_states.drain(..) {
+            main_automaton.states.insert(state.name.to_string(), state);
         }
     }
-    prog.modules = prog.modules.drain().filter(|(s, _)| s == "main").collect();
+    prog.automata = prog.automata.drain().filter(|(s, _)| s == "main").collect();
     // make_transitions_shared(prog, 2);
     // println!("{:#?}", prog);
     Ok(())
 }
 
-//Get a condition for the exit of a node.
-fn get_exit_condition(node: &Node) -> Loc<Expr> {
-    let mut expr = Loc::new(node.name.loc, Expr::Var(node.name.clone()));
-    for transition in node.transitions.iter() {
+//Get a condition for the exit of a state.
+fn get_exit_condition(state: &State) -> Loc<Expr> {
+    let mut expr = Loc::new(state.name.loc, Expr::Var(state.name.clone()));
+    for transition in state.transitions.iter() {
         expr = Loc::new(
             transition.condition.loc,
             Expr::BiOp(
@@ -385,26 +385,26 @@ fn get_exit_condition(node: &Node) -> Loc<Expr> {
     expr
 }
 
-fn compute_nodes_parents(module: &Module) -> AHashMap<&str, Vec<&str>> {
-    let mut node_parents = AHashMap::new();
-    for (_, node) in module.nodes.iter() {
-        if !node_parents.contains_key(&*node.name.value) {
-            node_parents.insert(&*node.name.value, Vec::new());
+fn compute_states_parents(automaton: &Automaton) -> AHashMap<&str, Vec<&str>> {
+    let mut state_parents = AHashMap::new();
+    for (_, state) in automaton.states.iter() {
+        if !state_parents.contains_key(&*state.name.value) {
+            state_parents.insert(&*state.name.value, Vec::new());
         }
-        for transition in node.transitions.iter() {
-            if transition.node.is_none() {
+        for transition in state.transitions.iter() {
+            if transition.state.is_none() {
                 continue;
             }
-            if !node_parents.contains_key(&**transition.node.as_ref().unwrap()) {
-                node_parents.insert(&**transition.node.as_ref().unwrap(), Vec::new());
+            if !state_parents.contains_key(&**transition.state.as_ref().unwrap()) {
+                state_parents.insert(&**transition.state.as_ref().unwrap(), Vec::new());
             }
-            node_parents
-                .get_mut(&**transition.node.as_ref().unwrap())
+            state_parents
+                .get_mut(&**transition.state.as_ref().unwrap())
                 .unwrap()
-                .push(&*node.name.value)
+                .push(&*state.name.value)
         }
     }
-    node_parents
+    state_parents
 }
 fn get_rename(counter: u32, name: &str, namespace: &str) -> String {
     format!("inline_mod${}${}${}$", name, namespace, counter)
@@ -414,25 +414,25 @@ fn get_pause_name(counter: u32, name: &str, namespace: &str) -> String {
     format!("inline_mod_pause${}${}${}$", name, namespace, counter)
 }
 
-//Build the inline automaton corresponding to a module and a contexts
+//Build the inline automaton corresponding to a automaton and a contexts
 pub fn make_automaton(
     resume_condition: &Loc<TrCond>,
     reset_condition: &Loc<Expr>,
     exit_condition: Loc<Expr>,
     mut inputs: Vec<String>,
-    module: &Module,
+    automaton: &Automaton,
     is_init: bool,
-) -> Result<(Vec<Node>, Vec<Loc<String>>, Vec<VarAssign>, Vec<String>)> {
-    //new_nodes, init nodes, new shared, outputs
+) -> Result<(Vec<State>, Vec<Loc<String>>, Vec<VarAssign>, Vec<String>)> {
+    //new_states, init states, new shared, outputs
     let counter = INLINE_MODULE_COUNTER.get_cloned();
     INLINE_MODULE_COUNTER.inc();
     let mut shared_rename_map = AHashMap::new();
     let mut shared = Vec::new();
-    let mut nodes = Vec::new();
-    for (s, rename) in module.inputs.iter().zip(inputs.drain(..)) {
+    let mut states = Vec::new();
+    for (s, rename) in automaton.inputs.iter().zip(inputs.drain(..)) {
         shared_rename_map.insert(s.name.clone(), rename);
     }
-    for arg in module.outputs.iter() {
+    for arg in automaton.outputs.iter() {
         let var = VarAssign {
             var: Loc::new(arg.size.loc, arg.name.clone()),
             expr: Loc::new(
@@ -441,48 +441,48 @@ pub fn make_automaton(
             ),
         };
         let mut new_var = var.clone();
-        let name = get_rename(counter, &new_var.var.value, &module.name);
+        let name = get_rename(counter, &new_var.var.value, &automaton.name);
         new_var.var.value = name.clone();
         shared.push(new_var.clone());
         shared_rename_map.insert(var.var.value.clone(), name);
     }
-    for var in module.shared.iter() {
+    for var in automaton.shared.iter() {
         let mut new_var = var.clone();
-        let name = get_rename(counter, &new_var.var.value, &module.name);
+        let name = get_rename(counter, &new_var.var.value, &automaton.name);
         new_var.var.value = name.clone();
         shared.push(new_var.clone());
         shared_rename_map.insert(var.var.value.clone(), name);
     }
-    //the reset transition is the same for every pause node, so it is pre-computed for the whole automaton here
-    let reset_transition = module
-        .init_nodes
+    //the reset transition is the same for every pause state, so it is pre-computed for the whole automaton here
+    let reset_transition = automaton
+        .init_states
         .iter()
         .map(|s| {
-            let new_name = Loc::new(s.loc, Some(get_rename(counter, &s.value, &module.name)));
+            let new_name = Loc::new(s.loc, Some(get_rename(counter, &s.value, &automaton.name)));
             Transition {
                 condition: Loc::new(
                     reset_condition.loc,
                     TrCond::Expr(reset_condition.value.clone()),
                 ),
-                node: new_name,
+                state: new_name,
                 reset: true,
             }
         })
         .collect();
-    for (_, node) in &module.nodes {
-        let (new_node, pause_node) = make_node(
+    for (_, state) in &automaton.states {
+        let (new_state, pause_state) = make_state(
             counter,
-            &module.name,
+            &automaton.name,
             &resume_condition,
             &reset_transition,
             &exit_condition,
             &shared_rename_map,
-            node,
+            state,
         );
-        nodes.push(new_node);
-        nodes.push(pause_node);
+        states.push(new_state);
+        states.push(pause_state);
     }
-    let outputs = module
+    let outputs = automaton
         .outputs
         .iter()
         .map(|s| {
@@ -495,38 +495,38 @@ pub fn make_automaton(
                 .clone())
         })
         .collect::<Result<Vec<String>>>()?;
-    let init_nodes = module
-        .init_nodes
+    let init_states = automaton
+        .init_states
         .iter()
         .map(|n| {
             if is_init {
-                Loc::new(n.loc, get_rename(counter, &*n.value, &*module.name))
+                Loc::new(n.loc, get_rename(counter, &*n.value, &*automaton.name))
             } else {
-                Loc::new(n.loc, get_pause_name(counter, &*n.value, &*module.name))
+                Loc::new(n.loc, get_pause_name(counter, &*n.value, &*automaton.name))
             }
         })
         .collect();
-    Ok((nodes, init_nodes, shared, outputs))
+    Ok((states, init_states, shared, outputs))
 }
 
-//Transform a node into a pause mode and the actual node, for inlining, given a node and its context
-pub fn make_node(
+//Transform a state into a pause mode and the actual state, for inlining, given a state and its context
+pub fn make_state(
     counter: u32,
     namespace: &str,
     resume_condition: &Loc<TrCond>,
     reset_transitions: &Vec<Transition>,
     exit_condition: &Loc<Expr>,
     shared_rename_map: &AHashMap<String, String>,
-    node: &Node,
-) -> (Node, Node) {
-    let new_name = get_rename(counter, &node.name, namespace);
-    let pos = node.name.loc;
-    let statements = node
+    state: &State,
+) -> (State, State) {
+    let new_name = get_rename(counter, &state.name, namespace);
+    let pos = state.name.loc;
+    let statements = state
         .statements
         .iter()
         .map(|s| replace_var_in_statement(s, &shared_rename_map, counter, namespace))
         .collect::<Vec<Statement>>();
-    let transitions = node
+    let transitions = state
         .transitions
         .iter()
         .map(|transition| {
@@ -558,18 +558,18 @@ pub fn make_node(
                     Box::new(exit_condition.clone()),
                 )),
             );
-            let new_node_name = Loc::new(
-                transition.node.loc,
+            let new_state_name = Loc::new(
+                transition.state.loc,
                 transition
-                    .node
+                    .state
                     .value
                     .clone()
                     .map(|s| get_rename(counter, &s, namespace)),
             );
-            let pause_node_name = Loc::new(
-                transition.node.loc,
+            let pause_state_name = Loc::new(
+                transition.state.loc,
                 transition
-                    .node
+                    .state
                     .value
                     .clone()
                     .map(|s| get_pause_name(counter, &s, namespace)),
@@ -577,12 +577,12 @@ pub fn make_node(
             vec![
                 Transition {
                     condition: transition_stay,
-                    node: new_node_name,
+                    state: new_state_name,
                     reset: transition.reset,
                 },
                 Transition {
                     condition: transition_pause,
-                    node: pause_node_name,
+                    state: pause_state_name,
                     reset: transition.reset,
                 },
             ]
@@ -612,10 +612,10 @@ pub fn make_node(
         .unwrap();
     pause_transitions.push(Transition {
         condition: resume_condition.clone(),
-        node: Loc::new(pos, Some(new_name.clone())),
+        state: Loc::new(pos, Some(new_name.clone())),
         reset: false,
     });
-    //Stay paused while we don't come back to the node.
+    //Stay paused while we don't come back to the state.
     pause_transitions.push(Transition {
         condition: Loc::new(
             pos,
@@ -631,22 +631,22 @@ pub fn make_node(
                 )),
             )))),
         ),
-        node: Loc::new(pos, Some(get_pause_name(counter, &node.name, namespace))),
+        state: Loc::new(pos, Some(get_pause_name(counter, &state.name, namespace))),
         reset: false,
     });
-    let pause_node = Node {
-        name: Loc::new(pos, get_pause_name(counter, &node.name, namespace)),
+    let pause_state = State {
+        name: Loc::new(pos, get_pause_name(counter, &state.name, namespace)),
         statements: Vec::new(),
         weak: true,
         transitions: pause_transitions,
     };
-    let stay_node = Node {
-        name: Loc::new(pos, get_rename(counter, &node.name, namespace)),
+    let stay_state = State {
+        name: Loc::new(pos, get_rename(counter, &state.name, namespace)),
         statements,
-        weak: node.weak,
+        weak: state.weak,
         transitions,
     };
-    (stay_node, pause_node)
+    (stay_state, pause_state)
 }
 
 //rename vars in a statement
@@ -654,7 +654,7 @@ fn replace_var_in_statement(
     statement: &Statement,
     replace_map: &AHashMap<String, String>,
     counter: u32,
-    module_name: &str,
+    automaton_name: &str,
 ) -> Statement {
     match statement {
         Statement::Assign(var_assigns) => Statement::Assign(
@@ -664,9 +664,13 @@ fn replace_var_in_statement(
                     let new_var = replace_map
                         .get(&var_assign.var.value)
                         .cloned()
-                        .unwrap_or(get_rename(counter, &var_assign.var.value, module_name));
-                    let new_expr =
-                        replace_var_in_expr(&var_assign.expr, &replace_map, counter, module_name);
+                        .unwrap_or(get_rename(counter, &var_assign.var.value, automaton_name));
+                    let new_expr = replace_var_in_expr(
+                        &var_assign.expr,
+                        &replace_map,
+                        counter,
+                        automaton_name,
+                    );
                     VarAssign {
                         var: Loc::new(var_assign.var.loc, new_var),
                         expr: Loc::new(var_assign.expr.loc, new_expr),
@@ -681,11 +685,11 @@ fn replace_var_in_statement(
         }) => Statement::If(IfStruct {
             if_block: if_block
                 .iter()
-                .map(|s| replace_var_in_statement(s, replace_map, counter, module_name))
+                .map(|s| replace_var_in_statement(s, replace_map, counter, automaton_name))
                 .collect(),
             else_block: else_block
                 .iter()
-                .map(|s| replace_var_in_statement(s, replace_map, counter, module_name))
+                .map(|s| replace_var_in_statement(s, replace_map, counter, automaton_name))
                 .collect(),
             condition: condition.clone(),
         }),
@@ -706,7 +710,7 @@ fn replace_var_in_statement(
                         replace_map.get(&v.value).cloned().unwrap_or(get_rename(
                             counter,
                             &v.value,
-                            module_name,
+                            automaton_name,
                         )),
                     )
                 })
@@ -720,7 +724,7 @@ fn replace_var_in_statement(
                         .map(|e| {
                             Loc::new(
                                 e.loc,
-                                replace_var_in_expr(e, replace_map, counter, module_name),
+                                replace_var_in_expr(e, replace_map, counter, automaton_name),
                             )
                         })
                         .collect(),
@@ -728,7 +732,7 @@ fn replace_var_in_statement(
                 static_args: static_args.clone(),
             },
         }),
-        Statement::ExtModule(e) => Statement::ExtModule(ExtModule {
+        Statement::ExtAutomaton(e) => Statement::ExtAutomaton(ExtAutomaton {
             inputs: Loc::new(
                 e.inputs.loc,
                 e.inputs
@@ -736,7 +740,7 @@ fn replace_var_in_statement(
                     .map(|e| {
                         Loc::new(
                             e.loc,
-                            replace_var_in_expr(e, replace_map, counter, module_name),
+                            replace_var_in_expr(e, replace_map, counter, automaton_name),
                         )
                     })
                     .collect(),
@@ -751,7 +755,7 @@ fn replace_var_in_statement(
                             replace_map.get(&v.value).cloned().unwrap_or(get_rename(
                                 counter,
                                 &v.value,
-                                module_name,
+                                automaton_name,
                             )),
                         )
                     })
@@ -767,7 +771,7 @@ fn replace_var_in_expr(
     expr: &Expr,
     replace_map: &AHashMap<String, String>,
     counter: u32,
-    module_name: &str,
+    automaton_name: &str,
 ) -> Expr {
     match expr {
         Expr::Var(v) => Expr::Var(Loc::new(
@@ -775,7 +779,7 @@ fn replace_var_in_expr(
             replace_map.get(&v.value).cloned().unwrap_or(get_rename(
                 counter,
                 &v.value,
-                module_name,
+                automaton_name,
             )),
         )),
         Expr::Last(v) => Expr::Last(Loc::new(
@@ -783,7 +787,7 @@ fn replace_var_in_expr(
             replace_map.get(&v.value).cloned().unwrap_or(get_rename(
                 counter,
                 &v.value,
-                module_name,
+                automaton_name,
             )),
         )),
         Expr::Const(_) => expr.clone(),
@@ -791,12 +795,12 @@ fn replace_var_in_expr(
             e,
             replace_map,
             counter,
-            module_name,
+            automaton_name,
         ))),
         Expr::Slice(e, c1, c2) => Expr::Slice(
             Box::new(Loc::new(
                 e.loc,
-                replace_var_in_expr(e, replace_map, counter, module_name),
+                replace_var_in_expr(e, replace_map, counter, automaton_name),
             )),
             c1.clone(),
             c2.clone(),
@@ -805,32 +809,32 @@ fn replace_var_in_expr(
             op.clone(),
             Box::new(Loc::new(
                 e1.loc,
-                replace_var_in_expr(e1, replace_map, counter, module_name),
+                replace_var_in_expr(e1, replace_map, counter, automaton_name),
             )),
             Box::new(Loc::new(
                 e2.loc,
-                replace_var_in_expr(e2, replace_map, counter, module_name),
+                replace_var_in_expr(e2, replace_map, counter, automaton_name),
             )),
         ),
         Expr::Mux(e1, e2, e3) => Expr::Mux(
             Box::new(Loc::new(
                 e1.loc,
-                replace_var_in_expr(e1, replace_map, counter, module_name),
+                replace_var_in_expr(e1, replace_map, counter, automaton_name),
             )),
             Box::new(Loc::new(
                 e2.loc,
-                replace_var_in_expr(e2, replace_map, counter, module_name),
+                replace_var_in_expr(e2, replace_map, counter, automaton_name),
             )),
             Box::new(Loc::new(
                 e3.loc,
-                replace_var_in_expr(e3, replace_map, counter, module_name),
+                replace_var_in_expr(e3, replace_map, counter, automaton_name),
             )),
         ),
         Expr::Reg(c, e) => Expr::Reg(
             c.clone(),
             Box::new(Loc::new(
                 e.loc,
-                replace_var_in_expr(e, replace_map, counter, module_name),
+                replace_var_in_expr(e, replace_map, counter, automaton_name),
             )),
         ),
         Expr::Ram(RamStruct {
@@ -841,19 +845,19 @@ fn replace_var_in_expr(
         }) => Expr::Ram(RamStruct {
             read_addr: Box::new(Loc::new(
                 read_addr.loc,
-                replace_var_in_expr(read_addr, replace_map, counter, module_name),
+                replace_var_in_expr(read_addr, replace_map, counter, automaton_name),
             )),
             write_enable: Box::new(Loc::new(
                 write_enable.loc,
-                replace_var_in_expr(write_enable, replace_map, counter, module_name),
+                replace_var_in_expr(write_enable, replace_map, counter, automaton_name),
             )),
             write_addr: Box::new(Loc::new(
                 write_addr.loc,
-                replace_var_in_expr(write_addr, replace_map, counter, module_name),
+                replace_var_in_expr(write_addr, replace_map, counter, automaton_name),
             )),
             write_data: Box::new(Loc::new(
                 write_data.loc,
-                replace_var_in_expr(write_data, replace_map, counter, module_name),
+                replace_var_in_expr(write_data, replace_map, counter, automaton_name),
             )),
         }),
         Expr::Rom(RomStruct {
@@ -862,7 +866,7 @@ fn replace_var_in_expr(
         }) => Expr::Rom(RomStruct {
             read_addr: Box::new(Loc::new(
                 read_addr.loc,
-                replace_var_in_expr(read_addr, replace_map, counter, module_name),
+                replace_var_in_expr(read_addr, replace_map, counter, automaton_name),
             )),
             word_size: word_size.clone(),
         }),
@@ -879,7 +883,7 @@ fn replace_var_in_expr(
                     .map(|e| {
                         Loc::new(
                             e.loc,
-                            replace_var_in_expr(e, replace_map, counter, module_name),
+                            replace_var_in_expr(e, replace_map, counter, automaton_name),
                         )
                     })
                     .collect(),

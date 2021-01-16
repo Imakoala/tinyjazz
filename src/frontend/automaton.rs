@@ -9,7 +9,7 @@ Transforms the automata in a single dataflow graph, using the following process 
 -Replace every node state var "n" with "last n" (as it is the expected behaviour) (this can be done lazily)
 -make a table of which node produces which output usign which ExprNode.
 for each node:
-    -make the mux expression of each Input, using previously computed nodes
+    -make the mux expression of each Input, using previously computed states
     -compute the expressions of its outputs
 -Replace them all, in scheduling order.
 -Last has disseapeared as it is redundant.
@@ -20,9 +20,9 @@ and so it should be simple using the previous map.
 
 pub fn flatten_automata(prog: &ProgramGraph) -> FlatProgramGraph {
     let n_input = prog.inputs.len();
-    let n_node = n_input + prog.nodes.len();
+    let n_node = n_input + prog.states.len();
     let mut shared_map = AHashMap::new();
-    let mut nodes_mem = vec![AHashMap::new(); prog.nodes.len()];
+    let mut nodes_mem = vec![AHashMap::new(); prog.states.len()];
     let reset_conditions = compute_reset_conditions(
         &prog,
         &mut shared_map,
@@ -32,9 +32,9 @@ pub fn flatten_automata(prog: &ProgramGraph) -> FlatProgramGraph {
     );
     let init_node = &RCell::new(Node::Reg(1, RCell::new(Node::Const(vec![true]))));
     //Link all the inputs and outputs of shared vars.
-    for node_id in 0..prog.nodes.len() {
-        compute_nodes(
-            &prog.nodes[node_id],
+    for node_id in 0..prog.states.len() {
+        compute_states(
+            &prog.states[node_id],
             &mut shared_map,
             &prog.shared,
             &mut nodes_mem[node_id],
@@ -73,8 +73,8 @@ pub fn flatten_automata(prog: &ProgramGraph) -> FlatProgramGraph {
     }
 }
 
-fn compute_nodes(
-    node: &ProgramNode,
+fn compute_states(
+    node: &ProgramState,
     shared_map: &mut AHashMap<usize, RCell<Node>>,
     shared_sizes: &Vec<Vec<bool>>,
     node_mem: &mut AHashMap<Rc<ExprNode>, RCell<Node>>,
@@ -133,8 +133,8 @@ fn compute_reset_conditions(
     node_mem: &mut Vec<AHashMap<Rc<ExprNode>, RCell<Node>>>,
     n_input: usize,
 ) -> Vec<Option<Node>> {
-    let mut reset_conditions = vec![None; prog.nodes.len()];
-    for (pred_id, node) in prog.nodes.iter().enumerate() {
+    let mut reset_conditions = vec![None; prog.states.len()];
+    for (pred_id, node) in prog.states.iter().enumerate() {
         for (next_id, expr_node, b) in &node.transition_outputs {
             if next_id.is_some() && *b {
                 let next_id = next_id.unwrap();
@@ -143,7 +143,7 @@ fn compute_reset_conditions(
                     shared_map,
                     shared_sizes,
                     &mut node_mem[pred_id],
-                    &vec![None; prog.nodes.len()],
+                    &vec![None; prog.states.len()],
                     n_input,
                     pred_id,
                 );
@@ -176,7 +176,7 @@ fn compute_transitions(
     reset_conditions: &Vec<Option<Node>>,
     n_input: usize,
 ) {
-    for (pred_id, node) in prog.nodes.iter().enumerate() {
+    for (pred_id, node) in prog.states.iter().enumerate() {
         for (next_id, expr_node, _) in &node.transition_outputs {
             if let Some(next_id) = next_id {
                 let new_node = compute_node(
@@ -398,12 +398,12 @@ fn compute_node(
 fn add_init_values(
     shared_map: &mut AHashMap<usize, RCell<Node>>,
     shared_size: &Vec<Vec<bool>>,
-    n_nodes: usize,
+    n_states: usize,
     n_input: usize,
     init_node: &RCell<Node>,
 ) {
     for (i, n) in shared_map.iter_mut() {
-        if *i >= n_nodes || *i < n_input {
+        if *i >= n_states || *i < n_input {
             continue;
         }
         if shared_size[*i]

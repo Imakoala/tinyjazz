@@ -29,8 +29,8 @@ pub struct Program {
     pub inputs: Vec<Arg>,
     pub outputs: Vec<Arg>,
     pub shared: AHashMap<SharedVar, Value>,
-    pub nodes: AHashMap<Name, Node>,
-    pub init_nodes: Vec<Name>,
+    pub states: AHashMap<Name, State>,
+    pub init_states: Vec<Name>,
 }
 
 //Just to be a bit more explicit in the ast, these are all strings
@@ -48,7 +48,7 @@ pub enum Var {
 pub type Value = Vec<bool>;
 
 #[derive(Debug, Clone)]
-pub struct Node {
+pub struct State {
     pub name: String,
     pub statements: AHashMap<Var, Expr>,
     pub transitions: Vec<(Var, Option<Name>, bool)>,

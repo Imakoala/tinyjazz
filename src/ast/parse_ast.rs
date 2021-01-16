@@ -1,3 +1,9 @@
+/*
+This is the syntax tree to be used by the parser
+and the first steps of compilation. It is quite close
+to the tinyjazz syntaxe.
+*/
+
 use core::panic;
 use std::{
     hash::Hash,
@@ -7,13 +13,20 @@ use std::{
 
 use ahash::AHashMap;
 
+//Binary Operation are the same for every ast, so they are imported
 pub use crate::ast::BiOp;
 
-//filed_id, left index, right index
+//struct for storing the a position
+//the tuple is file_id, left index, right index
 pub type Pos = (usize, usize, usize);
 
 //A wrapper to include position information in the tree
 //It implements deref for easier use
+//It means that we can call methods directly on the "value" field
+//of the struct, without deconstructiong it.
+//More precisely, if we try to call a method that does no exist
+//on the loc struct, the compiler will try to call it
+//on the value field instead. It makes it way easier to use.
 #[derive(Debug, Clone, Eq)]
 pub struct Loc<T> {
     pub loc: Pos,
@@ -54,21 +67,20 @@ impl<T> DerefMut for Loc<T> {
 #[derive(Debug, Clone)]
 pub struct Program {
     pub imports: Vec<Import>,                   //all imported files
-    pub modules: AHashMap<String, Module>,      //all the modules ordered by name
+    pub automata: AHashMap<String, Automaton>,  //all the automata ordered by name
     pub functions: AHashMap<String, Function>,  //all the functions ordered by name
     pub global_consts: AHashMap<String, Const>, //the global constants
 }
 pub type Import = PathBuf; //an import is just a Path
 
-//A module is basically a group of automata, taking some input and ouputs
 #[derive(Debug, Clone)]
-pub struct Module {
+pub struct Automaton {
     pub name: String,
     pub inputs: Vec<Arg>,
     pub outputs: Vec<Arg>,
-    pub shared: Vec<VarAssign>, //Variables shared across nodes and automata must be declared
-    pub nodes: AHashMap<String, Node>,
-    pub init_nodes: Vec<Loc<Var>>,
+    pub shared: Vec<VarAssign>, //Variables shared across states and automata must be declared
+    pub states: AHashMap<String, State>,
+    pub init_states: Vec<Loc<Var>>,
 }
 
 //A variable assignement
@@ -88,16 +100,16 @@ pub struct ConstVarAssign {
 #[derive(Debug, Clone)]
 pub struct Value(Vec<bool>);
 
-//A call to an extenrla module
+//A call to an extenrla automaton
 #[derive(Debug, Clone)]
-pub struct ExtModule {
+pub struct ExtAutomaton {
     pub inputs: Loc<Vec<Loc<Expr>>>,
     pub outputs: Loc<Vec<Loc<Var>>>,
     pub name: Loc<Var>,
 }
 
 #[derive(Debug, Clone)]
-pub struct Node {
+pub struct State {
     pub name: Loc<String>,
     pub statements: Vec<Statement>,
     pub transitions: Vec<Transition>,
@@ -106,7 +118,7 @@ pub struct Node {
 #[derive(Debug, Clone)]
 pub struct Transition {
     pub condition: Loc<TrCond>,
-    pub node: Loc<Option<Var>>,
+    pub state: Loc<Option<Var>>,
     pub reset: bool,
 }
 #[derive(Debug, Clone)]
@@ -144,7 +156,7 @@ pub enum Statement {
     Assign(Vec<VarAssign>),
     If(IfStruct),
     FnAssign(FnAssign),
-    ExtModule(ExtModule),
+    ExtAutomaton(ExtAutomaton),
 }
 
 #[derive(Debug, Clone)]

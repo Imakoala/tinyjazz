@@ -152,7 +152,7 @@ fn get_diagnostic(
                     Label::primary(loc2.0, loc2.1..loc2.2),
                 ])
                 .with_message(format!("Duplicate variable {}", name)),
-            TypingError::UnknownNode(name, loc) => Diagnostic::error()
+            TypingError::UnknownState(name, loc) => Diagnostic::error()
                 .with_message("Error : unknown node")
                 .with_code("E0015")
                 .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
@@ -178,7 +178,7 @@ fn get_diagnostic(
                 .with_code("E0021")
                 .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])
                 .with_message(format!("Local var {} in strong transition", name)),
-            TypingError::ConflictingNodeShared(loc1, name, loc2) => Diagnostic::error()
+            TypingError::ConflictingStateShared(loc1, name, loc2) => Diagnostic::error()
                 .with_message("Error : Conflicting node name and shared variable name")
                 .with_code("E0025")
                 .with_labels(vec![
@@ -196,15 +196,15 @@ fn get_diagnostic(
                 .with_message(format!("Non shared var {} in last", name)),
         },
         ErrorType::ColAutomata(err) => match err {
-            CollapseAutomataError::CyclicModuleCall(s) => Diagnostic::error()
+            CollapseAutomataError::CyclicAutomatonCall(s) => Diagnostic::error()
                 .with_message("Error : cyclic module calls")
                 .with_code("E0019")
                 .with_message(format!("Module {} called itself", s)),
-            CollapseAutomataError::NoMainModule => Diagnostic::error()
+            CollapseAutomataError::NoMainAutomaton => Diagnostic::error()
                 .with_message("Error : no main module")
                 .with_code("E0020")
                 .with_message(format!("must have a module called \"main\"")),
-            CollapseAutomataError::UnknownModule(loc, name) => Diagnostic::error()
+            CollapseAutomataError::UnknownAutomaton(loc, name) => Diagnostic::error()
                 .with_message("Error : unknown module")
                 .with_code("E0014")
                 .with_labels(vec![Label::primary(loc.0, loc.1..loc.2)])

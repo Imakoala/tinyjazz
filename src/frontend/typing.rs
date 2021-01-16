@@ -22,12 +22,12 @@ pub enum TypingError {
     MismatchedBusSize(Token, Token), //expected, got
     UnknownVar(String, Pos),
     DuplicateVar(String, Pos, Pos),
-    UnknownNode(String, Pos),
+    UnknownState(String, Pos),
     ExpectedSizeOne(Pos, usize),
     IndexOutOfRange(Pos, i32, usize),
     LocalVarInUnless(Pos, String),
     NonSharedInLast(Pos, String),
-    ConflictingNodeShared(Pos, String, Pos),
+    ConflictingStateShared(Pos, String, Pos),
 }
 #[derive(Debug)]
 pub struct Token {
@@ -42,7 +42,7 @@ pub fn type_prog(
 ) -> Result<typ::Program> {
     let mut shared_types: AHashMap<String, (usize, Pos)> = AHashMap::new();
     //build the map from shared variables, and type them as well.
-    let main_module = prog.modules.get_mut("main").unwrap();
+    let main_module = prog.automata.get_mut("main").unwrap();
     let mut shared_map = main_module
         .shared
         .drain(..)
@@ -76,17 +76,17 @@ pub fn type_prog(
             }
         })
         .collect::<Result<AHashMap<String, Vec<bool>>>>()?;
-    //Nodes name are shared variable which indicated the state of the node (running or not)
-    for (name, node) in main_module.nodes.iter() {
+    //States name are shared variable which indicated the state of the state (running or not)
+    for (name, state) in main_module.states.iter() {
         if shared_map.contains_key(name) {
             let (_, loc) = shared_types.get(name).unwrap();
-            return Err(TypingError::ConflictingNodeShared(
-                node.name.loc,
-                node.name.value.clone(),
+            return Err(TypingError::ConflictingStateShared(
+                state.name.loc,
+                state.name.value.clone(),
                 *loc,
             ));
         }
-        shared_types.insert(name.clone(), (1, node.name.loc));
+        shared_types.insert(name.clone(), (1, state.name.loc));
     }
     //inputs are added as shared variables.
     //the types are also added in a vector for use in external module typing.
@@ -156,51 +156,51 @@ pub fn type_prog(
             }
         })
         .collect::<Result<Vec<typ::Sized<String>>>>()?;
-    let nodes_map = main_module
-        .nodes
+    let states_map = main_module
+        .states
         .iter()
-        .map(|(_, node)| (node.name.to_string(), node.name.loc))
+        .map(|(_, state)| (state.name.to_string(), state.name.loc))
         .collect::<AHashMap<String, Pos>>();
-    //If init nodes were specified, use them. Else, use the first node.
-    let init_nodes = main_module
-        .init_nodes
+    //If init states were specified, use them. Else, use the first state.
+    let init_states = main_module
+        .init_states
         .drain(..)
         .map(|s| {
-            if nodes_map.contains_key(&s.value) {
+            if states_map.contains_key(&s.value) {
                 Ok(s.value)
             } else {
-                Err(TypingError::UnknownNode(s.value, s.loc))
+                Err(TypingError::UnknownState(s.value, s.loc))
             }
         })
         .collect::<Result<Vec<String>>>()?;
-    let nodes = main_module
-        .nodes
+    let states = main_module
+        .states
         .drain()
-        .map(|(_, node)| {
+        .map(|(_, state)| {
             Ok((
-                node.name.value.clone(),
-                type_node(node, &nodes_map, &shared_types, &mut type_constraints)?,
+                state.name.value.clone(),
+                type_state(state, &states_map, &shared_types, &mut type_constraints)?,
             ))
         })
-        .collect::<Result<AHashMap<typ::Name, typ::Node>>>()?;
+        .collect::<Result<AHashMap<typ::Name, typ::State>>>()?;
     Ok(typ::Program {
         inputs,
         outputs,
-        nodes,
+        states,
         shared: shared_map,
-        init_nodes,
+        init_states,
     })
 }
 
-//type a node. It has to type all the statements and transitions
-fn type_node(
-    mut node: untyp::Node,
-    nodes_map: &AHashMap<String, Pos>,
+//type a state. It has to type all the statements and transitions
+fn type_state(
+    mut state: untyp::State,
+    states_map: &AHashMap<String, Pos>,
     shared_types: &AHashMap<String, (usize, Pos)>,
     type_constraints: &mut AHashMap<String, (i32, Pos)>,
-) -> Result<typ::Node> {
+) -> Result<typ::State> {
     let mut var_types: AHashMap<String, (usize, Pos)> = AHashMap::new();
-    let statements = node
+    let statements = state
         .statements
         .drain(..)
         .map(|s| {
@@ -212,18 +212,18 @@ fn type_node(
             )?)
         })
         .collect::<Result<AHashMap<typ::Var, typ::Expr>>>()?;
-    let weak = node.weak;
-    let transitions = node
+    let weak = state.weak;
+    let transitions = state
         .transitions
         .drain(..)
         .map(|transition| {
             if let untyp::Expr::Var(s) = transition.condition.unwrap_ref() {
-                if transition.node.is_some()
-                    && !nodes_map.contains_key(transition.node.as_ref().unwrap())
+                if transition.state.is_some()
+                    && !states_map.contains_key(transition.state.as_ref().unwrap())
                 {
-                    return Err(TypingError::UnknownNode(
-                        transition.node.value.unwrap(),
-                        transition.node.loc,
+                    return Err(TypingError::UnknownState(
+                        transition.state.value.unwrap(),
+                        transition.state.loc,
                     ));
                 }
                 if let Some((size, _loc)) = var_types.get(&s.value) {
@@ -235,7 +235,7 @@ fn type_node(
                     }
                     Ok((
                         typ::Var::Local(s.value.clone()),
-                        transition.node.value,
+                        transition.state.value,
                         transition.reset,
                     ))
                 } else {
@@ -245,7 +245,7 @@ fn type_node(
                         }
                         Ok((
                             typ::Var::Shared(s.value.clone()),
-                            transition.node.value,
+                            transition.state.value,
                             transition.reset,
                         ))
                     } else {
@@ -257,10 +257,10 @@ fn type_node(
             }
         })
         .collect::<Result<Vec<(typ::Var, Option<typ::Name>, bool)>>>()?;
-    Ok(typ::Node {
+    Ok(typ::State {
         transitions,
-        name: node.name.value,
-        weak: node.weak,
+        name: state.name.value,
+        weak: state.weak,
         statements,
     })
 }
