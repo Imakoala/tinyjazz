@@ -7,7 +7,6 @@ use crate::frontend::{
     constants::ComputeConstError,
     functions::{ExpandFnError, REC_DEPTH},
     hierarchical_automata::CollapseAutomataError,
-    nested_expr::FlattenError,
     parser_wrapper::{ParseErrorType, ParserError},
     typing::TypingError,
 };
@@ -22,7 +21,6 @@ pub enum ErrorType {
     ExpandFn(ExpandFnError),
     Typing(TypingError),
     ColAutomata(CollapseAutomataError),
-    FlattenError(FlattenError),
 }
 
 fn get_diagnostic(
@@ -221,30 +219,6 @@ fn get_diagnostic(
                     typ, expected, got
                 )),
         },
-        ErrorType::FlattenError(flatten_error) => {
-            let (pos, message, note) = match flatten_error {
-                FlattenError::MemoryInReg(pos) => (
-                    pos,
-                    "Error: Access to memory in register",
-                    "Can't access rom or ram memory in a register",
-                ),
-                FlattenError::ConcatInReg(pos) => (
-                    pos,
-                    "Error: Concatenation in register",
-                    "Cannot statically determine the length of these expressions",
-                ),
-                FlattenError::SliceInReg(pos) => (
-                    pos,
-                    "Error: Slice in register",
-                    "Cannot statically determine the length of this expression<",
-                ),
-            };
-            Diagnostic::error()
-                .with_message(message)
-                .with_code("E0022")
-                .with_labels(vec![Label::primary(pos.0, pos.1..pos.2)])
-                .with_message(note)
-        }
     }
 }
 
@@ -306,16 +280,6 @@ impl From<(CollapseAutomataError, Rc<SimpleFiles<String, String>>)> for Tinyjazz
         let (typ_error, files) = err;
         TinyjazzError {
             error: ErrorType::ColAutomata(typ_error),
-            files,
-        }
-    }
-}
-
-impl From<(FlattenError, Rc<SimpleFiles<String, String>>)> for TinyjazzError {
-    fn from(err: (FlattenError, Rc<SimpleFiles<String, String>>)) -> Self {
-        let (typ_error, files) = err;
-        TinyjazzError {
-            error: ErrorType::FlattenError(typ_error),
             files,
         }
     }

@@ -28,7 +28,7 @@ use crate::ast::graph::*;
 use parse_ast::*;
 
 use parser::ProgramParser;
-
+//parse the file and convert it into a flatprogramgraph
 pub fn from_netlist(path: &str) -> FlatProgramGraph {
     let file = read_to_string(path.clone()).unwrap();
     let netlist = ProgramParser::new().parse(&file).unwrap();

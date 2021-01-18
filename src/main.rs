@@ -2,7 +2,7 @@
 mod ast;
 mod backends;
 mod frontend;
-mod interpreters;
+mod interpreter;
 mod optimization;
 mod test;
 mod util;
@@ -35,7 +35,7 @@ fn process_file(path: PathBuf) -> Result<FlatProgramGraph, util::errors::Tinyjaz
     frontend::constants::compute_consts(&mut prog).map_err(|e| (e, files.clone()))?;
     frontend::hierarchical_automata::collapse_automata(&mut prog)
         .map_err(|e| (e, files.clone()))?; //this is just error handling
-    frontend::nested_expr::flatten(&mut prog).map_err(|e| (e, files.clone()))?;
+    frontend::nested_expr::flatten(&mut prog);
     //a map the keep the input and output types of function,
     //even when they are inlined
     let mut type_map = AHashMap::new();
@@ -83,9 +83,7 @@ fn main() {
     }
     //interprete the file for <steps> steps
     if let Some(steps) = args.flag_s {
-        for outputs in
-            interpreters::low_level_interpreter::interprete(&flat_prog, args.flag_i).take(steps)
-        {
+        for outputs in interpreter::interprete(&flat_prog, args.flag_i).take(steps) {
             println!("{:?}", outputs);
         }
     }

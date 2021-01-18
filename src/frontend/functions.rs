@@ -11,7 +11,7 @@ Then as all constants in automata are values again, it can inlines the remaining
 
 It stops if the depth exceed a constant currently, probably a cli parameter eventually
 */
-//TODO : make this an argument instead of a builtin const
+//TODO : make the recursion depth an argument instead of a builtin const
 pub const REC_DEPTH: u32 = 1000;
 global_counter!(FN_CALL_VARIABLE, u32, 0);
 

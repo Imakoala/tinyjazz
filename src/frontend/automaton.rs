@@ -12,10 +12,11 @@ for each node:
     -make the mux expression of each Input, using previously computed states
     -compute the expressions of its outputs
 -Replace them all, in scheduling order.
--Last has disseapeared as it is redundant.
+-Last has dissapeared as it is redundant.
 -Everything is wrapped in RCell to stay mutable, for optimisations later on
 Once this is done, computes the state variables. They should all be simple shared vars,
 and so it should be simple using the previous map.
+Then replace all temp values with actual links in the graph, and everything is good
 */
 
 pub fn flatten_automata(prog: &ProgramGraph) -> FlatProgramGraph {
@@ -32,15 +33,15 @@ pub fn flatten_automata(prog: &ProgramGraph) -> FlatProgramGraph {
     );
     let init_node = &RCell::new(Node::Reg(1, RCell::new(Node::Const(vec![true]))));
     //Link all the inputs and outputs of shared vars.
-    for node_id in 0..prog.states.len() {
-        compute_states(
-            &prog.states[node_id],
+    for state_id in 0..prog.states.len() {
+        compute_state(
+            &prog.states[state_id],
             &mut shared_map,
             &prog.shared,
-            &mut nodes_mem[node_id],
+            &mut nodes_mem[state_id],
             &reset_conditions,
             n_input,
-            node_id,
+            state_id,
             init_node,
         );
     }
@@ -53,8 +54,9 @@ pub fn flatten_automata(prog: &ProgramGraph) -> FlatProgramGraph {
         &reset_conditions,
         n_input,
     );
+    //when init value are needed, adds them.
+    //this is done using "reg 1" to know whether this is the first cycle or not.
     add_init_values(&mut shared_map, &prog.shared, n_node, n_input, init_node);
-    // println!("{:#?}", shared_map);
     remove_tmp_value(&mut shared_map, &prog.shared);
     FlatProgramGraph {
         outputs: prog
@@ -73,30 +75,30 @@ pub fn flatten_automata(prog: &ProgramGraph) -> FlatProgramGraph {
     }
 }
 
-fn compute_states(
-    node: &ProgramState,
+fn compute_state(
+    state: &ProgramState,
     shared_map: &mut AHashMap<usize, RCell<Node>>,
     shared_sizes: &Vec<Vec<bool>>,
-    node_mem: &mut AHashMap<Rc<ExprNode>, RCell<Node>>,
+    state_mem: &mut AHashMap<Rc<ExprNode>, RCell<Node>>,
     reset_conditions: &Vec<Option<Node>>,
     n_input: usize,
-    node_id: usize,
+    state_id: usize,
     init_node: &RCell<Node>,
 ) {
-    for (id, expr_node) in &node.shared_outputs {
+    for (id, expr_node) in &state.shared_outputs {
         let node = compute_node(
             expr_node.clone(),
             shared_map,
             shared_sizes,
-            node_mem,
+            state_mem,
             reset_conditions,
             n_input,
-            node_id,
+            state_id,
         );
 
         let new_node = if let Some(prev_node) = shared_map.remove(id) {
             Node::Mux(
-                RCell::new(Node::TmpValueHolder(n_input + node_id)),
+                RCell::new(Node::TmpValueHolder(n_input + state_id)),
                 node,
                 prev_node,
             )
@@ -118,7 +120,7 @@ fn compute_states(
                 loop_reg
             };
             Node::Mux(
-                RCell::new(Node::TmpValueHolder(n_input + node_id)),
+                RCell::new(Node::TmpValueHolder(n_input + state_id)),
                 node,
                 init_value,
             )
@@ -130,7 +132,7 @@ fn compute_reset_conditions(
     prog: &ProgramGraph,
     shared_map: &mut AHashMap<usize, RCell<Node>>,
     shared_sizes: &Vec<Vec<bool>>,
-    node_mem: &mut Vec<AHashMap<Rc<ExprNode>, RCell<Node>>>,
+    state_mem: &mut Vec<AHashMap<Rc<ExprNode>, RCell<Node>>>,
     n_input: usize,
 ) -> Vec<Option<Node>> {
     let mut reset_conditions = vec![None; prog.states.len()];
@@ -142,7 +144,7 @@ fn compute_reset_conditions(
                     expr_node.clone(),
                     shared_map,
                     shared_sizes,
-                    &mut node_mem[pred_id],
+                    &mut state_mem[pred_id],
                     &vec![None; prog.states.len()],
                     n_input,
                     pred_id,
@@ -172,7 +174,7 @@ fn compute_transitions(
     prog: &ProgramGraph,
     shared_map: &mut AHashMap<usize, RCell<Node>>,
     shared_sizes: &Vec<Vec<bool>>,
-    node_mem: &mut Vec<AHashMap<Rc<ExprNode>, RCell<Node>>>,
+    state_mem: &mut Vec<AHashMap<Rc<ExprNode>, RCell<Node>>>,
     reset_conditions: &Vec<Option<Node>>,
     n_input: usize,
 ) {
@@ -183,7 +185,7 @@ fn compute_transitions(
                     expr_node.clone(),
                     shared_map,
                     shared_sizes,
-                    &mut node_mem[pred_id],
+                    &mut state_mem[pred_id],
                     reset_conditions,
                     n_input,
                     pred_id,
@@ -211,12 +213,12 @@ fn compute_node(
     expr_node: Rc<ExprNode>,
     shared_map: &mut AHashMap<usize, RCell<Node>>,
     shared_size: &Vec<Vec<bool>>,
-    node_mem: &mut AHashMap<Rc<ExprNode>, RCell<Node>>,
+    state_mem: &mut AHashMap<Rc<ExprNode>, RCell<Node>>,
     reset_conditions: &Vec<Option<Node>>,
     n_input: usize,
-    node_id: usize,
+    state_id: usize,
 ) -> RCell<Node> {
-    if let Some(n) = node_mem.get(&expr_node) {
+    if let Some(n) = state_mem.get(&expr_node) {
         return n.clone();
     }
     let ret = match expr_node.op.clone() {
@@ -232,20 +234,20 @@ fn compute_node(
             e,
             shared_map,
             shared_size,
-            node_mem,
+            state_mem,
             reset_conditions,
             n_input,
-            node_id,
+            state_id,
         ))),
         ExprOperation::Slice(e, c1, c2) => RCell::new(Node::Slice(
             compute_node(
                 e,
                 shared_map,
                 shared_size,
-                node_mem,
+                state_mem,
                 reset_conditions,
                 n_input,
-                node_id,
+                state_id,
             ),
             c1,
             c2,
@@ -256,19 +258,19 @@ fn compute_node(
                 e1,
                 shared_map,
                 shared_size,
-                node_mem,
+                state_mem,
                 reset_conditions,
                 n_input,
-                node_id,
+                state_id,
             ),
             compute_node(
                 e2,
                 shared_map,
                 shared_size,
-                node_mem,
+                state_mem,
                 reset_conditions,
                 n_input,
-                node_id,
+                state_id,
             ),
         )),
         ExprOperation::Mux(e1, e2, e3) => RCell::new(Node::Mux(
@@ -276,28 +278,28 @@ fn compute_node(
                 e1,
                 shared_map,
                 shared_size,
-                node_mem,
+                state_mem,
                 reset_conditions,
                 n_input,
-                node_id,
+                state_id,
             ),
             compute_node(
                 e2,
                 shared_map,
                 shared_size,
-                node_mem,
+                state_mem,
                 reset_conditions,
                 n_input,
-                node_id,
+                state_id,
             ),
             compute_node(
                 e3,
                 shared_map,
                 shared_size,
-                node_mem,
+                state_mem,
                 reset_conditions,
                 n_input,
-                node_id,
+                state_id,
             ),
         )),
         ExprOperation::Reg(s, e) => {
@@ -306,13 +308,13 @@ fn compute_node(
                     e,
                     shared_map,
                     shared_size,
-                    node_mem,
+                    state_mem,
                     reset_conditions,
                     n_input,
-                    node_id,
+                    state_id,
                 )
             } else {
-                //FIXME: this is due to the other fixme in make_automaton_graph, and currently is not handles
+                //FIXME: this is due to the other fixme in make_automaton_graph, and currently is not handled
                 todo!()
             };
             //make the reg loop instead of computing its value when not in the right node
@@ -320,7 +322,7 @@ fn compute_node(
             let node = RCell::new(Node::Reg(
                 s,
                 RCell::new(Node::Mux(
-                    RCell::new(Node::TmpValueHolder(node_id + n_input)),
+                    RCell::new(Node::TmpValueHolder(state_id + n_input)),
                     new_expr,
                     RCell::new(Node::Reg(s, tmp_value.clone())),
                 )),
@@ -333,37 +335,37 @@ fn compute_node(
                 e1,
                 shared_map,
                 shared_size,
-                node_mem,
+                state_mem,
                 reset_conditions,
                 n_input,
-                node_id,
+                state_id,
             ),
             compute_node(
                 e2,
                 shared_map,
                 shared_size,
-                node_mem,
+                state_mem,
                 reset_conditions,
                 n_input,
-                node_id,
+                state_id,
             ),
             compute_node(
                 e3,
                 shared_map,
                 shared_size,
-                node_mem,
+                state_mem,
                 reset_conditions,
                 n_input,
-                node_id,
+                state_id,
             ),
             compute_node(
                 e4,
                 shared_map,
                 shared_size,
-                node_mem,
+                state_mem,
                 reset_conditions,
                 n_input,
-                node_id,
+                state_id,
             ),
         )),
         ExprOperation::Rom(s, e) => RCell::new(Node::Rom(
@@ -372,14 +374,14 @@ fn compute_node(
                 e,
                 shared_map,
                 shared_size,
-                node_mem,
+                state_mem,
                 reset_conditions,
                 n_input,
-                node_id,
+                state_id,
             ),
         )),
         ExprOperation::Last(i) => {
-            let inside_node = if let Some(n) = &reset_conditions[node_id] {
+            let inside_node = if let Some(n) = &reset_conditions[state_id] {
                 Node::Mux(
                     RCell::new(n.clone()),
                     RCell::new(Node::Const(shared_size[i].clone())),
@@ -391,7 +393,7 @@ fn compute_node(
             RCell::new(Node::Reg(shared_size[i].len(), RCell::new(inside_node)))
         }
     };
-    node_mem.insert(expr_node, ret.clone());
+    state_mem.insert(expr_node, ret.clone());
     ret
 }
 
@@ -440,7 +442,7 @@ fn remove_tmp_value(shared_map: &mut AHashMap<usize, RCell<Node>>, shared_size: 
             .clone();
     }
 }
-
+//get the temp values everywhere in a vec so they can be replaced
 fn fetch_tmp_values(
     node: RCell<Node>,
     tmp_values: &mut Vec<RCell<Node>>,

@@ -36,9 +36,6 @@ and everything else will be dropped by the compiler, hence the free optimisation
 
 For program states, we keep a vec of states and they are represented by their id. It can't be done like expr states because program states can
 contain cycles.
-
-With this representation, simulation can be done with a threadpool : each state is simulated in its own thread.
-
 */
 
 use crate::ast::{graph_automaton::*, typed_ast as typ};
@@ -90,13 +87,7 @@ pub fn make_graph(prog: &typ::Program) -> ProgramGraph {
         .map(|v| (v.value.clone(), *shared_rename_map.get(&v.value).unwrap()))
         .collect();
     let inputs = prog.inputs.iter().map(|var| var.size).collect();
-    // println!("{:#?}", states);
-    // println!("{:#?}", shared_rename_map);
-    // for state in &states {
-    //     println!("--------------------------------------------------\n inputs : {:#?} \n \n outputs : {:#?} "
-    //     ,state.inputs, state.shared_outputs.iter().map(|(s, _)| *s).collect::<Vec<usize>>())
-    // }
-    let schedule = Vec::new(); // scheduler::schedule(&states, shared.len())?;
+    let schedule = Vec::new(); // the scheduler is disabled
     ProgramGraph {
         init_states,
         shared,
@@ -106,7 +97,7 @@ pub fn make_graph(prog: &typ::Program) -> ProgramGraph {
         inputs,
     }
 }
-
+//transform a state into a ProgramState
 fn make_state(
     state: &State,
     state_rename_map: &AHashMap<String, usize>,

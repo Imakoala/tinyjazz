@@ -14,20 +14,20 @@ It also transforms the ast in a typed_ast, which is a lot simpler and without lo
 
 Scoping is also done in this file. It just means shared variables are particularized.
 
-The compiler / interpreter is unable to fail after this point, and so every possible error must be detected and reported now.
+The compiler / interpreter must fail as little as possible after this point (as there are no more localisation info)
 */
 #[derive(Debug)]
 pub enum TypingError {
     NegativeSizeBus(Pos, i32),
-    MismatchedBusSize(Token, Token), //expected, got
+    MismatchedBusSize(Token, Token), //expected X, got X
     UnknownVar(String, Pos),
     DuplicateVar(String, Pos, Pos),
     UnknownState(String, Pos),
     ExpectedSizeOne(Pos, usize),
     IndexOutOfRange(Pos, i32, usize),
-    LocalVarInUnless(Pos, String),
+    LocalVarInUnless(Pos, String), //unless is not fully implemented
     NonSharedInLast(Pos, String),
-    ConflictingStateShared(Pos, String, Pos),
+    ConflictingStateShared(Pos, String, Pos), //shared variables and states cannot have conflicting names
 }
 #[derive(Debug)]
 pub struct Token {
@@ -36,13 +36,15 @@ pub struct Token {
     pub length: usize,
 }
 type Result<T> = std::result::Result<T, TypingError>;
+
+//the main wrapper function
 pub fn type_prog(
     mut prog: untyp::Program,
     mut type_constraints: AHashMap<String, (i32, Pos)>,
 ) -> Result<typ::Program> {
     let mut shared_types: AHashMap<String, (usize, Pos)> = AHashMap::new();
-    //build the map from shared variables, and type them as well.
     let main_module = prog.automata.get_mut("main").unwrap();
+    //build the map of shared variables, and type them as well.
     let mut shared_map = main_module
         .shared
         .drain(..)
@@ -89,7 +91,7 @@ pub fn type_prog(
         shared_types.insert(name.clone(), (1, state.name.loc));
     }
     //inputs are added as shared variables.
-    //the types are also added in a vector for use in external module typing.
+    //the types are also added in a vector for module typing.
     let mut in_types = Vec::new();
     let inputs = main_module
         .inputs
@@ -329,7 +331,7 @@ fn type_statement(
         )),
     }
 }
-
+//type and expression, same
 fn type_expr(
     expr: untyp::Expr,
     var_types: &AHashMap<String, (usize, Pos)>,
@@ -458,9 +460,10 @@ fn type_expr(
             let (size, expr) =
                 type_expr_term_reg(expr_term.value, var_types, shared_types, type_constraints)?;
             if let untyp::Const::Value(i) = c.value {
-                let j = usize::try_from(i).map_err(|_| TypingError::NegativeSizeBus(c.loc, i))?;
+                let mut j =
+                    usize::try_from(i).map_err(|_| TypingError::NegativeSizeBus(c.loc, i))?;
                 if let Some(size) = size {
-                    if size != j {
+                    if size != j && j != 1 {
                         let token1 = Token {
                             loc: loc1,
                             name: None,
@@ -472,6 +475,11 @@ fn type_expr(
                             length: size,
                         };
                         return Err(TypingError::MismatchedBusSize(token1, token2));
+                    }
+                    //if the size of the reg is not specified (or is 1), but can be inferred by the compiler,
+                    //it doen't fail, it infers the value
+                    if j == 1 {
+                        j = size
                     }
                 }
                 Ok(typ::Sized {
@@ -544,7 +552,7 @@ fn type_expr(
         untyp::Expr::FnCall(_) => panic!("Should not happen : fn call in typing"),
     }
 }
-
+//type an expression that the compiler assume will be constant or a variable
 fn type_expr_term(
     expr: untyp::Expr,
     var_types: &AHashMap<String, (usize, Pos)>,
@@ -598,7 +606,8 @@ fn type_expr_term(
         )),
     }
 }
-
+//tries to type an expression inside a reg. If it can't, just returns none, as it is not an error
+//(a = reg(a) is valid)
 fn type_expr_term_reg(
     expr: untyp::Expr,
     var_types: &AHashMap<String, (usize, Pos)>,
@@ -643,7 +652,8 @@ fn type_expr_term_reg(
         _ => panic!("Should not happen : non terminal expr at depth 1 in typing"),
     }
 }
-
+//from the variable name, it can retrace in which function with which arguments it was.
+//TODO : make it work the same, but without the ugly hack.
 fn format_var(var: String) -> String {
     if var.starts_with('$') {
         let vec: Vec<&str> = var.split('$').filter(|s| *s != "").collect();
