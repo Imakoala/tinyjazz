@@ -1,3 +1,8 @@
+/*
+This uses a crate to generate .dot files.
+It is pretty much just verbose, so I won't comment everything
+*/
+
 use std::{collections::HashMap, io::Write};
 
 use crate::ast::graph::{FlatProgramGraph, Node, RCell};

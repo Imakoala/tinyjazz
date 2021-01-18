@@ -4,7 +4,8 @@ use std::{
     collections::{HashMap, HashSet},
     io::Write,
 };
-
+//not much to say : it writes a netlist to anything implementing write
+//(it can be a file, or a string, or a port...)
 pub fn to_netlist(source: &FlatProgramGraph, mut dest: impl Write) -> Result<(), std::io::Error> {
     writeln!(
         dest,

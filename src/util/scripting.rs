@@ -1,5 +1,7 @@
 use rhai::{Array, Engine, Scope};
-
+//This returns a closure with no arguments. Each time it is called, it calls the rhai script
+//with always the same context (so some form of continuity can be kept)
+//and returns the output of the script.
 pub fn get_inputs_closure(
     path: Option<String>,
     inputs: Vec<usize>,
