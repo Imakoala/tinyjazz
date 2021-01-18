@@ -25,7 +25,6 @@ struct Args {
     flag_print: bool,
     flag_i: Option<String>,
     flag_s: Option<usize>,
-    flag_hl: bool,
     flag_netlist: bool,
     flag_o: usize,
 }
@@ -84,7 +83,18 @@ fn main() {
     //interprete the file for <steps> steps
     if let Some(steps) = args.flag_s {
         for outputs in interpreter::interprete(&flat_prog, args.flag_i).take(steps) {
-            println!("{:?}", outputs);
+            println!(
+                "{:?}",
+                outputs
+                    .into_iter()
+                    .map(|(s, v)| (
+                        s,
+                        v.into_iter()
+                            .map(|b| if b { 1 } else { 0 })
+                            .collect::<Vec<u32>>()
+                    ))
+                    .collect::<Vec<(&String, Vec<u32>)>>()
+            );
         }
     }
 }
